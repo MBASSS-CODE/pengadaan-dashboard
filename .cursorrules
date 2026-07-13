@@ -1,0 +1,25 @@
+# Nuxt 3 Monolith & PrimeVue Dashboard Rules
+
+## 1. Tech Stack & Core Architecture
+* Gunakan Nuxt 3 dengan Vue 3 Composition API (`<script setup>`), PrimeVue, Pinia, dan backend Nitro.
+* Terapkan arsitektur monolith dengan sistem penyimpanan cache berbasis file JSON secara terpisah per *endpoint*.
+* Otentikasi internal dikelola menggunakan JWT yang disimpan di dalam `HttpOnly` Cookie.
+* Data manajemen pengguna disimpan pada file `server/data/users.json` dan wajib menggunakan enkripsi `bcryptjs`.
+
+## 2. Standar UI/UX (Frontend)
+* Desain antarmuka harus bersih, profesional, dan mengikuti tata letak seragam ala template Verona atau Aura.
+* Selalu analisis struktur JSON; gunakan `DataTable` untuk data array tabular (lengkap dengan filter, *sorting*, dan paginasi), gunakan `Tag` atau `Badge` untuk label status, dan terapkan format mata uang untuk angka besar.
+* Dilarang menempatkan logika *fetch* API ber-token di komponen antarmuka/frontend.
+
+## 3. Strategi Backend & Data Fetching (Nitro)
+* **Dashboard API:** Lakukan *fetch* tanpa otentikasi untuk data *precomputed* dan simpan di `server/data/dashboard_precomputed.json`.
+* **Data API (Multi-Endpoint):** Lakukan *fetch* menggunakan token rahasia dari `.env` (`API_DATA_TOKEN` dan `API_DATA_KODE_KLPD`).
+* **Paginasi Data API:** Wajib menerapkan *Cursor-based While Loop* untuk menarik data secara berulang (batas 100) hingga properti `has_more` bernilai `false`.
+* **Penyimpanan Dinamis:** Simpan hasil agregasi data per grup menggunakan *Dynamic Routing* (`server/api/data/[group]/[endpoint].get.ts`).
+* **Mekanisme Fallback:** Saat memuat data, selalu urutkan pengecekan dari: RAM (`memoryCache`) -> Ketersediaan File JSON (`server/data/[group]/[endpoint].json`) -> Jika kosong, lakukan *fetch* dan simpan.
+
+## 4. SOP Iteratif (Instruksi Mutlak Saat Menerima JSON/Endpoint Baru)
+Setiap kali diberikan struktur JSON dari endpoint baru, otomatis jalankan langkah berikut:
+* **Langkah A (Registrasi Backend):** Identifikasi *Group* dan *Endpoint*, lalu daftarkan ke dalam eksekusi *cron job* di `server/plugins/cron.ts` untuk automasi sinkronisasi.
+* **Langkah B (Generate Frontend):** Buat halaman baru di `pages/[group]/[endpoint].vue` dan buat tampilan antarmuka yang modern dan mudah dibaca menggunakan PrimeVue.
+* **Langkah C (Agregasi Data - Hanya jika diminta manual):** Buat fungsi di `server/utils/dataAggregator.ts` untuk memetakan data, buat rute API khusus di `server/api/features/`, dan siapkan UI interaktif (*Chart*, *Card*, dll).
