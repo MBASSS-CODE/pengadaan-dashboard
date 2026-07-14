@@ -36,10 +36,10 @@
                         <span>A</span>
                     </div>
                     <div class="user-info">
-                        <span class="user-name">Admin UKPBJ</span>
+                        <span class="user-name">Admin</span>
                         <span class="user-role">Administrator</span>
                     </div>
-                    <button class="logout-btn" title="Logout">
+                    <button class="logout-btn" title="Logout" @click="handleLogout">
                         <svg xmlns="http://www.w3.org/2000/svg" class="logout-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
@@ -83,7 +83,9 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const isMobile = ref(false);
 const isSidebarOpen = ref(true);
 const { toggleDarkMode, isDark } = useTheme();
@@ -114,6 +116,20 @@ const closeSidebar = () => {
     if (isMobile.value) {
         isSidebarOpen.value = false;
     }
+};
+
+const handleLogout = async () => {
+    try {
+        const isLoggedIn = useCookie('is_logged_in');
+        isLoggedIn.value = null; // Hapus cookie
+        // Optional: Call the backend logout API if it exists
+        // await $fetch('/api/auth/logout', { method: 'POST' });
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+    
+    // Redirect user to the login page
+    router.push('/login');
 };
 </script>
 

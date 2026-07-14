@@ -42,12 +42,12 @@
         
         <div class="form-group">
           <label class="form-label">Username</label>
-          <MazInput v-model="userForm.username" block />
+          <MazInput v-model="userForm.username" block no-label />
         </div>
         
         <div class="form-group">
           <label class="form-label">Password</label>
-          <MazInput type="password" v-model="userForm.password" block />
+          <MazInput type="password" v-model="userForm.password" block no-label />
         </div>
         
         <div class="modal-actions">

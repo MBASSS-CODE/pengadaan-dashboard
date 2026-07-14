@@ -3,7 +3,7 @@
     <div class="login-card">
       <div class="login-header">
         <h1 class="login-title">Selamat Datang</h1>
-        <p class="login-subtitle">Masuk ke Sistem Dashboard INAPROC</p>
+        <p class="login-subtitle">Masuk ke Sistem Dashboard</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="login-form">
@@ -16,6 +16,7 @@
             placeholder="Masukkan username" 
             required 
             block
+            no-label
           />
         </div>
 
@@ -28,6 +29,7 @@
             placeholder="Masukkan password" 
             required 
             block
+            no-label
           />
         </div>
 
@@ -76,6 +78,8 @@ const handleLogin = async () => {
     });
 
     if (response.success) {
+      const isLoggedIn = useCookie('is_logged_in');
+      isLoggedIn.value = 'true';
       router.push('/');
     }
   } catch (error) {
