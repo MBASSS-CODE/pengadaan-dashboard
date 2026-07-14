@@ -62,10 +62,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 
-definePageMeta({
-  middleware: 'auth'
-});
-
 const users = ref([]);
 const loading = ref(true);
 const userDialog = ref(false);
