@@ -1,51 +1,49 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-surface-50 dark:bg-surface-900">
-    <div class="w-full max-w-md p-6">
-      <div class="bg-surface-0 dark:bg-surface-800 p-8 shadow rounded-xl border border-surface-200 dark:border-surface-700">
-        <div class="text-center mb-8">
-          <div class="text-900 dark:text-0 text-3xl font-medium mb-3">Selamat Datang</div>
-          <span class="text-600 dark:text-400 font-medium line-height-3">Masuk ke Sistem Dashboard INAPROC</span>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <h1 class="login-title">Selamat Datang</h1>
+        <p class="login-subtitle">Masuk ke Sistem Dashboard INAPROC</p>
+      </div>
+
+      <form @submit.prevent="handleLogin" class="login-form">
+        <div class="form-group">
+          <label for="username" class="form-label">Username</label>
+          <MazInput 
+            id="username" 
+            v-model="username" 
+            type="text" 
+            placeholder="Masukkan username" 
+            required 
+            block
+          />
         </div>
 
-        <form @submit.prevent="handleLogin">
-          <div class="mb-4">
-            <label for="username" class="block text-900 dark:text-0 font-medium mb-2">Username</label>
-            <InputText 
-              id="username" 
-              v-model="username" 
-              type="text" 
-              class="w-full" 
-              placeholder="Masukkan username" 
-              required 
-            />
-          </div>
-
-          <div class="mb-6">
-            <label for="password" class="block text-900 dark:text-0 font-medium mb-2">Password</label>
-            <Password 
-              id="password" 
-              v-model="password" 
-              :feedback="false" 
-              toggleMask 
-              class="w-full" 
-              inputClass="w-full" 
-              placeholder="Masukkan password" 
-              required 
-            />
-          </div>
-
-          <div v-if="errorMessage" class="mb-4 text-red-500 text-sm font-medium">
-            {{ errorMessage }}
-          </div>
-
-          <Button 
-            type="submit" 
-            label="Masuk" 
-            class="w-full" 
-            :loading="loading" 
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <MazInput 
+            id="password" 
+            v-model="password" 
+            type="password"
+            placeholder="Masukkan password" 
+            required 
+            block
           />
-        </form>
-      </div>
+        </div>
+
+        <div v-if="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+
+        <MazBtn 
+          type="submit" 
+          class="submit-btn" 
+          :loading="loading" 
+          block
+        >
+          Masuk
+        </MazBtn>
+      </form>
     </div>
   </div>
 </template>
@@ -54,7 +52,6 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-// Metadata halaman agar tidak menggunakan layout yang memiliki sidebar/header (opsional)
 definePageMeta({
   layout: 'blank',
 });
@@ -79,7 +76,6 @@ const handleLogin = async () => {
     });
 
     if (response.success) {
-      // Pindah ke halaman dashboard utama setelah berhasil login
       router.push('/');
     }
   } catch (error) {
@@ -91,8 +87,88 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-/* Tambahan styling kustom bila utilitas PrimeFlex/Tailwind tidak mencukupi */
-.w-full {
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, hsl(var(--maz-primary) / 10%), hsl(var(--maz-secondary) / 10%));
+  background-color: hsl(var(--maz-background));
+  font-family: var(--maz-font-family, sans-serif);
+  padding: 1rem;
+}
+
+.login-card {
   width: 100%;
+  max-width: 420px;
+  background: hsl(var(--maz-background));
+  padding: 2.5rem;
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid hsl(var(--maz-border));
+  backdrop-filter: blur(10px);
+  transform: translateY(0);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.login-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: hsl(var(--maz-foreground));
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.5px;
+}
+
+.login-subtitle {
+  font-size: 0.95rem;
+  color: hsl(var(--maz-muted));
+  margin: 0;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: hsl(var(--maz-foreground));
+  margin-left: 0.25rem;
+}
+
+.error-message {
+  color: hsl(var(--maz-destructive));
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+  padding: 0.5rem;
+  background: hsl(var(--maz-destructive) / 10%);
+  border-radius: var(--maz-border-radius, 0.5rem);
+}
+
+.submit-btn {
+  margin-top: 1rem;
+  height: 48px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 </style>
