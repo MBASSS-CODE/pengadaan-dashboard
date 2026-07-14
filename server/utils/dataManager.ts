@@ -121,7 +121,7 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
   }
 
   const dirPath = path.resolve(process.cwd(), 'server/data');
-  const filePath = path.resolve(dirPath, 'dashboard_precomputed.json');
+  const filePath = path.resolve(dirPath, `dashboard_precomputed_${tahun}_${instansi}.json`);
 
   try {
     const fileData = await fs.readFile(filePath, 'utf-8');

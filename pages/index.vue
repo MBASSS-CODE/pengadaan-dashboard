@@ -1,12 +1,15 @@
 <template>
   <div class="dashboard-container">
-    <div class="page-header">
+    <div class="page-header flex-between">
       <div>
         <h1 class="page-title">Dashboard Profil Pengadaan</h1>
-        <p class="page-subtitle">Ringkasan Realisasi dan Perencanaan Pengadaan (Tahun 2026)</p>
+        <p class="page-subtitle">Ringkasan Realisasi dan Perencanaan Pengadaan (Tahun {{ selectedYear }})</p>
       </div>
       <div class="header-actions">
-        <!-- Optional filter inputs can be added here -->
+        <select v-model="selectedYear" class="form-select" @change="loadData">
+          <option :value="currentYear">{{ currentYear }}</option>
+          <option :value="currentYear - 1">{{ currentYear - 1 }}</option>
+        </select>
       </div>
     </div>
 
@@ -67,6 +70,53 @@
 
       <!-- Tab Content: Realisasi -->
       <div v-if="activeTab === 'realisasi'" class="tab-content">
+        <div class="charts-grid-realisasi mb-6">
+          <div class="chart-card">
+            <h3 class="chart-title">% Realisasi Pengadaan</h3>
+            <div class="chart-wrapper doughnut-wrapper gauge-wrapper">
+              <Doughnut :data="persentaseRealisasiData.chartData" :options="gaugeOptions" />
+              <div class="gauge-text">
+                <span class="gauge-percent">{{ persentaseRealisasiData.percent }}%</span>
+                <span class="gauge-label">% Realisasi</span>
+              </div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">Pagu Per Jenis Proses</h3>
+            <div class="chart-wrapper doughnut-wrapper">
+              <Doughnut :data="realisasiPaguDoughnutData" :options="doughnutOptions" />
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">Ringkasan Per Jenis Proses</h3>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>JENIS PROSES</th>
+                    <th class="text-right">JUMLAH PAKET</th>
+                    <th class="text-right">TOTAL PAGU</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(item, index) in realisasiRingkasanData" :key="index">
+                    <td>{{ item.label }}</td>
+                    <td class="text-right">{{ item.count }}</td>
+                    <td class="text-right">{{ formatCurrency(item.pagu) }}</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="font-bold">
+                    <td>Total</td>
+                    <td class="text-right">{{ realisasiRingkasanData.reduce((acc, curr) => acc + curr.count, 0) }}</td>
+                    <td class="text-right">{{ formatCurrency(realisasiRingkasanData.reduce((acc, curr) => acc + curr.pagu, 0)) }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <div class="charts-grid">
           <div class="chart-card">
             <h3 class="chart-title">Nilai Realisasi Berdasarkan Metode Pelaksanaan</h3>
@@ -75,7 +125,7 @@
             </div>
           </div>
           <div class="chart-card">
-            <h3 class="chart-title">Proporsi Metode Pelaksanaan</h3>
+            <h3 class="chart-title">Proporsi Jumlah Paket Pelaksanaan</h3>
             <div class="chart-wrapper doughnut-wrapper">
               <Doughnut :data="realisasiMetodeDoughnutData" :options="doughnutOptions" />
             </div>
@@ -116,13 +166,16 @@ const error = ref(false);
 const dashboardData = ref({});
 const activeTab = ref('realisasi');
 
+const currentYear = new Date().getFullYear();
+const selectedYear = ref(currentYear);
+
 const loadData = async () => {
   loading.value = true;
   error.value = false;
   try {
     const res = await $fetch('/api/dashboard', {
       params: {
-        tahun: '2026',
+        tahun: selectedYear.value,
         jenis: '1',
         instansi: 'K22',
         view: 'Nilai'
@@ -152,7 +205,32 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
-// --- Realisasi Charts ---
+// --- Realisasi Charts & Data ---
+const persentaseRealisasiData = computed(() => {
+  const d = dashboardData.value;
+  const realisasi = d.total_nilai_realisasi || 0;
+  const perencanaan = d.total_nilai_perencanaan || 0;
+  let percent = 0;
+  if (perencanaan > 0) {
+    percent = (realisasi / perencanaan) * 100;
+  }
+  
+  return {
+    percent: percent.toFixed(2),
+    chartData: {
+      labels: ['Realisasi', 'Sisa'],
+      datasets: [
+        {
+          data: [percent, 100 - percent],
+          backgroundColor: ['hsl(164 76% 46%)', 'hsl(220 13% 91%)'],
+          borderWidth: 0,
+          cutout: '80%'
+        }
+      ]
+    }
+  };
+});
+
 const realisasiMetodeChartData = computed(() => {
   const d = dashboardData.value;
   return {
@@ -193,6 +271,52 @@ const realisasiMetodeDoughnutData = computed(() => {
           d.pelaksanaan_langsung || 0,
           d.pelaksanaan_seleksi || 0
         ]
+      }
+    ]
+  };
+});
+
+const realisasiRingkasanData = computed(() => {
+  const d = dashboardData.value;
+  
+  const tenderCount = (d.pelaksanaan_tender || 0) + (d.pelaksanaan_tender_cepat || 0);
+  const tenderPagu = (d.pelaksanaan_total_tender || 0) + (d.pelaksanaan_total_tender_cepat || 0);
+  
+  const nonTenderCount = (d.pelaksanaan_langsung || 0) + (d.pelaksanaan_seleksi || 0) + (d.pelaksanaan_penunjukan || 0);
+  const nonTenderPagu = (d.pelaksanaan_total_langsung || 0) + (d.pelaksanaan_total_seleksi || 0) + (d.pelaksanaan_total_penunjukan || 0);
+  
+  const pencatatanNonTenderCount = d.pelaksanaan_dikecualikan || 0;
+  const pencatatanNonTenderPagu = d.pelaksanaan_total_dikecualikan || 0;
+  
+  const swakelolaCount = d.pelaksanaan_swakelola || 0;
+  const swakelolaPagu = d.pelaksanaan_total_swakelola || 0;
+  
+  const epurchasingCount = d.pelaksanaan_epurchasing || 0;
+  const epurchasingPagu = d.pelaksanaan_total_epurchasing || 0;
+  
+  return [
+    { label: 'Tender', count: tenderCount, pagu: tenderPagu },
+    { label: 'Non-Tender', count: nonTenderCount, pagu: nonTenderPagu },
+    { label: 'Pencatatan Non-Tender', count: pencatatanNonTenderCount, pagu: pencatatanNonTenderPagu },
+    { label: 'Pencatatan Swakelola', count: swakelolaCount, pagu: swakelolaPagu },
+    { label: 'E-Katalog/E-Purchasing', count: epurchasingCount, pagu: epurchasingPagu }
+  ];
+});
+
+const realisasiPaguDoughnutData = computed(() => {
+  const tableData = realisasiRingkasanData.value;
+  return {
+    labels: tableData.map(item => item.label),
+    datasets: [
+      {
+        backgroundColor: [
+          'hsl(210 100% 56%)',
+          'hsl(40 97% 59%)',
+          'hsl(164 76% 46%)',
+          'hsl(356.95 95.91% 57.73%)',
+          'hsl(272 99% 54%)'
+        ],
+        data: tableData.map(item => item.pagu)
       }
     ]
   };
@@ -274,6 +398,15 @@ const doughnutOptions = {
   maintainAspectRatio: false
 };
 
+const gaugeOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: { enabled: false }
+  }
+};
+
 onMounted(() => {
   loadData();
 });
@@ -288,6 +421,29 @@ onMounted(() => {
 
 .page-header {
   margin-bottom: 2rem;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.form-select {
+  padding: 0.5rem 1rem;
+  border-radius: var(--maz-border-radius, 0.5rem);
+  border: 1px solid hsl(var(--maz-border));
+  background-color: hsl(var(--maz-background));
+  color: hsl(var(--maz-foreground));
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+  min-width: 120px;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: hsl(var(--maz-primary));
 }
 
 .page-title {
@@ -393,10 +549,73 @@ onMounted(() => {
   gap: 1.5rem;
 }
 
+.charts-grid-realisasi {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.5fr;
+  gap: 1.5rem;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .charts-grid-realisasi {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 @media (max-width: 992px) {
-  .charts-grid {
+  .charts-grid,
+  .charts-grid-realisasi {
     grid-template-columns: 1fr;
   }
+}
+
+/* Table Styles */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.data-table th, .data-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid hsl(var(--maz-border));
+}
+
+.data-table th {
+  font-weight: 600;
+  color: hsl(var(--maz-muted));
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.data-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.data-table tbody tr:hover {
+  background-color: hsl(var(--maz-foreground) / 5%);
+}
+
+.data-table tfoot td {
+  background-color: hsl(var(--maz-background));
+  border-top: 2px solid hsl(var(--maz-border));
+}
+
+.text-right {
+  text-align: right !important;
+}
+
+.font-bold {
+  font-weight: 700;
 }
 
 .chart-card {
@@ -424,6 +643,35 @@ onMounted(() => {
   height: 300px;
   display: flex;
   justify-content: center;
+}
+
+.gauge-wrapper {
+  position: relative;
+}
+
+.gauge-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.gauge-percent {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: hsl(var(--maz-foreground));
+  line-height: 1.2;
+}
+
+.gauge-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: hsl(var(--maz-muted));
 }
 
 @keyframes fadeIn {
