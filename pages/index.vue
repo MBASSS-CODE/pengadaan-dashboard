@@ -70,7 +70,7 @@
 
       <!-- Tab Content: Realisasi -->
       <div v-if="activeTab === 'realisasi'" class="tab-content">
-        <div class="charts-grid-realisasi mb-6">
+        <div class="charts-grid-top mb-6">
           <div class="chart-card">
             <h3 class="chart-title">% Realisasi Pengadaan</h3>
             <div class="chart-wrapper doughnut-wrapper gauge-wrapper">
@@ -81,6 +81,45 @@
               </div>
             </div>
           </div>
+
+          <div class="charts-grid-half">
+            <div class="chart-card" v-for="(metric, index) in progressMetrics" :key="index">
+              <h3 class="chart-title">{{ metric.title }}</h3>
+              <div class="custom-progress-wrapper">
+                <div class="progress-label">{{ metric.label }}</div>
+                <div class="progress-container">
+                  <div class="progress-track">
+                    <div 
+                      class="progress-fill" 
+                      :style="{ width: Math.min(metric.percent, 100) + '%' }"
+                    >
+                      <span class="progress-text" v-if="metric.percent >= 10">
+                        {{ metric.percent.toFixed(2) }}%
+                      </span>
+                    </div>
+                    <div class="progress-remainder">
+                      <span class="progress-text text-dark" v-if="(100 - metric.percent) >= 10">
+                        {{ (100 - metric.percent).toFixed(2) }}%
+                      </span>
+                    </div>
+                  </div>
+                  <div class="progress-ticks">
+                    <span>0%</span>
+                    <span>25%</span>
+                    <span>50%</span>
+                    <span>75%</span>
+                    <span>100%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="progress-footer">
+                {{ metric.footerText }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="charts-grid-realisasi mb-6">
           <div class="chart-card">
             <h3 class="chart-title">Pagu Per Jenis Proses</h3>
             <div class="chart-wrapper doughnut-wrapper">
@@ -117,7 +156,7 @@
           </div>
         </div>
 
-        <div class="charts-grid">
+        <div class="charts-grid mb-6">
           <div class="chart-card">
             <h3 class="chart-title">Nilai Realisasi Berdasarkan Metode Pelaksanaan</h3>
             <div class="chart-wrapper">
@@ -128,6 +167,15 @@
             <h3 class="chart-title">Proporsi Jumlah Paket Pelaksanaan</h3>
             <div class="chart-wrapper doughnut-wrapper">
               <Doughnut :data="realisasiMetodeDoughnutData" :options="doughnutOptions" />
+            </div>
+          </div>
+        </div>
+
+        <div class="charts-grid-half mb-6">
+          <div class="chart-card">
+            <h3 class="chart-title">Realisasi Jenis Pengadaan (Penyedia) - Nilai</h3>
+            <div class="chart-wrapper pie-wrapper">
+              <Pie :data="realisasiJenisPengadaanChartData" :options="pieOptions" />
             </div>
           </div>
         </div>
@@ -157,7 +205,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement } from 'chart.js';
-import { Bar, Doughnut } from 'vue-chartjs';
+import { Bar, Doughnut, Pie } from 'vue-chartjs';
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement);
 
@@ -229,6 +277,36 @@ const persentaseRealisasiData = computed(() => {
       ]
     }
   };
+});
+
+const progressMetrics = computed(() => {
+  const d = dashboardData.value;
+  
+  const createMetric = (title, label, realisasi, perencanaan, footerFormat) => {
+    let percent = 0;
+    if (perencanaan > 0) percent = (realisasi / perencanaan) * 100;
+    
+    const fRealisasi = formatCurrency(realisasi);
+    const fPerencanaan = formatCurrency(perencanaan);
+    
+    let footerText = '';
+    if (footerFormat === 'realisasi_first') {
+       footerText = `Realisasi: Rp ${fRealisasi} | Perencanaan: Rp ${fPerencanaan}`;
+    } else if (footerFormat === 'umkk') {
+       footerText = `Total Nilai Perencanaan UMKK: Rp ${fPerencanaan} | Total Nilai Realisasi UMKK: Rp ${fRealisasi}`;
+    } else if (footerFormat === 'pdn') {
+       footerText = `Total Nilai Perencanaan PDN: Rp ${fPerencanaan} | Total Nilai Realisasi PDN: Rp ${fRealisasi}`;
+    }
+
+    return { title, label, realisasi, perencanaan, percent, footerText };
+  };
+
+  return [
+    createMetric('Realisasi Penyedia', 'Realisasi', d.pelaksanaan_total_penyedia || 0, d.perencanaan_total_penyedia || 0, 'realisasi_first'),
+    createMetric('Realisasi Swakelola', 'Realisasi', d.pelaksanaan_total_swakelola || 0, d.perencanaan_total_swakelola || 0, 'realisasi_first'),
+    createMetric('% Capaian Realisasi UMKK terhadap Rencana UMKK', 'Total Nilai\nRealisasi\nUMKK', d.total_nilai_realisasi_umkk || 0, d.total_umkk || 0, 'umkk'),
+    createMetric('% Capaian Realisasi PDN terhadap Rencana PDN', 'Total Nilai\nRealisasi\nPDN', d.total_nilai_realisasi_pdn || 0, d.total_pdn || 0, 'pdn')
+  ];
 });
 
 const realisasiMetodeChartData = computed(() => {
@@ -322,6 +400,29 @@ const realisasiPaguDoughnutData = computed(() => {
   };
 });
 
+const realisasiJenisPengadaanChartData = computed(() => {
+  const d = dashboardData.value;
+  return {
+    labels: ['Jasa Konsultansi', 'Jasa Lainnya', 'Pekerjaan Konstruksi', 'Pengadaan Barang'],
+    datasets: [
+      {
+        backgroundColor: [
+          '#FF8A65',
+          '#9575CD',
+          '#4DD0E1',
+          '#B0BEC5'
+        ],
+        data: [
+          d.pelaksanaan_total_jasa_konsultasi || 0,
+          d.pelaksanaan_total_jasa_lainnya || 0,
+          d.pelaksanaan_total_pekerjaan_konstruksi || 0,
+          d.pelaksanaan_total_barang || 0
+        ]
+      }
+    ]
+  };
+});
+
 // --- Perencanaan Charts ---
 const perencanaanJenisChartData = computed(() => {
   const d = dashboardData.value;
@@ -369,6 +470,31 @@ const perencanaanDoughnutData = computed(() => {
 });
 
 // --- Chart Options ---
+const chartOptionsWithLegend = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: true,
+      position: 'bottom'
+    },
+    tooltip: {
+      callbacks: {
+        label: function(context) {
+          let label = context.dataset.label || '';
+          if (label) {
+            label += ': ';
+          }
+          if (context.parsed.y !== null) {
+            label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(context.parsed.y);
+          }
+          return label;
+        }
+      }
+    }
+  }
+};
+
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -396,6 +522,31 @@ const chartOptions = {
 const doughnutOptions = {
   responsive: true,
   maintainAspectRatio: false
+};
+
+const pieOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: true,
+      position: 'right'
+    },
+    tooltip: {
+      callbacks: {
+        label: function(context) {
+          let label = context.label || '';
+          if (label) {
+            label += ': ';
+          }
+          if (context.parsed !== null) {
+            label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(context.parsed);
+          }
+          return label;
+        }
+      }
+    }
+  }
 };
 
 const gaugeOptions = {
@@ -551,7 +702,25 @@ onMounted(() => {
 
 .charts-grid-realisasi {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.5fr;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 1.5rem;
+}
+
+.charts-grid-top {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1.5rem;
+}
+
+.charts-grid-full {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.charts-grid-half {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
 }
 
@@ -559,15 +728,21 @@ onMounted(() => {
   margin-bottom: 1.5rem;
 }
 
+.mt-6 {
+  margin-top: 1.5rem;
+}
+
 @media (max-width: 1200px) {
-  .charts-grid-realisasi {
-    grid-template-columns: 1fr 1fr;
+  .charts-grid-top {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 992px) {
   .charts-grid,
-  .charts-grid-realisasi {
+  .charts-grid-realisasi,
+  .charts-grid-half,
+  .charts-grid-top {
     grid-template-columns: 1fr;
   }
 }
@@ -677,5 +852,90 @@ onMounted(() => {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom Progress Bar */
+.custom-progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+}
+
+.progress-label {
+  font-weight: 600;
+  color: hsl(var(--maz-muted));
+  width: 100px;
+  text-align: right;
+  line-height: 1.2;
+  white-space: pre-line;
+}
+
+.progress-container {
+  flex: 1;
+}
+
+.progress-track {
+  display: flex;
+  height: 40px;
+  background-color: hsl(220 13% 91%);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  background-color: hsl(164 76% 46%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: width 0.5s ease;
+  min-width: 0;
+}
+
+.progress-remainder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.text-dark {
+  color: hsl(var(--maz-foreground));
+  opacity: 0.8;
+}
+
+.progress-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: hsl(var(--maz-muted));
+  padding: 0 2px;
+}
+
+.progress-footer {
+  font-size: 0.9rem;
+  color: hsl(var(--maz-muted));
+  font-weight: 500;
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .custom-progress-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .progress-container {
+    width: 100%;
+  }
 }
 </style>
