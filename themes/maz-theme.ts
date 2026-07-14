@@ -4,7 +4,7 @@ export const customTheme: ThemePreset = {
   name: 'maz-ui',
   foundation: {
     "base-font-size": '14px',
-    "font-family": 'Manrope, sans-serif, system-ui, -apple-system, blinkmacsystemfont, \'Segoe UI\', roboto, oxygen, ubuntu, cantarell, \'Fira Sans\', \'Droid Sans\', \'Helvetica Neue\', sans-serif',
+    "font-family": '\'Plus Jakarta Sans\', sans-serif, system-ui, -apple-system, blinkmacsystemfont, \'Segoe UI\', roboto, oxygen, ubuntu, cantarell, \'Fira Sans\', \'Droid Sans\', \'Helvetica Neue\', sans-serif',
     "radius": '0.6rem',
     "border-width": '1px'
   },

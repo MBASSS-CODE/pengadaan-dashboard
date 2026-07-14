@@ -2,7 +2,7 @@
   <div class="dashboard-container">
     <div class="page-header flex-between">
       <div>
-        <h1 class="page-title">Dashboard Profil Pengadaan</h1>
+        <h1 class="page-title">Dashboard Pengadaan</h1>
         <p class="page-subtitle">Ringkasan Realisasi dan Perencanaan Pengadaan (Tahun {{ selectedYear }})</p>
       </div>
       <div class="header-actions">
