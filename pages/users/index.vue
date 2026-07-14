@@ -3,7 +3,7 @@
     <div class="flex justify-between items-center mb-6">
       <div>
         <h1 class="text-3xl font-bold text-900 dark:text-0">Manajemen Pengguna</h1>
-        <p class="text-600 dark:text-400 mt-2">Kelola akses admin sistem INAPROC</p>
+        <p class="text-600 dark:text-400 mt-2">Kelola akses</p>
       </div>
       <Button label="Tambah Pengguna" icon="pi pi-plus" @click="openNew" />
     </div>

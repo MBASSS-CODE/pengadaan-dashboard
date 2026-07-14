@@ -1,6 +1,5 @@
 <template>
-  <div>
-    <!-- Tambahkan Header/Sidebar di sini nanti -->
+  <Layout>
     <slot />
-  </div>
+  </Layout>
 </template>
