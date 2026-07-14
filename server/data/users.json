@@ -10,5 +10,11 @@
     "username": "indra",
     "passwordHash": "$2b$10$MWF8qa.Ui1K5oKXLjREbFuMZIlmAslEq/eiGPDhEiw.hNMpC7flQ6",
     "role": "admin"
+  },
+  {
+    "id": "1784041193987",
+    "username": "user",
+    "passwordHash": "$2b$10$UptnY5jclYY5X.eZd/zEsO2.n3SV5xI7Xhd8gQ3S0AzqTcZr4Etna",
+    "role": "user"
   }
 ]

@@ -49,6 +49,14 @@
           <label class="form-label">Password</label>
           <MazInput type="password" v-model="userForm.password" block no-label />
         </div>
+
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select v-model="userForm.role" class="form-select">
+            <option value="admin">Administrator</option>
+            <option value="user">User Biasa</option>
+          </select>
+        </div>
         
         <div class="modal-actions">
           <MazBtn color="transparent" @click="hideDialog">Batal</MazBtn>
@@ -101,7 +109,8 @@ const saveUser = async () => {
           method: 'PUT',
           body: {
             username: userForm.value.username,
-            password: userForm.value.password || undefined
+            password: userForm.value.password || undefined,
+            role: userForm.value.role || 'user'
           }
         });
       } else {
@@ -110,7 +119,7 @@ const saveUser = async () => {
           body: {
             username: userForm.value.username,
             password: userForm.value.password,
-            role: 'admin'
+            role: userForm.value.role || 'user'
           }
         });
       }
@@ -276,6 +285,23 @@ onMounted(() => loadUsers());
   font-weight: 600;
   color: hsl(var(--maz-foreground));
   margin-bottom: 0.5rem;
+}
+
+.form-select {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: var(--maz-border-radius, 0.5rem);
+  border: 1px solid hsl(var(--maz-border));
+  background-color: hsl(var(--maz-background));
+  color: hsl(var(--maz-foreground));
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: hsl(var(--maz-primary));
 }
 
 .modal-actions {

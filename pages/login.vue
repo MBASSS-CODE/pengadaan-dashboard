@@ -80,6 +80,8 @@ const handleLogin = async () => {
     if (response.success) {
       const isLoggedIn = useCookie('is_logged_in');
       isLoggedIn.value = 'true';
+      const userRole = useCookie('user_role');
+      userRole.value = response.user.role;
       router.push('/');
     }
   } catch (error) {
