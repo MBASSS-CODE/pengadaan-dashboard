@@ -197,7 +197,7 @@
 
           <div class="chart-card" style="display: flex; flex-direction: column; justify-content: space-between;">
             <div v-for="(metric, index) in perencanaanProgressMetrics" :key="index" :class="{'mb-4': index < perencanaanProgressMetrics.length - 1}">
-              <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.5rem; margin-top: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.5rem;" :style="{ marginTop: index > 0 ? '1rem' : '0' }">
                 <h3 class="chart-title" style="margin-bottom: 0; font-size: 0.85rem;">{{ metric.title }}</h3>
               </div>
               <div class="custom-progress-wrapper" style="margin-bottom: 0.25rem;">
