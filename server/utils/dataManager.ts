@@ -112,8 +112,8 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
 /**
  * Get precomputed dashboard data
  */
-export const getDashboardPrecomputed = async (tahun: string, instansi: string) => {
-  const cacheKey = `dashboard_precomputed_${tahun}_${instansi}`;
+export const getDashboardPrecomputed = async (tahun: string, instansi: string, jenis?: string, view?: string) => {
+  const cacheKey = `dashboard_precomputed_${tahun}_${instansi}_${jenis}_${view}`;
   
   if (memoryCache[cacheKey]) {
     console.log(`[Cache Hit - RAM] Dashboard Precomputed ${tahun} ${instansi}`);
@@ -140,7 +140,7 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string) =
   console.log(`Fetching dashboard precomputed data for ${tahun} - ${instansi}...`);
   try {
     const response: any = await $fetch('https://data.inaproc.id/dashboard-api/profil-pengadaan/precomputed', {
-      params: { tahun, instansi }
+      params: { tahun, instansi, jenis, view }
     });
     
     await fs.mkdir(dirPath, { recursive: true });

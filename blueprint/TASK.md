@@ -38,7 +38,7 @@ Berperanlah sebagai Senior Nuxt 3 Developer. Kerjakan tugas-tugas di bawah ini u
 
 ## Task 6: Frontend Pages (Manajemen Pengguna)
 1. Buat `middleware/auth.ts` untuk proteksi halaman.
-2. Buat `pages/users/index.vue` dengan PrimeVue `DataTable` dan `Dialog` untuk CRUD admin. Pastikan UI bersih dan profesional.
+2. Buat `pages/users/index.vue` dengan MAZ-UI `DataTable` dan `Dialog` untuk CRUD admin. Pastikan UI bersih dan profesional.
 
 ---
 
@@ -53,11 +53,10 @@ Setiap kali User memberikan *prompt* berisi struktur JSON/Response baru dari seb
 
 ## Langkah B: Generate UI / Frontend (Modern & Readable)
 1. Buat file Vue baru (misal: `pages/[group]/[endpoint].vue`).
-2. Analisis struktur JSON yang diberikan User. Pilih komponen PrimeVue yang paling relevan:
+2. Analisis struktur JSON yang diberikan User. Pilih komponen MAZ-UI yang paling relevan:
    - Jika data berbentuk array tabular: Gunakan `DataTable` lengkap dengan filter, sorting, dan paginasi lokal.
-   - Jika data memiliki status/label: Gunakan PrimeVue `Tag` atau `Badge`.
+   - Jika data memiliki status/label: Gunakan MAZ-UI `Tag` atau `Badge`.
    - Jika data numerik besar: Format menggunakan standar mata uang atau ribuan.
-3. Pastikan konfigurasi PrimeVue di menggunakan *Verona/Aura style* (atau preferensi desain yang elegan dan profesional).
 
 ## Langkah C: Agregasi Data (Feature Combination)
 1. *Task ini akan dipicu secara manual oleh User.* 

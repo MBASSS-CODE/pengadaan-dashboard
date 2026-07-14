@@ -4,13 +4,15 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const tahun = query.tahun as string;
   const instansi = query.instansi as string;
+  const jenis = query.jenis as string;
+  const view = query.view as string;
 
   if (!tahun || !instansi) {
     throw createError({ statusCode: 400, statusMessage: 'Parameter tahun dan instansi are required' });
   }
 
   try {
-    const data = await getDashboardPrecomputed(tahun, instansi);
+    const data = await getDashboardPrecomputed(tahun, instansi, jenis, view);
     return {
       success: true,
       data
