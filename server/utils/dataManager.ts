@@ -108,3 +108,48 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
   // 3. Jika kosong di RAM dan File, jalankan syncEndpointData
   return await syncEndpointData(group, endpoint, tahun, extraParams);
 };
+
+/**
+ * Get precomputed dashboard data
+ */
+export const getDashboardPrecomputed = async (tahun: string, instansi: string) => {
+  const cacheKey = `dashboard_precomputed_${tahun}_${instansi}`;
+  
+  if (memoryCache[cacheKey]) {
+    console.log(`[Cache Hit - RAM] Dashboard Precomputed ${tahun} ${instansi}`);
+    return memoryCache[cacheKey];
+  }
+
+  const dirPath = path.resolve(process.cwd(), 'server/data');
+  const filePath = path.resolve(dirPath, 'dashboard_precomputed.json');
+
+  try {
+    const fileData = await fs.readFile(filePath, 'utf-8');
+    const parsedData = JSON.parse(fileData);
+    
+    memoryCache[cacheKey] = parsedData;
+    console.log(`[Cache Hit - File] Dashboard Precomputed`);
+    return parsedData;
+  } catch (error: any) {
+    if (error.code !== 'ENOENT') {
+      console.error(`Error reading cache file ${filePath}:`, error);
+    }
+  }
+
+  // Fetch from API
+  console.log(`Fetching dashboard precomputed data for ${tahun} - ${instansi}...`);
+  try {
+    const response: any = await $fetch('https://data.inaproc.id/dashboard-api/profil-pengadaan/precomputed', {
+      params: { tahun, instansi }
+    });
+    
+    await fs.mkdir(dirPath, { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify(response, null, 2), 'utf-8');
+    
+    memoryCache[cacheKey] = response;
+    return response;
+  } catch (error: any) {
+    console.error('Error fetching dashboard precomputed:', error);
+    throw createError({ statusCode: 500, statusMessage: 'Failed to fetch dashboard data' });
+  }
+};
