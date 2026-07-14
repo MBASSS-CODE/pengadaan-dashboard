@@ -183,17 +183,65 @@
 
       <!-- Tab Content: Perencanaan -->
       <div v-if="activeTab === 'perencanaan'" class="tab-content">
-        <div class="charts-grid">
+        <div class="charts-grid-top-perencanaan mb-6">
           <div class="chart-card">
-            <h3 class="chart-title">Nilai Perencanaan Berdasarkan Jenis</h3>
-            <div class="chart-wrapper">
-              <Bar :data="perencanaanJenisChartData" :options="chartOptions" />
+            <h3 class="chart-title">% Pengisian RUP</h3>
+            <div class="chart-wrapper doughnut-wrapper gauge-wrapper">
+              <Doughnut :data="persentasePengisianRUPData.chartData" :options="gaugeOptions" />
+              <div class="gauge-text">
+                <span class="gauge-percent">{{ persentasePengisianRUPData.percent }}%</span>
+                <span class="gauge-label text-muted" style="font-size: 0.75rem; margin-top: 0.25rem;">Total RUP<br/>100.0%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div v-for="(metric, index) in perencanaanProgressMetrics" :key="index" :class="{'mb-4': index < perencanaanProgressMetrics.length - 1}">
+              <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.5rem; margin-top: 1rem;">
+                <h3 class="chart-title" style="margin-bottom: 0; font-size: 0.85rem;">{{ metric.title }}</h3>
+              </div>
+              <div class="custom-progress-wrapper" style="margin-bottom: 0.25rem;">
+                <div class="progress-label" style="width: 80px;">{{ metric.labelLeft }}</div>
+                <div class="progress-container">
+                  <div class="progress-track">
+                    <div 
+                      class="progress-fill" 
+                      :style="{ width: Math.min(metric.percent, 100) + '%' }"
+                    >
+                      <span class="progress-text" v-if="metric.percent >= 10">
+                        {{ metric.percent.toFixed(2) }}%
+                      </span>
+                    </div>
+                    <div class="progress-remainder">
+                      <span class="progress-text text-dark" v-if="(100 - metric.percent) >= 10">
+                        {{ (100 - metric.percent).toFixed(2) }}%
+                      </span>
+                    </div>
+                  </div>
+                  <div class="progress-ticks">
+                    <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="progress-footer" style="margin-top: 0; font-size: 0.75rem;">
+                {{ metric.footerText }}
+              </div>
+              <hr v-if="index < perencanaanProgressMetrics.length - 1" style="border: 0; border-top: 1px dashed hsl(var(--maz-border)); margin-top: 1rem; margin-bottom: 0;" />
+            </div>
+          </div>
+        </div>
+
+        <div class="charts-grid-half mb-6">
+          <div class="chart-card">
+            <h3 class="chart-title">Metode Pemilihan (Penyedia) - Nilai</h3>
+            <div class="chart-wrapper pie-wrapper">
+              <Pie :data="perencanaanMetodePieData" :options="pieOptions" />
             </div>
           </div>
           <div class="chart-card">
-            <h3 class="chart-title">Proporsi Metode Perencanaan</h3>
-            <div class="chart-wrapper doughnut-wrapper">
-              <Doughnut :data="perencanaanDoughnutData" :options="doughnutOptions" />
+            <h3 class="chart-title">Jenis Pengadaan (Penyedia) - Nilai</h3>
+            <div class="chart-wrapper pie-wrapper">
+              <Pie :data="perencanaanJenisPieData" :options="pieOptions" />
             </div>
           </div>
         </div>
@@ -424,48 +472,86 @@ const realisasiJenisPengadaanChartData = computed(() => {
 });
 
 // --- Perencanaan Charts ---
-const perencanaanJenisChartData = computed(() => {
+const persentasePengisianRUPData = computed(() => {
   const d = dashboardData.value;
+  const belanja = d.belanja_barang_jasa || 0;
+  const perencanaan = d.total_nilai_perencanaan || 0;
+  
+  let percent = 0;
+  if (belanja > 0) percent = (perencanaan / belanja) * 100;
+  
+  const formattedPercent = percent.toFixed(2);
+  const chartFill = Math.min(percent, 100);
+  const chartEmpty = Math.max(100 - percent, 0);
+
   return {
-    labels: ['Barang', 'Jasa Konsultasi', 'Jasa Lainnya', 'Konstruksi', 'Penyedia'],
-    datasets: [
-      {
-        label: 'Total Nilai (Rp)',
-        backgroundColor: 'hsl(272 99% 54%)',
-        data: [
-          d.perencanaan_total_barang || 0,
-          d.perencanaan_total_jasa_konsultasi || 0,
-          d.perencanaan_total_jasa_lainnya || 0,
-          d.perencanaan_total_pekerjaan_konstruksi || 0,
-          d.perencanaan_total_penyedia || 0
-        ]
-      }
-    ]
+    percent: formattedPercent,
+    chartData: {
+      labels: ['Pengisian', 'Sisa'],
+      datasets: [{
+        data: [chartFill, chartEmpty],
+        backgroundColor: ['#4DD0E1', '#E0E0E0'],
+        borderWidth: 0,
+        cutout: '75%'
+      }]
+    }
   };
 });
 
-const perencanaanDoughnutData = computed(() => {
+const perencanaanProgressMetrics = computed(() => {
+  const d = dashboardData.value;
+  const createComparison = (title, labelLeft, labelRight, valLeft, valRight) => {
+    const total = valLeft + valRight;
+    let percentLeft = 0;
+    if (total > 0) percentLeft = (valLeft / total) * 100;
+    return {
+      title,
+      labelLeft,
+      labelRight,
+      percent: percentLeft,
+      footerText: `${labelLeft}: ${formatCurrency(valLeft)} | ${labelRight}: ${formatCurrency(valRight)}`
+    };
+  };
+
+  return [
+    createComparison('Penyedia/Swakelola', 'Penyedia', 'Swakelola', d.perencanaan_total_penyedia || 0, d.perencanaan_total_swakelola || 0),
+    createComparison('PDN/Impor', 'PDN', 'Impor', d.total_pdn || 0, d.total_non_pdn || 0),
+    createComparison('UMKK/Non UMKK', 'UMKK', 'Non UMKK', d.total_umkk || 0, d.total_non_umkk || 0)
+  ];
+});
+
+const perencanaanMetodePieData = computed(() => {
   const d = dashboardData.value;
   return {
-    labels: ['Barang', 'Jasa Konsultasi', 'Jasa Lainnya', 'Langsung', 'Swakelola'],
-    datasets: [
-      {
-        backgroundColor: [
-          'hsl(210 100% 56%)',
-          'hsl(272 99% 54%)',
-          'hsl(164 76% 46%)',
-          'hsl(40 97% 59%)',
-          'hsl(80 75% 47%)'
-        ],
-        data: [
-          d.perencanaan_barang || 0,
-          d.perencanaan_jasa_konsultasi || 0,
-          d.perencanaan_jasa_lainnya || 0,
-          d.perencanaan_langsung || 0,
-          d.perencanaan_swakelola || 0
-        ]
-      }
-    ]
+    labels: ['Dikecualikan', 'E-Purchasing', 'Lainnya', 'Pengadaan Langsung', 'Penunjukan Langsung', 'Tender/Tender Cepat/Seleksi'],
+    datasets: [{
+      backgroundColor: ['#4DD0E1', '#B0BEC5', '#BA68C8', '#FF8A65', '#9575CD', '#4FC3F7'],
+      data: [
+        d.perencanaan_total_dikecualikan || 0,
+        d.perencanaan_total_epurchasing || 0,
+        d.perencanaan_total_lainnya || 0,
+        d.perencanaan_total_langsung || 0,
+        d.perencanaan_total_penunjukan || 0,
+        (d.perencanaan_total_tender || 0) + (d.perencanaan_total_tender_cepat || 0) + (d.perencanaan_total_seleksi || 0)
+      ]
+    }]
+  };
+});
+
+const perencanaanJenisPieData = computed(() => {
+  const d = dashboardData.value;
+  return {
+    labels: ['Jasa Konsultansi', 'Jasa Lainnya', 'Pekerjaan Konstruksi', 'Pengadaan Barang', 'Terintegrasi'],
+    datasets: [{
+      backgroundColor: ['#B0BEC5', '#4DD0E1', '#FF8A65', '#4FC3F7', '#BA68C8'],
+      data: [
+        d.perencanaan_total_jasa_konsultasi || 0,
+        d.perencanaan_total_jasa_lainnya || 0,
+        d.perencanaan_total_pekerjaan_konstruksi || 0,
+        d.perencanaan_total_barang || 0,
+        d.perencanaan_total_terintegrasi || 0
+      ]
+    }]
   };
 });
 
@@ -724,6 +810,18 @@ onMounted(() => {
   gap: 1.5rem;
 }
 
+.charts-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.charts-grid-top-perencanaan {
+  display: grid;
+  grid-template-columns: 1fr 2.5fr;
+  gap: 1.5rem;
+}
+
 .mb-6 {
   margin-bottom: 1.5rem;
 }
@@ -733,7 +831,11 @@ onMounted(() => {
 }
 
 @media (max-width: 1200px) {
-  .charts-grid-top {
+  .charts-grid-top,
+  .charts-grid-top-perencanaan {
+    grid-template-columns: 1fr;
+  }
+  .charts-grid-3 {
     grid-template-columns: 1fr;
   }
 }
@@ -742,7 +844,9 @@ onMounted(() => {
   .charts-grid,
   .charts-grid-realisasi,
   .charts-grid-half,
-  .charts-grid-top {
+  .charts-grid-top,
+  .charts-grid-top-perencanaan,
+  .charts-grid-3 {
     grid-template-columns: 1fr;
   }
 }
@@ -859,7 +963,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  margin-top: 1rem;
   margin-bottom: 2rem;
 }
 
