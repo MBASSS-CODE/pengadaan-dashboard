@@ -13,7 +13,8 @@ export default defineNuxtConfig({
     }
   },
   modules: [
-    '@maz-ui/nuxt'
+    '@maz-ui/nuxt',
+    '@nuxtjs/tailwindcss'
   ],
   mazUi: {
     theme: {
