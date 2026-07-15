@@ -181,4 +181,50 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
     console.error('Error fetching dashboard precomputed:', error);
     throw createError({ statusCode: 500, statusMessage: 'Failed to fetch dashboard data' });
   }
+  }
+;
+
+/**
+ * Get overall system statistics for cache and JSON storage
+ */
+export const getSystemStats = async () => {
+  const dirPath = path.resolve(process.cwd(), 'server/data');
+  
+  let totalFiles = 0;
+  let totalSize = 0;
+
+  const getFiles = async (dir: string) => {
+    try {
+      const dirents = await fs.readdir(dir, { withFileTypes: true });
+      for (const dirent of dirents) {
+        const res = path.resolve(dir, dirent.name);
+        if (dirent.isDirectory()) {
+          await getFiles(res);
+        } else if (res.endsWith('.json')) {
+          totalFiles++;
+          const stats = await fs.stat(res);
+          totalSize += stats.size;
+        }
+      }
+    } catch (e) {
+      // Directory might not exist or error reading
+    }
+  };
+
+  await getFiles(dirPath);
+
+  // Estimate memory size of the cache object
+  let ramSize = 0;
+  try {
+     const str = JSON.stringify(memoryCache);
+     ramSize = Buffer.byteLength(str, 'utf8');
+  } catch(e) {
+     console.error('Error estimating memory cache size', e);
+  }
+
+  return {
+    totalFiles,
+    totalSizeBytes: totalSize,
+    ramSizeBytes: ramSize
+  };
 };

@@ -10,7 +10,7 @@ export const customTheme: ThemePreset = {
   },
   colors: {
     light: {
-      "background": '0 0% 100%',
+      "background": '0 2% 92%',
       "foreground": '210 8% 14%',
       "primary": '210 100% 56%',
       "primary-foreground": '0 0% 100%',
