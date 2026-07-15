@@ -85,11 +85,16 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
     // Tambahkan tahun ke nama file agar tidak bentrok
     const filePath = path.resolve(dirPath, `${endpoint}_${tahun}.json`);
     
-    await fs.mkdir(dirPath, { recursive: true });
-    
-    // Write to JSON file
-    await fs.writeFile(filePath, JSON.stringify(allData, null, 2), 'utf-8');
-    console.log(`Successfully synced ${allData.length} records to ${filePath}`);
+    // Write to JSON file if not on Vercel
+    try {
+      if (process.env.VERCEL !== '1') {
+        await fs.mkdir(dirPath, { recursive: true });
+        await fs.writeFile(filePath, JSON.stringify(allData, null, 2), 'utf-8');
+        console.log(`Successfully synced ${allData.length} records to ${filePath}`);
+      }
+    } catch (error) {
+      console.warn(`Vercel/Read-Only FS detected. Using memory cache only for ${filePath}`);
+    }
 
     // Save to memory cache
     const cacheKey = `${group}_${endpoint}_${tahun}`;
@@ -172,8 +177,14 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
       params: { tahun, instansi, jenis, view }
     });
     
-    await fs.mkdir(dirPath, { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(response, null, 2), 'utf-8');
+    try {
+      if (process.env.VERCEL !== '1') {
+        await fs.mkdir(dirPath, { recursive: true });
+        await fs.writeFile(filePath, JSON.stringify(response, null, 2), 'utf-8');
+      }
+    } catch (e) {
+      console.warn(`Vercel/Read-Only FS detected. Using memory cache only for ${filePath}`);
+    }
     
     memoryCache[cacheKey] = response;
     return response;

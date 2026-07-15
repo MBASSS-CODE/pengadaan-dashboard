@@ -33,9 +33,15 @@ export const getCronConfig = async () => {
 };
 
 export const saveCronConfig = async (config: { schedule: string }) => {
-  const dir = path.dirname(configPath);
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
+  if (process.env.VERCEL !== '1') {
+    try {
+      const dir = path.dirname(configPath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
+    } catch (e) {
+      console.warn('Vercel/Read-Only FS detected. Cannot save cron config to disk.');
+    }
+  }
   await reloadCronJob();
   return config;
 };
@@ -62,9 +68,15 @@ export const logEndpointActivity = async (group: string, endpoint: string, statu
     logs.push(newLog);
   }
   
-  const dir = path.dirname(logsPath);
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(logsPath, JSON.stringify(logs, null, 2), 'utf-8');
+  if (process.env.VERCEL !== '1') {
+    try {
+      const dir = path.dirname(logsPath);
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(logsPath, JSON.stringify(logs, null, 2), 'utf-8');
+    } catch (e) {
+      console.warn('Vercel/Read-Only FS detected. Cannot save endpoint logs to disk.');
+    }
+  }
 };
 
 export const triggerSyncAll = async () => {

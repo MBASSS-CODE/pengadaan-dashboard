@@ -11,27 +11,48 @@ export interface User {
   role: string;
 }
 
+// In-memory fallback for serverless environments (like Vercel) where FS is read-only
+let memoryUsers: User[] | null = null;
+const isVercel = process.env.VERCEL === '1';
+
+const defaultHash = bcrypt.hashSync('admin123', 10);
+const defaultUsers: User[] = [{ id: '1', username: 'admin', passwordHash: defaultHash, role: 'admin' }];
+
 const ensureFile = async () => {
+  if (memoryUsers) return; // Already loaded in memory
+
   try {
     await fs.access(usersFile);
-  } catch {
-    await fs.mkdir(path.dirname(usersFile), { recursive: true });
-    // Default admin user: admin / admin123
-    const defaultHash = bcrypt.hashSync('admin123', 10);
-    const defaultUsers: User[] = [{ id: '1', username: 'admin', passwordHash: defaultHash, role: 'admin' }];
-    await fs.writeFile(usersFile, JSON.stringify(defaultUsers, null, 2), 'utf-8');
+    const data = await fs.readFile(usersFile, 'utf-8');
+    memoryUsers = JSON.parse(data);
+  } catch (error) {
+    // If file doesn't exist or can't be read, initialize with default
+    memoryUsers = [...defaultUsers];
+    try {
+      if (!isVercel) {
+        await fs.mkdir(path.dirname(usersFile), { recursive: true });
+        await fs.writeFile(usersFile, JSON.stringify(memoryUsers, null, 2), 'utf-8');
+      }
+    } catch (writeErr) {
+      console.warn('Vercel/Serverless Environment detected or FS is Read-Only. Using in-memory users storage.');
+    }
   }
 };
 
 export const getUsers = async (): Promise<User[]> => {
   await ensureFile();
-  const data = await fs.readFile(usersFile, 'utf-8');
-  return JSON.parse(data);
+  return memoryUsers || defaultUsers;
 };
 
 export const saveUsers = async (users: User[]) => {
-  await ensureFile();
-  await fs.writeFile(usersFile, JSON.stringify(users, null, 2), 'utf-8');
+  memoryUsers = users;
+  try {
+    if (!isVercel) {
+      await fs.writeFile(usersFile, JSON.stringify(users, null, 2), 'utf-8');
+    }
+  } catch (error) {
+    console.warn('Failed to save users to disk, using in-memory only.', error);
+  }
 };
 
 export const findUserByUsername = async (username: string): Promise<User | undefined> => {
