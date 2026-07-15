@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "cursor": "eyJpZCI6ODc5NTcwMzU3MDY3NDgzMjcyMX0=",
+    "limit": 100
+  },
+  "success": true,
+  "data": [
+    {
+      "status_delete_rup": false,
+      "nama_satker": "MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA",
+      "pagu": 386330000,
+      "status_aktif_rup": true,
+      "kd_satker_str": "427950",
+      "nama_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "kd_rup": 43290257,
+      "kd_satker": 15760,
+      "tahun_anggaran_dana": 2026,
+      "asal_dana": "K22",
+      "asal_dana_satker": "MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA",
+      "jenis_klpd": "KEMENTERIAN",
+      "asal_dana_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "id_paket_anggaran_swakelola": 595804578,
+      "jenis_dana_apbn": "RUPIAH MURNI",
+      "kd_klpd": "K22",
+      "kd_komponen": 5165297,
+      "kd_kegiatan": null,
+      "kd_rup_lokal": null,
+      "sumber_dana": "APBN",
+      "tahun_anggaran": 2026,
+      "mak": "CO.6191.FAB.002.051.0B.522131",
+      "status_umumkan_rup": "Terumumkan",
+      "kd_subkegiatan": null,
+      "last_update_ref": "f9e65fa3-621a-5ee6-b5b7-5c1ea30cd677.oqEczJkUSBHP6JjD.JI49nLgOn7YgSMr-wo68dRahxZLOt6XQW7B-KNIsoEI"
+    },
+    {
+      "kd_satker": 15760,
+      "status_delete_rup": false,
+      "status_umumkan_rup": "Terumumkan",
+      "tahun_anggaran": 2026,
+      "sumber_dana": "APBN",
+      "kd_subkegiatan": null,
+      "asal_dana_satker": "MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA",
+      "kd_kegiatan": 13617623,
+      "id_paket_anggaran_swakelola": 590842427,
+      "kd_rup": 42868795,
+      "kd_rup_lokal": null,
+      "nama_satker": "MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA",
+      "mak": "WA.6180.EBD.Z33.051.0A.522141",
+      "tahun_anggaran_dana": 2026,
+      "kd_komponen": 5165422,
+      "pagu": 83592000,
+      "kd_klpd": "K22",
+      "nama_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "status_aktif_rup": true,
+      "kd_satker_str": "427950",
+      "asal_dana_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "jenis_dana_apbn": "RUPIAH MURNI",
+      "jenis_klpd": "KEMENTERIAN",
+      "asal_dana": "K22",
+      "last_update_ref": "f9e65fa3-621a-5ee6-b5b7-5c1ea30cd677.oqEczJkUSBHP6JjD.JI49nLgOn7YgSMr-wo68dRahxZLOt6XQW7B-KNIsoEI"
+    }
+  ]
+}
