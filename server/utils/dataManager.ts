@@ -181,8 +181,7 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
     console.error('Error fetching dashboard precomputed:', error);
     throw createError({ statusCode: 500, statusMessage: 'Failed to fetch dashboard data' });
   }
-  }
-;
+};
 
 /**
  * Get overall system statistics for cache and JSON storage
