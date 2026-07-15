@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import cron from 'node-cron';
+import * as cron from 'node-cron';
 import { syncEndpointData } from './dataManager';
 
 // Daftar endpoint aktif per grup yang akan disinkronisasi secara otomatis
@@ -10,6 +10,7 @@ export const activeEndpoints: Record<string, string[]> = {
     'master-satker',
     'paket-anggaran-penyedia',
     'paket-anggaran-swakelola',
+    'paket-penyedia'
   ],
   ekatalog: [
     // contoh: 'list_produk'
