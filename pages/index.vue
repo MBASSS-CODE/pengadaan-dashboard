@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-container">
-    <div class="page-header flex-between">
+    <div class="page-header flex justify-between items-center mb-8">
       <div>
         <h1 class="page-title">Dashboard Pengadaan</h1>
         <p class="page-subtitle">Ringkasan Realisasi dan Perencanaan Pengadaan (Tahun {{ selectedYear }})</p>
@@ -27,7 +27,7 @@
     <!-- Data Loaded -->
     <div v-else>
       <!-- Summary Cards -->
-      <div class="summary-cards">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
         <div class="card bg-primary-light">
           <h3>Total Nilai Perencanaan</h3>
           <div class="value">{{ formatCurrency(dashboardData.total_nilai_perencanaan) }}</div>
@@ -51,7 +51,7 @@
       </div>
 
       <!-- Tabs -->
-      <div class="tabs-container">
+      <div class="flex gap-4 mb-6 pb-2 border-b border-[hsl(var(--maz-border))]">
         <button 
           class="tab-btn" 
           :class="{ active: activeTab === 'realisasi' }"
@@ -70,8 +70,8 @@
 
       <!-- Tab Content: Realisasi -->
       <div v-if="activeTab === 'realisasi'" class="tab-content">
-        <div class="charts-grid-top mb-6">
-          <div class="chart-card">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div class="chart-card lg:col-span-1">
             <h3 class="chart-title">% Realisasi Pengadaan</h3>
             <div class="chart-wrapper doughnut-wrapper gauge-wrapper">
               <Doughnut :data="persentaseRealisasiData.chartData" :options="gaugeOptions" />
@@ -82,7 +82,7 @@
             </div>
           </div>
 
-          <div class="charts-grid-half">
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:col-span-2">
             <div class="chart-card" v-for="(metric, index) in progressMetrics" :key="index">
               <h3 class="chart-title">{{ metric.title }}</h3>
               <div class="custom-progress-wrapper">
@@ -119,14 +119,14 @@
           </div>
         </div>
 
-        <div class="charts-grid-realisasi mb-6">
-          <div class="chart-card">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
+          <div class="chart-card lg:col-span-2">
             <h3 class="chart-title">Pagu Per Jenis Proses</h3>
             <div class="chart-wrapper doughnut-wrapper">
               <Doughnut :data="realisasiPaguDoughnutData" :options="doughnutOptions" />
             </div>
           </div>
-          <div class="chart-card">
+          <div class="chart-card lg:col-span-3">
             <h3 class="chart-title">Ringkasan Per Jenis Proses</h3>
             <div class="table-responsive">
               <table class="data-table">
@@ -156,14 +156,14 @@
           </div>
         </div>
 
-        <div class="charts-grid mb-6">
-          <div class="chart-card">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div class="chart-card lg:col-span-2">
             <h3 class="chart-title">Nilai Realisasi Berdasarkan Metode Pelaksanaan</h3>
             <div class="chart-wrapper">
               <Bar :data="realisasiMetodeChartData" :options="chartOptions" />
             </div>
           </div>
-          <div class="chart-card">
+          <div class="chart-card lg:col-span-1">
             <h3 class="chart-title">Proporsi Jumlah Paket Pelaksanaan</h3>
             <div class="chart-wrapper doughnut-wrapper">
               <Doughnut :data="realisasiMetodeDoughnutData" :options="doughnutOptions" />
@@ -171,7 +171,7 @@
           </div>
         </div>
 
-        <div class="charts-grid-half mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div class="chart-card">
             <h3 class="chart-title">Realisasi Jenis Pengadaan (Penyedia) - Nilai</h3>
             <div class="chart-wrapper pie-wrapper">
@@ -183,8 +183,8 @@
 
       <!-- Tab Content: Perencanaan -->
       <div v-if="activeTab === 'perencanaan'" class="tab-content">
-        <div class="charts-grid-top-perencanaan mb-6">
-          <div class="chart-card">
+        <div class="grid grid-cols-1 lg:grid-cols-7 gap-6 mb-6">
+          <div class="chart-card lg:col-span-2">
             <h3 class="chart-title">% Pengisian RUP</h3>
             <div class="chart-wrapper doughnut-wrapper gauge-wrapper">
               <Doughnut :data="persentasePengisianRUPData.chartData" :options="gaugeOptions" />
@@ -195,13 +195,13 @@
             </div>
           </div>
 
-          <div class="chart-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="chart-card flex flex-col justify-between lg:col-span-5">
             <div v-for="(metric, index) in perencanaanProgressMetrics" :key="index" :class="{'mb-4': index < perencanaanProgressMetrics.length - 1}">
-              <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.5rem;" :style="{ marginTop: index > 0 ? '1rem' : '0' }">
-                <h3 class="chart-title" style="margin-bottom: 0; font-size: 0.85rem;">{{ metric.title }}</h3>
+              <div class="flex justify-between items-end mb-2" :class="{'mt-4': index > 0}">
+                <h3 class="chart-title !mb-0 text-sm">{{ metric.title }}</h3>
               </div>
-              <div class="custom-progress-wrapper" style="margin-bottom: 0.25rem;">
-                <div class="progress-label" style="width: 80px;">{{ metric.labelLeft }}</div>
+              <div class="custom-progress-wrapper !mb-1">
+                <div class="progress-label w-[80px]">{{ metric.labelLeft }}</div>
                 <div class="progress-container">
                   <div class="progress-track">
                     <div 
@@ -231,7 +231,7 @@
           </div>
         </div>
 
-        <div class="charts-grid-half mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div class="chart-card">
             <h3 class="chart-title">Metode Pemilihan (Penyedia) - Nilai</h3>
             <div class="chart-wrapper pie-wrapper">
@@ -660,12 +660,6 @@ onMounted(() => {
   margin-bottom: 2rem;
 }
 
-.flex-between {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .form-select {
   padding: 0.5rem 1rem;
   border-radius: var(--maz-border-radius, 0.5rem);
@@ -706,13 +700,6 @@ onMounted(() => {
   color: hsl(var(--maz-muted));
 }
 
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
 .card {
   padding: 1.5rem;
   border-radius: var(--maz-border-radius, 0.75rem);
@@ -730,10 +717,11 @@ onMounted(() => {
 }
 
 .card .value {
-  font-size: 1.5rem;
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
   font-weight: 700;
   color: hsl(var(--maz-foreground));
   margin-bottom: 0.5rem;
+  word-break: break-word;
 }
 
 .card .label {
@@ -746,14 +734,6 @@ onMounted(() => {
 .bg-secondary-light { border-top: 4px solid hsl(var(--maz-secondary)); }
 .bg-success-light { border-top: 4px solid hsl(var(--maz-success)); }
 .bg-warning-light { border-top: 4px solid hsl(var(--maz-warning)); }
-
-.tabs-container {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid hsl(var(--maz-border));
-  padding-bottom: 0.5rem;
-}
 
 .tab-btn {
   background: none;
@@ -778,77 +758,6 @@ onMounted(() => {
 
 .tab-content {
   animation: fadeIn 0.3s ease;
-}
-
-.charts-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1.5rem;
-}
-
-.charts-grid-realisasi {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 1.5rem;
-}
-
-.charts-grid-top {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 1.5rem;
-}
-
-.charts-grid-full {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
-.charts-grid-half {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-}
-
-.charts-grid-3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 1.5rem;
-}
-
-.charts-grid-top-perencanaan {
-  display: grid;
-  grid-template-columns: 1fr 2.5fr;
-  gap: 1.5rem;
-}
-
-.mb-6 {
-  margin-bottom: 1.5rem;
-}
-
-.mt-6 {
-  margin-top: 1.5rem;
-}
-
-@media (max-width: 1200px) {
-  .charts-grid-top,
-  .charts-grid-top-perencanaan {
-    grid-template-columns: 1fr;
-  }
-  .charts-grid-3 {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 992px) {
-  .charts-grid,
-  .charts-grid-realisasi,
-  .charts-grid-half,
-  .charts-grid-top,
-  .charts-grid-top-perencanaan,
-  .charts-grid-3 {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* Table Styles */
