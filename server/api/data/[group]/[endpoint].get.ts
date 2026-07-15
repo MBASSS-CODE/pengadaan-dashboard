@@ -16,11 +16,13 @@ export default defineEventHandler(async (event) => {
   }
 
   // Pisahkan extra parameters selain tahun
+  const forceRefresh = query.forceRefresh === 'true';
   const extraParams = { ...query };
   delete extraParams.tahun;
+  delete extraParams.forceRefresh;
 
   try {
-    const data = await getEndpointData(group, endpoint, tahun, extraParams);
+    const data = await getEndpointData(group, endpoint, tahun, extraParams, forceRefresh);
     return {
       success: true,
       data

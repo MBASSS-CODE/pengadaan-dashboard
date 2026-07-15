@@ -4,6 +4,7 @@ import { syncEndpointData } from '../utils/dataManager';
 // Daftar endpoint aktif per grup yang akan disinkronisasi secara otomatis
 export const activeEndpoints: Record<string, string[]> = {
   rup: [
+    'history-kaji-ulang',
     // contoh: 'list_paket'
   ],
   ekatalog: [
