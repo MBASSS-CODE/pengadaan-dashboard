@@ -23,6 +23,7 @@ server/data/**/*.json
 server/data/rup/
 server/data/ekatalog/
 !server/data/.gitkeep
+!server/data/users.json
 
 # Local env files
 .env
