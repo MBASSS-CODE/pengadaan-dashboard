@@ -93,10 +93,10 @@
               </td>
               <td class="px-6 py-4">
                 <span 
-                  class="px-2.5 py-1 text-xs font-semibold rounded-full"
+                  class="px-2.5 py-1 text-xs font-semibold rounded-full border border-transparent"
                   :class="{
-                    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': item.status_satker === 'Aktif',
-                    'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300': item.status_satker !== 'Aktif'
+                    'bg-[color:hsl(var(--maz-success)_/_15%)] text-[color:hsl(var(--maz-info)_/_100%)] dark:bg-[color:hsl(var(--maz-success)_/_20%)]': item.status_satker === 'Aktif',
+                    'bg-[color:hsl(var(--maz-muted)_/_15%)] text-[color:hsl(var(--maz-foreground)_/_80%)] dark:bg-[color:hsl(var(--maz-muted)_/_20%)]': item.status_satker !== 'Aktif'
                   }"
                 >
                   {{ item.status_satker }}

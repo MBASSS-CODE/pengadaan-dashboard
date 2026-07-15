@@ -26,8 +26,8 @@
     <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm overflow-hidden">
       
       <!-- Search/Filter Bar -->
-      <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))]">
-        <div class="max-w-md">
+      <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col lg:flex-row lg:items-center gap-4">
+        <div class="flex-1 min-w-[250px]">
           <MazInput 
             v-model="searchQuery" 
             placeholder="Cari nama satker atau alasan..." 
@@ -39,6 +39,24 @@
               </svg>
             </template>
           </MazInput>
+        </div>
+
+        <div class="w-full lg:w-48">
+          <MazInput 
+            type="date"
+            label="Tgl Kaji Ulang"
+            v-model="filterDate" 
+            size="sm"
+          />
+        </div>
+
+        <div class="w-full lg:w-48">
+          <select v-model="filterJenisRevisi" class="w-full px-3 py-1.5 h-[2.25rem] text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors">
+            <option value="">Semua Jenis Revisi</option>
+            <option value="SATUKESATU">SATUKESATU</option>
+            <option value="PEMBATALAN">PEMBATALAN</option>
+            <option value="PENGAKTIFAN">PENGAKTIFAN</option>
+          </select>
         </div>
       </div>
 
@@ -103,14 +121,14 @@
                 <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1 capitalize">{{ item.jenis_paket?.toLowerCase() }}</div>
               </td>
               <td class="px-6 py-4">
-                <span 
-                  class="px-2.5 py-1 text-xs font-semibold rounded-full"
-                  :class="{
-                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': item.jenis_revisi === 'PEMBATALAN',
-                    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': item.jenis_revisi === 'SATUKESATU',
-                    'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300': !['PEMBATALAN', 'SATUKESATU'].includes(item.jenis_revisi)
-                  }"
-                >
+                  <span 
+                    class="px-2.5 py-1 text-xs font-semibold rounded-full border border-transparent"
+                    :class="{
+                      'bg-[color:hsl(var(--maz-destructive)_/_15%)] text-[color:hsl(var(--maz-destructive)_/_100%)] dark:bg-[color:hsl(var(--maz-destructive)_/_20%)]': item.jenis_revisi === 'PEMBATALAN',
+                      'bg-[color:hsl(var(--maz-primary)_/_15%)] text-[color:hsl(var(--maz-primary)_/_100%)] dark:bg-[color:hsl(var(--maz-primary)_/_20%)]': item.jenis_revisi === 'SATUKESATU',
+                      'bg-[color:hsl(var(--maz-muted)_/_15%)] text-[color:hsl(var(--maz-foreground)_/_80%)] dark:bg-[color:hsl(var(--maz-muted)_/_20%)]': !['PEMBATALAN', 'SATUKESATU'].includes(item.jenis_revisi)
+                    }"
+                  >
                   {{ item.jenis_revisi }}
                 </span>
               </td>
@@ -170,6 +188,8 @@ const availableYears = [
 ];
 const selectedYear = ref(currentYear.toString());
 const searchQuery = ref('');
+const filterDate = ref('');
+const filterJenisRevisi = ref('');
 
 // Pagination state
 const currentPage = ref(1);
@@ -211,14 +231,34 @@ const formatDate = (dateString) => {
 
 // Computed for filtering and pagination
 const filteredData = computed(() => {
-  if (!searchQuery.value) return rawData.value;
+  let result = rawData.value;
   
-  const query = searchQuery.value.toLowerCase();
-  return rawData.value.filter(item => 
-    (item.nama_satker && item.nama_satker.toLowerCase().includes(query)) ||
-    (item.alasan_kajiulang && item.alasan_kajiulang.toLowerCase().includes(query)) ||
-    (item.nama_klpd && item.nama_klpd.toLowerCase().includes(query))
-  );
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    result = result.filter(item => 
+      (item.nama_satker && item.nama_satker.toLowerCase().includes(query)) ||
+      (item.alasan_kajiulang && item.alasan_kajiulang.toLowerCase().includes(query)) ||
+      (item.nama_klpd && item.nama_klpd.toLowerCase().includes(query)) ||
+      (item.kd_rup_lama && item.kd_rup_lama.toString().includes(query)) ||
+      (item.kd_rup_baru && item.kd_rup_baru.toString().includes(query))
+    );
+  }
+
+  if (filterDate.value) {
+    result = result.filter(item => {
+      if (!item.tgl_kaji_ulang) return false;
+      return item.tgl_kaji_ulang.startsWith(filterDate.value);
+    });
+  }
+
+  if (filterJenisRevisi.value) {
+    result = result.filter(item => {
+      if (!item.jenis_revisi) return false;
+      return item.jenis_revisi.toUpperCase() === filterJenisRevisi.value.toUpperCase();
+    });
+  }
+
+  return result;
 });
 
 const totalPages = computed(() => {

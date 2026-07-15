@@ -106,19 +106,19 @@
               <td class="px-6 py-4">
                 <div class="flex flex-col items-center gap-1">
                   <span 
-                    class="px-2.5 py-1 text-[0.7rem] font-semibold rounded-full w-full text-center"
+                    class="px-2.5 py-1 text-[0.7rem] font-semibold rounded-full w-full text-center border border-transparent"
                     :class="{
-                      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': item.status_aktif_rup,
-                      'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': !item.status_aktif_rup
+                      'bg-[color:hsl(var(--maz-success)_/_15%)] text-[color:hsl(var(--maz-info)_/_100%)] dark:bg-[color:hsl(var(--maz-success)_/_20%)]': item.status_aktif_rup,
+                      'bg-[color:hsl(var(--maz-destructive)_/_15%)] text-[color:hsl(var(--maz-destructive)_/_100%)] dark:bg-[color:hsl(var(--maz-destructive)_/_20%)]': !item.status_aktif_rup
                     }"
                   >
                     {{ item.status_aktif_rup ? 'Aktif' : 'Non-Aktif' }}
                   </span>
                   <span 
-                    class="px-2.5 py-1 text-[0.7rem] font-semibold rounded-full w-full text-center"
+                    class="px-2.5 py-1 text-[0.7rem] font-semibold rounded-full w-full text-center border border-transparent"
                     :class="{
-                      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': item.status_umumkan_rup === 'Terumumkan',
-                      'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300': item.status_umumkan_rup !== 'Terumumkan'
+                      'bg-[color:hsl(var(--maz-primary)_/_15%)] text-[color:hsl(var(--maz-primary)_/_100%)] dark:bg-[color:hsl(var(--maz-primary)_/_20%)]': item.status_umumkan_rup === 'Terumumkan',
+                      'bg-[color:hsl(var(--maz-muted)_/_15%)] text-[color:hsl(var(--maz-foreground)_/_80%)] dark:bg-[color:hsl(var(--maz-muted)_/_20%)]': item.status_umumkan_rup !== 'Terumumkan'
                     }"
                   >
                     {{ item.status_umumkan_rup }}
