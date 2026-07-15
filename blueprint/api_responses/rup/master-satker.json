@@ -1,0 +1,68 @@
+{
+  "error": {
+    "code": "000",
+    "message": "Success",
+    "details": "Success"
+  },
+  "meta": {
+    "cursor": "eyJpZCI6ODU3OTgxNjYyMTEwNTc0OTcxNX0=",
+    "limit": 100
+  },
+  "success": true,
+  "data": [
+    {
+      "kode_eselon": null,
+      "tahun_aktif": "2013, 2014, 2015, 2016, 2017, 2018, 2019",
+      "telepon": null,
+      "kd_satker": 15761,
+      "jenis_klpd": "KEMENTERIAN",
+      "jenis_satker": "Pusat",
+      "kd_klpd": "K22",
+      "alamat": null,
+      "status_satker": "Aktif",
+      "kd_satker_str": "689100",
+      "fax": null,
+      "kodepos": null,
+      "ket_satker": "Satker/OPD Non-BLU/BLUD",
+      "nama_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "nama_satker": "KEDEPUTIAN BIDANG PROGRAM DAN REFORMASI BIROKRASI",
+      "last_update_ref": "d9ade10d-ef0f-5095-87bb-71bbd82e7006.i7TH6tneP5OnWDB0.tXaO0ygGAM7auHmeMXPN13Y_2YHrQgA5XV9FKKRSunE"
+    },
+    {
+      "ket_satker": "Satker/OPD Non-BLU/BLUD",
+      "jenis_klpd": "KEMENTERIAN",
+      "kodepos": null,
+      "nama_satker": "MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA",
+      "telepon": null,
+      "kd_satker": 15760,
+      "kode_eselon": "01",
+      "status_satker": "Aktif",
+      "tahun_aktif": "2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030",
+      "alamat": null,
+      "kd_satker_str": "427950",
+      "nama_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "kd_klpd": "K22",
+      "fax": null,
+      "jenis_satker": "Pusat",
+      "last_update_ref": "d9ade10d-ef0f-5095-87bb-71bbd82e7006.i7TH6tneP5OnWDB0.tXaO0ygGAM7auHmeMXPN13Y_2YHrQgA5XV9FKKRSunE"
+    },
+    {
+      "kd_klpd": "K22",
+      "fax": null,
+      "kodepos": null,
+      "tahun_aktif": "2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025",
+      "kd_satker": 142307,
+      "status_satker": "Aktif",
+      "ket_satker": "Satker/OPD Non-BLU/BLUD",
+      "telepon": null,
+      "kd_satker_str": "015416",
+      "nama_satker": "KOMISI APARATUR SIPIL NEGARA",
+      "alamat": null,
+      "jenis_klpd": "KEMENTERIAN",
+      "kode_eselon": "48",
+      "jenis_satker": "Pusat",
+      "nama_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "last_update_ref": "d9ade10d-ef0f-5095-87bb-71bbd82e7006.i7TH6tneP5OnWDB0.tXaO0ygGAM7auHmeMXPN13Y_2YHrQgA5XV9FKKRSunE"
+    }
+  ]
+}

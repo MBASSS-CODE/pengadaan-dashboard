@@ -5,7 +5,7 @@ import { syncEndpointData } from '../utils/dataManager';
 export const activeEndpoints: Record<string, string[]> = {
   rup: [
     'history-kaji-ulang',
-    // contoh: 'list_paket'
+    'master-satker',
   ],
   ekatalog: [
     // contoh: 'list_produk'
