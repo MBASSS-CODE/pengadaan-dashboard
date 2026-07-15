@@ -1,23 +1,25 @@
 # Product Requirements Document (PRD)
-**Sistem Dashboard INAPROC & Agregasi Data (Nuxt 3 Monolith)**
+**Sistem Dashboard Agregasi Data (Nuxt 3 Monolith)**
 
 ## 1. Ringkasan Proyek
-Sistem ini menarik, mengagregasi, menyisihkan (cache), dan menyajikan data dari API eksternal menggunakan arsitektur monolith Nuxt 3. Sistem harus tangguh menangani data besar dengan menyimpan *cache* di dalam file JSON per *endpoint*.
+Sistem dasbor administrasi internal yang bertugas menarik, mengagregasi, menyisihkan (cache), dan menyajikan data dari API eksternal. Aplikasi dibangun menggunakan arsitektur monolith Nuxt 3 dengan antarmuka yang bersih dan profesional. Sistem menyimpan *cache* di dalam file JSON secara terpisah per *endpoint* untuk performa maksimal.
 
-## 2. Kebutuhan Data (Data Fetching Strategy)
+## 2. Tech Stack & UI/UX
+- **Framework Utama:** Nuxt 3 (Vue 3 Composition API).
+- **Styling & Layout:** Tailwind CSS (digunakan secara eksklusif untuk tata letak, *grid*, *flexbox*, *margin/padding*, dan tipografi).
+- **UI Component Library:** Maz-UI.
+- **Custom Theme:** Menggunakan tema bawaan yang sudah di- *generate* via Theme Builder dan disimpan di `themes/maz-theme.ts`.
+- **Desain:** Harus terlihat rapi, modern, dan fungsional, responsive di mobile dan desktop, sangat cocok untuk aplikasi internal tingkat birokrasi/pemerintahan yang menangani banyak data.
 
-### 2.1 API Dashboard (Public API)
+## 3. Kebutuhan Data (Data Fetching Strategy)
+
+### 3.1 API Dashboard (Public API)
 - **Sifat:** Publik, tanpa otentikasi.
 - **Endpoint:** `https://data.inaproc.id/dashboard-api/profil-pengadaan/precomputed`
-- **Parameter Wajib:** `tahun` dan `instansi`.
 - **Target Penyimpanan:** `server/data/dashboard_precomputed.json`
 
-### 2.2 API Data (Secured, Paginated, & Multi-Endpoint)
+### 3.2 API Data (Secured, Paginated, & Multi-Endpoint)
 - **Sifat:** Privat, membutuhkan Token dari `.env`.
-- **Skala Endpoint:** Terdapat 28+ endpoint yang akan terus bertambah (contoh: `/list_produk`, `/list_e_purchasing`, dll).
-- **Parameter Wajib Base:** `tahun`, `kode_klpd` (dari `.env`), `cursor`.
+- **Skala Endpoint:** Terdapat banyak endpoint yang dikelompokkan (contoh: `/rup/list_paket`, `/ekatalog/list_produk`).
 - **Mekanisme Paginasi:** *Cursor-based While Loop* (batas 100 data per *request* hingga `has_more` bernilai `false`).
-- **Strategi Penyimpanan Cache (Pemisahan File):** Sistem **wajib** menyimpan hasil agregasi data (setelah proses *loop* selesai) ke dalam file JSON yang namanya diambil persis dari nama *endpoint* tersebut.
-  - Jika fetch `/list_produk`, simpan di `server/data/list_produk.json`.
-  - Jika fetch `/list_e_purchasing`, simpan di `server/data/list_e_purchasing.json`.
-- **Struktur Akses Frontend:** Frontend cukup memanggil API internal yang dinamis, tanpa perlu tahu token aslinya.
+- **Strategi Penyimpanan Cache:** Wajib menyimpan hasil agregasi data ke dalam file JSON menggunakan jalur dinamis `server/data/[group]/[endpoint].json`.
