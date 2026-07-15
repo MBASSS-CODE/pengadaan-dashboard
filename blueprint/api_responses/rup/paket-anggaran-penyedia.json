@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "cursor": "eyJpZCI6LTc1NDg4OTYzMjk1MjA2Mjc5NTh9",
+    "has_more": true,
+    "limit": 100
+  },
+  "success": true,
+  "data": [
+    {
+      "asal_dana": "K22",
+      "tahun_anggaran_dana": 2026,
+      "jenis_klpd": "KEMENTERIAN",
+      "kd_rup": 66773878,
+      "mak": "CO.6193.FAI.013.053.0B.521211",
+      "asal_dana_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "kd_klpd": "K22",
+      "kd_rup_lokal": null,
+      "id_paket_anggaran_penyedia": 596101498,
+      "status_delete_rup": false,
+      "kd_subkegiatan": null,
+      "kd_satker": 15760,
+      "kd_satker_str": "427950",
+      "status_umumkan_rup": "Terumumkan",
+      "kd_kegiatan": 13617615,
+      "kd_komponen": 5165186,
+      "nama_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "nama_satker": "MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA",
+      "jenis_dana_apbn": "RUPIAH MURNI",
+      "asal_dana_satker": "MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA",
+      "status_aktif_rup": true,
+      "pagu": 400000,
+      "sumber_dana": "APBN",
+      "tahun_anggaran": 2026,
+      "last_update_ref": "c1743648-3b75-5ca3-853a-7a8bbb5529a3.C9YWWemFC7z0yhEy.km5g7RMtQc8FNpwypH9cAL8ZD3N4VNcKzBDCIXcq9tg"
+    }
+  ]
+}

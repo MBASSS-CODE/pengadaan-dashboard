@@ -6,6 +6,7 @@ export const activeEndpoints: Record<string, string[]> = {
   rup: [
     'history-kaji-ulang',
     'master-satker',
+    'paket-anggaran-penyedia',
   ],
   ekatalog: [
     // contoh: 'list_produk'
