@@ -1,0 +1,45 @@
+{
+  "data": [
+    {
+      "nama_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "status_umumkan_rup": "Terumumkan",
+      "uraian_pekerjaan": "1. Jasa Konsultan Kajian pengembangan AI untuk implementasi kebijakan Reformasi Birokrasi dan penerapan RB Tematik di Instansi Pemeri ( 1, PKT, @ 2000000000 ); \r\n",
+      "nip_ppk": "***************002",
+      "kd_klpd": "K22",
+      "tgl_pengumuman_paket": "2026-03-30T12:30:44.348Z",
+      "status_delete_rup": false,
+      "kd_klpd_penyelenggara": "PT5",
+      "jenis_klpd": "KEMENTERIAN",
+      "kd_satker": 15760,
+      "nama_satker": "MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA",
+      "tipe_swakelola": 2,
+      "volume_pekerjaan": "( 1, PKT, @ 2000000000 )",
+      "detail_lokasi": "[{\"kbp_id\": null, \"pkt_id\": null, \"prp_id\": null, \"kbp_nama\": null, \"prp_nama\": null, \"detil_lokasi\": null}]",
+      "nama_ppk": "n*** n******",
+      "nama_satker_penyelenggara": "Universitas Indonesia",
+      "username_ppk": "*********366",
+      "kd_rup": 43290238,
+      "kd_satker_str": "427950",
+      "tahun_anggaran": 2026,
+      "tgl_akhir_pelaksanaan_kontrak": "2026-12-01",
+      "tgl_buat_paket": "2026-03-30T00:00:00Z",
+      "nama_klpd_penyelenggara": "Universitas Indonesia",
+      "tgl_awal_pelaksanaan_kontrak": "2026-01-01",
+      "nama_paket": "RB-TW1-4-Jasa Konsultan Kajian pengembangan AI untuk implementasi kebijakan Reformasi Birokrasi dan penerapan RB Tematik di Instansi Pemeri",
+      "kd_rup_lokal": null,
+      "status_aktif_rup": true,
+      "pagu": 2000000000,
+      "last_update_ref": "9ab352f1-8adc-5d17-80df-b1e2b6e965b5.NUHAsyCxtPF3FCQ4.fvp9sT-lvicRbeSzK1e8AH5AlHAxwD38kgHB3gD15do"
+    }
+  ],
+  "error": {
+    "code": "000",
+    "message": "Success",
+    "details": "Success"
+  },
+  "meta": {
+    "cursor": "eyJpZCI6OTAzOTE0MjkwMTQ4Nzc4NTg3MX0=",
+    "limit": 100
+  },
+  "success": true
+}

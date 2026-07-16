@@ -10,7 +10,8 @@ export const activeEndpoints: Record<string, string[]> = {
     'master-satker',
     'paket-anggaran-penyedia',
     'paket-anggaran-swakelola',
-    'paket-penyedia'
+    'paket-penyedia',
+    'paket-swakelola'
   ],
   ekatalog: [
     // contoh: 'list_produk'
