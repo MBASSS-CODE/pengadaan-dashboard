@@ -69,7 +69,7 @@
       </div>
 
       <!-- Error State -->
-      <div v-else-if="error" class="flex flex-col items-center justify-center py-20 text-red-500">
+      <div v-if="error" class="flex flex-col items-center justify-center py-20 text-red-500">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
@@ -77,99 +77,74 @@
         <MazBtn @click="loadData" size="sm" outline class="mt-4">Coba Lagi</MazBtn>
       </div>
 
-      <!-- Empty State -->
-      <div v-else-if="pageData.length === 0" class="flex flex-col items-center justify-center py-20 text-[color:hsl(var(--maz-muted))]">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-        </svg>
-        <p>Tidak ada data yang ditemukan.</p>
-      </div>
-
-      <!-- Data Table -->
-      <div v-else class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-[color:hsl(var(--maz-foreground))]">
-          <thead class="text-xs uppercase bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))]">
-            <tr>
-              <th scope="col" class="px-6 py-4 font-semibold border-b border-[color:hsl(var(--maz-border))]">No</th>
-              <th scope="col" class="px-6 py-4 font-semibold border-b border-[color:hsl(var(--maz-border))]">Tgl Kaji Ulang</th>
-              <th scope="col" class="px-6 py-4 font-semibold border-b border-[color:hsl(var(--maz-border))] min-w-[250px]">Satuan Kerja</th>
-              <th scope="col" class="px-6 py-4 font-semibold border-b border-[color:hsl(var(--maz-border))]">Kode RUP (Lama -> Baru)</th>
-              <th scope="col" class="px-6 py-4 font-semibold border-b border-[color:hsl(var(--maz-border))]">Jenis Revisi</th>
-              <th scope="col" class="px-6 py-4 font-semibold border-b border-[color:hsl(var(--maz-border))] min-w-[200px]">Alasan</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr 
-              v-for="(item, index) in pageData" 
-              :key="item.last_update_ref || index"
-              class="border-b border-[color:hsl(var(--maz-border))] hover:bg-[color:hsl(var(--maz-foreground)_/_3%)] transition-colors"
-            >
-              <td class="px-6 py-4 font-medium">{{ (currentPage - 1) * itemsPerPage + index + 1 }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                {{ formatDate(item.tgl_kaji_ulang) }}
-              </td>
-              <td class="px-6 py-4">
-                <div class="font-medium text-[color:hsl(var(--maz-primary))]">{{ item.nama_satker }}</div>
-                <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">{{ item.nama_klpd }} ({{ item.kd_satker_str }})</div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-2">
-                  <span class="text-[color:hsl(var(--maz-muted))] line-through">{{ item.kd_rup_lama }}</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[color:hsl(var(--maz-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                  <span class="font-semibold text-[color:hsl(var(--maz-success))]">{{ item.kd_rup_baru }}</span>
-                </div>
-                <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1 capitalize">{{ item.jenis_paket?.toLowerCase() }}</div>
-              </td>
-              <td class="px-6 py-4">
-                  <span 
-                    class="px-2.5 py-1 text-xs font-semibold rounded-full border border-transparent"
-                    :class="{
-                      'bg-[color:hsl(var(--maz-destructive)_/_15%)] text-[color:hsl(var(--maz-destructive)_/_100%)] dark:bg-[color:hsl(var(--maz-destructive)_/_20%)]': item.jenis_revisi === 'PEMBATALAN',
-                      'bg-[color:hsl(var(--maz-primary)_/_15%)] text-[color:hsl(var(--maz-primary)_/_100%)] dark:bg-[color:hsl(var(--maz-primary)_/_20%)]': item.jenis_revisi === 'SATUKESATU',
-                      'bg-[color:hsl(var(--maz-muted)_/_15%)] text-[color:hsl(var(--maz-foreground)_/_80%)] dark:bg-[color:hsl(var(--maz-muted)_/_20%)]': !['PEMBATALAN', 'SATUKESATU'].includes(item.jenis_revisi)
-                    }"
-                  >
-                  {{ item.jenis_revisi }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-sm max-w-xs truncate" :title="item.alasan_kajiulang">
-                {{ item.alasan_kajiulang }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination Footer -->
-      <div v-if="totalItems > 0" class="p-4 border-t border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="text-sm text-[color:hsl(var(--maz-muted))]">
-          Menampilkan <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ ((currentPage - 1) * itemsPerPage) + 1 }}</span> 
-          sampai <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ Math.min(currentPage * itemsPerPage, totalItems) }}</span> 
-          dari <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ totalItems }}</span> data
-          <span v-if="totalAllItems !== totalItems" class="text-xs opacity-70">(total keseluruhan: {{ totalAllItems }})</span>
-        </div>
+      <!-- MazTable Data Table -->
+      <MazTable
+        v-else
+        size="sm"
+        v-model:page="currentPage"
+        v-model:page-size="itemsPerPage"
+        pagination
+        :paginate-rows="false"
+        :total-items="totalItems"
+        :loading="loading"
+        color="primary"
+        hoverable
+        background-even
+        :headers="[
+          { label: 'No', key: 'index', align: 'center', width: '4rem', sortable: false },
+          { label: 'Tgl Kaji Ulang', key: 'tgl_kaji_ulang', sortable: false },
+          { label: 'Satuan Kerja', key: 'satker', sortable: false, classes: 'min-w-[250px]' },
+          { label: 'Kode RUP (Lama -> Baru)', key: 'kd_rup', sortable: false },
+          { label: 'Jenis Revisi', key: 'jenis_revisi', sortable: false },
+          { label: 'Alasan', key: 'alasan', sortable: false, classes: 'min-w-[200px]' }
+        ]"
+        :rows="pageData"
+        @update:page="loadData(false)"
+        @update:page-size="onFilterChange(false)"
+      >
+        <template #cell-index="{ row }">
+          <span class="font-medium">{{ (currentPage - 1) * itemsPerPage + (row._index || 0) + 1 }}</span>
+        </template>
         
-        <div class="flex gap-2">
-          <MazBtn 
-            size="sm" 
-            outline 
-            :disabled="currentPage === 1 || loading" 
-            @click="goToPage(currentPage - 1)"
+        <template #cell-tgl_kaji_ulang="{ row }">
+          <span class="whitespace-nowrap">{{ formatDate(row.tgl_kaji_ulang) }}</span>
+        </template>
+        
+        <template #cell-satker="{ row }">
+          <div class="font-medium text-[color:hsl(var(--maz-primary))]">{{ row.nama_satker }}</div>
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">{{ row.nama_klpd }} ({{ row.kd_satker_str }})</div>
+        </template>
+        
+        <template #cell-kd_rup="{ row }">
+          <div class="flex items-center gap-2">
+            <span class="text-[color:hsl(var(--maz-muted))] line-through">{{ row.kd_rup_lama }}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[color:hsl(var(--maz-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+            <span class="font-semibold text-[color:hsl(var(--maz-success))]">{{ row.kd_rup_baru }}</span>
+          </div>
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1 capitalize">{{ row.jenis_paket?.toLowerCase() }}</div>
+        </template>
+        
+        <template #cell-jenis_revisi="{ row }">
+          <span 
+            class="px-2.5 py-1 text-xs font-semibold rounded-full border border-transparent"
+            :class="{
+              'bg-[color:hsl(var(--maz-destructive)_/_15%)] text-[color:hsl(var(--maz-destructive)_/_100%)] dark:bg-[color:hsl(var(--maz-destructive)_/_20%)]': row.jenis_revisi === 'PEMBATALAN',
+              'bg-[color:hsl(var(--maz-primary)_/_15%)] text-[color:hsl(var(--maz-primary)_/_100%)] dark:bg-[color:hsl(var(--maz-primary)_/_20%)]': row.jenis_revisi === 'SATUKESATU',
+              'bg-[color:hsl(var(--maz-muted)_/_15%)] text-[color:hsl(var(--maz-foreground)_/_80%)] dark:bg-[color:hsl(var(--maz-muted)_/_20%)]': !['PEMBATALAN', 'SATUKESATU'].includes(row.jenis_revisi)
+            }"
           >
-            Sebelumnya
-          </MazBtn>
-          <MazBtn 
-            size="sm" 
-            outline 
-            :disabled="currentPage >= totalPages || loading" 
-            @click="goToPage(currentPage + 1)"
-          >
-            Selanjutnya
-          </MazBtn>
-        </div>
-      </div>
+            {{ row.jenis_revisi }}
+          </span>
+        </template>
+        
+        <template #cell-alasan="{ row }">
+          <div class="text-sm max-w-xs truncate" :title="row.alasan_kajiulang">
+            {{ row.alasan_kajiulang }}
+          </div>
+        </template>
+      </MazTable>
     </div>
   </div>
 </template>
@@ -201,7 +176,7 @@ const filterJenisRevisi = ref('');
 
 // Pagination state
 const currentPage = ref(1);
-const itemsPerPage = 10;
+const itemsPerPage = ref(10);
 
 // Debounce timer
 let searchTimer = null;
@@ -214,7 +189,7 @@ const loadData = async (force = false) => {
       params: { 
         tahun: selectedYear.value,
         page: currentPage.value,
-        limit: itemsPerPage,
+        limit: itemsPerPage.value,
         search: searchQuery.value || undefined,
         filterDate: filterDate.value || undefined,
         filterJenisRevisi: filterJenisRevisi.value || undefined,
@@ -222,7 +197,8 @@ const loadData = async (force = false) => {
       }
     });
     
-    pageData.value = response.data || [];
+    const rawItems = response.data || [];
+    pageData.value = rawItems.map((item, index) => ({ ...item, _index: index }));
     totalItems.value = response.meta?.totalItems || 0;
     totalPages.value = response.meta?.totalPages || 0;
     totalAllItems.value = response.meta?.totalAllItems || 0;
