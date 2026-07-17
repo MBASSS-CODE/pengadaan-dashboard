@@ -63,7 +63,7 @@
         @update:search-query="onSearchDebounced"
       >
         <template #cell-index="{ row }">
-          <span class="font-medium">{{ (currentPage - 1) * itemsPerPage + pageData.indexOf(row) + 1 }}</span>
+          <span class="font-medium">{{ (currentPage - 1) * itemsPerPage + (row._index || 0) + 1 }}</span>
         </template>
         
         <template #cell-kd_rup="{ row }">
@@ -161,8 +161,8 @@ const loadData = async (force = false) => {
         forceRefresh: force ? 'true' : undefined
       }
     });
-    
-    pageData.value = response.data || [];
+    const rawItems = response.data || [];
+    pageData.value = rawItems.map((item, index) => ({ ...item, _index: index }));
     totalItems.value = response.meta?.totalItems || 0;
     totalPages.value = response.meta?.totalPages || 0;
     totalAllItems.value = response.meta?.totalAllItems || 0;
@@ -200,12 +200,4 @@ onMounted(() => {
   loadData(false);
 });
 </script>
-<style scoped>
-:deep(.m-table-row.--background-even:nth-child(2n)) {
-  background-color: hsl(var(--maz-foreground) / 3%) !important;
-}
 
-:deep(.m-table-row.--background-even:nth-child(2n):is([class~=dark] *)) {
-  background-color: hsl(var(--maz-foreground) / 4%) !important;
-}
-</style>
