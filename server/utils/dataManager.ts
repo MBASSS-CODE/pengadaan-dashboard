@@ -7,6 +7,86 @@ const memoryCache: Record<string, any> = {};
 // Fallback base URL for the API
 const BASE_URL = process.env.INPROC_API;
 
+// ─── Retry & Timeout Configuration ───────────────────────────────────────────
+const FETCH_TIMEOUT_MS = 30_000;   // 30 detik timeout per request
+const MAX_RETRIES = 3;             // Maksimal 3x percobaan
+const BASE_RETRY_DELAY_MS = 5_000; // Jeda awal 5 detik (exponential: 5s → 10s → 20s)
+
+/**
+ * Helper: delay execution for a given duration
+ */
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Validate that a response is a proper JSON object/array, not an HTML timeout page.
+ * INAPROC API sometimes returns an HTML page when it times out internally.
+ */
+const validateJsonResponse = (response: any, context: string): void => {
+  if (typeof response === 'string') {
+    // Detect HTML responses (timeout pages, error pages, etc.)
+    if (response.trim().startsWith('<') || response.includes('<html') || response.includes('<!DOCTYPE')) {
+      throw new Error(`[${context}] API mengembalikan HTML alih-alih JSON (kemungkinan halaman timeout)`);
+    }
+    // Try to parse if it's a JSON string
+    try {
+      JSON.parse(response);
+    } catch {
+      throw new Error(`[${context}] API mengembalikan response yang bukan JSON valid`);
+    }
+  }
+};
+
+/**
+ * Resilient fetch wrapper with timeout, retry, and response validation.
+ * - Timeout: AbortSignal.timeout (30s default)
+ * - Retry: exponential backoff (5s → 10s → 20s)
+ * - Validation: rejects HTML responses from INAPROC timeout pages
+ */
+const fetchWithRetry = async (url: string, options: any = {}, context: string = 'API'): Promise<any> => {
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await $fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
+
+      // Validate: pastikan response bukan HTML timeout page
+      validateJsonResponse(response, context);
+
+      return response;
+    } catch (error: any) {
+      lastError = error;
+
+      const isTimeout = error.name === 'TimeoutError' || error.name === 'AbortError';
+      const isHtmlResponse = error.message?.includes('HTML');
+      const errorType = isTimeout ? 'TIMEOUT' : isHtmlResponse ? 'HTML_RESPONSE' : 'ERROR';
+
+      console.warn(
+        `[${context}] Percobaan ${attempt}/${MAX_RETRIES} gagal [${errorType}]: ${error.message || error}`
+      );
+
+      // Jangan retry jika error bukan timeout/network (misal: 401 Unauthorized, 404 Not Found)
+      if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
+        console.error(`[${context}] Client error ${error.statusCode}, tidak akan di-retry.`);
+        throw error;
+      }
+
+      // Retry dengan exponential backoff (kecuali percobaan terakhir)
+      if (attempt < MAX_RETRIES) {
+        const delay = BASE_RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+        console.log(`[${context}] Menunggu ${delay / 1000}s sebelum retry...`);
+        await sleep(delay);
+      }
+    }
+  }
+
+  // Semua percobaan gagal
+  console.error(`[${context}] Gagal setelah ${MAX_RETRIES}x percobaan.`);
+  throw lastError;
+};
+
 /**
  * Synchronize data from external API to local file and memory cache
  */
@@ -38,7 +118,7 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
       
       console.log(`[Backend API Hit] Menghubungi: ${targetUrl}`);
 
-      const response: any = await $fetch(`/${group}/${endpoint}`, {
+      const response: any = await fetchWithRetry(`/${group}/${endpoint}`, {
         baseURL: BASE_URL,
         headers: {
           'Authorization': `Bearer ${token}`
@@ -49,7 +129,7 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
           cursor: cursor || undefined, // Send undefined if empty so it doesn't appear in query
           ...extraParams
         }
-      });
+      }, `sync:${group}/${endpoint}`);
       
       console.log(`[Backend API Response] Data diterima dari ${endpoint}:`, JSON.stringify(response, null, 2).substring(0, 1000) + '... (terpotong agar terminal tidak penuh)');
 
@@ -168,9 +248,9 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
   // Fetch from API
   console.log(`Fetching dashboard precomputed data for ${tahun} - ${instansi}...`);
   try {
-    const response: any = await $fetch('https://data.inaproc.id/dashboard-api/profil-pengadaan/precomputed', {
+    const response: any = await fetchWithRetry('https://data.inaproc.id/dashboard-api/profil-pengadaan/precomputed', {
       params: { tahun, instansi, jenis, view }
-    });
+    }, 'dashboard-precomputed');
     
     await fs.mkdir(dirPath, { recursive: true });
     await fs.writeFile(filePath, JSON.stringify(response, null, 2), 'utf-8');

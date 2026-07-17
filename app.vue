@@ -19,4 +19,12 @@ html, body {
 *, *::before, *::after {
   box-sizing: inherit;
 }
+
+/* Global Override untuk warna baris genap MazTable */
+.m-table-row.--background-even:nth-child(2n) {
+  background-color: hsl(var(--maz-foreground) / 3%) !important;
+}
+.m-table-row.--background-even:nth-child(2n):is([class~=dark] *) {
+  background-color: hsl(var(--maz-foreground) / 4%) !important;
+}
 </style>
