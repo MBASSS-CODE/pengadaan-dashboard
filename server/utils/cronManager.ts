@@ -3,24 +3,67 @@ import path from 'path';
 import * as cron from 'node-cron';
 import { syncEndpointData } from './dataManager';
 
-// Daftar endpoint aktif per grup yang akan disinkronisasi secara otomatis
-export const activeEndpoints: Record<string, string[]> = {
+// ─── Master Registry: Daftar SEMUA endpoint yang tersedia ─────────────────────
+// Ini adalah "katalog" lengkap. Admin bisa mengaktifkan/menonaktifkan masing-masing.
+export const endpointRegistry: Record<string, { endpoint: string; label: string; description: string }[]> = {
   rup: [
-    'history-kaji-ulang',
-    'master-satker',
-    'paket-anggaran-penyedia',
-    'paket-anggaran-swakelola',
-    'paket-penyedia',
-    'paket-swakelola',
-    'paket-swakelola-terumumkan'
+    { endpoint: 'history-kaji-ulang', label: 'History Kaji Ulang', description: 'Riwayat kaji ulang paket RUP' },
+    { endpoint: 'master-satker', label: 'Master Satker', description: 'Daftar satuan kerja' },
+    { endpoint: 'paket-anggaran-penyedia', label: 'Anggaran Penyedia', description: 'Pagu anggaran paket penyedia' },
+    { endpoint: 'paket-anggaran-swakelola', label: 'Anggaran Swakelola', description: 'Pagu anggaran paket swakelola' },
+    { endpoint: 'paket-penyedia', label: 'Paket Penyedia', description: 'Detail paket penyedia, PPK, dan metode' },
+    { endpoint: 'paket-swakelola', label: 'Paket Swakelola', description: 'Detail paket swakelola' },
+    { endpoint: 'paket-swakelola-terumumkan', label: 'Swakelola Terumumkan', description: 'Paket swakelola yang sudah diumumkan' },
+    { endpoint: 'program-master', label: 'Program Master', description: 'Daftar program master RUP' },
   ],
-  ekatalog: [
-    // contoh: 'list_produk'
-  ]
 };
+
+// Daftar endpoint aktif per grup (akan di-load dari file config)
+let activeEndpoints: Record<string, string[]> = {};
 
 const configPath = path.resolve(process.cwd(), 'server/data/cron_config.json');
 const logsPath = path.resolve(process.cwd(), 'server/data/endpoint_logs.json');
+const endpointsConfigPath = path.resolve(process.cwd(), 'server/data/endpoints_config.json');
+
+// ─── Endpoints Config (Persistence) ───────────────────────────────────────────
+
+/**
+ * Load active endpoints config from file, or generate default (all enabled)
+ */
+export const loadEndpointsConfig = async (): Promise<Record<string, string[]>> => {
+  try {
+    const data = await fs.readFile(endpointsConfigPath, 'utf-8');
+    activeEndpoints = JSON.parse(data);
+    return activeEndpoints;
+  } catch (e) {
+    // File doesn't exist yet — default: semua endpoint di registry aktif
+    const defaultConfig: Record<string, string[]> = {};
+    for (const [group, items] of Object.entries(endpointRegistry)) {
+      defaultConfig[group] = items.map(i => i.endpoint);
+    }
+    activeEndpoints = defaultConfig;
+    // Persist default config
+    await saveEndpointsConfig(defaultConfig);
+    return defaultConfig;
+  }
+};
+
+/**
+ * Save active endpoints config to file
+ */
+export const saveEndpointsConfig = async (config: Record<string, string[]>): Promise<void> => {
+  const dir = path.dirname(endpointsConfigPath);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(endpointsConfigPath, JSON.stringify(config, null, 2), 'utf-8');
+  activeEndpoints = config;
+};
+
+/**
+ * Get the currently active endpoints (from memory, loaded at startup)
+ */
+export const getActiveEndpoints = (): Record<string, string[]> => {
+  return activeEndpoints;
+};
 
 // Default config
 let currentScheduleStr = '0 6,12 * * *';

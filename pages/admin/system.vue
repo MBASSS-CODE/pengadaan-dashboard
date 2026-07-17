@@ -77,6 +77,73 @@
       </div>
     </div>
 
+    <!-- Endpoint Aktif (Checklist) -->
+    <div class="mb-8">
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-[color:hsl(var(--maz-border))] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-[color:hsl(var(--maz-foreground))] flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-[color:hsl(var(--maz-primary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              Endpoint Aktif
+            </h2>
+            <p class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">Centang endpoint yang ingin diambil datanya dari API Inaproc dan ditampilkan di dashboard</p>
+          </div>
+          <MazBtn @click="saveEndpointsConfig" :loading="savingEndpoints" color="primary" size="sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Simpan Perubahan
+          </MazBtn>
+        </div>
+
+        <div v-if="endpointConfigLoading" class="p-10 flex items-center justify-center">
+          <MazSpinner color="primary" />
+        </div>
+
+        <div v-else class="p-6">
+          <div v-for="(items, group) in endpointRegistry" :key="group" class="mb-6 last:mb-0">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-bold uppercase tracking-wider text-[color:hsl(var(--maz-primary))]">{{ group }}</h3>
+              <button 
+                @click="toggleAllGroup(group)" 
+                class="text-xs font-medium text-[color:hsl(var(--maz-primary))] hover:underline cursor-pointer"
+              >
+                {{ isAllGroupActive(group) ? 'Nonaktifkan Semua' : 'Aktifkan Semua' }}
+              </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              <label 
+                v-for="item in items" 
+                :key="item.endpoint"
+                class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all duration-200"
+                :class="{
+                  'border-[color:hsl(var(--maz-primary)_/_40%)] bg-[color:hsl(var(--maz-primary)_/_5%)]': isEndpointActive(group, item.endpoint),
+                  'border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] hover:bg-[color:hsl(var(--maz-foreground)_/_3%)]': !isEndpointActive(group, item.endpoint)
+                }"
+              >
+                <input 
+                  type="checkbox" 
+                  :checked="isEndpointActive(group, item.endpoint)"
+                  @change="toggleEndpoint(group, item.endpoint)"
+                  class="mt-0.5 w-4 h-4 accent-[hsl(var(--maz-primary))] rounded cursor-pointer"
+                />
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold text-[color:hsl(var(--maz-foreground))]">{{ item.label }}</div>
+                  <div class="text-[11px] text-[color:hsl(var(--maz-muted))] mt-0.5 leading-snug">{{ item.description }}</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div v-if="endpointSaveMessage" class="mt-4 p-3 rounded-lg text-sm bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800">
+            {{ endpointSaveMessage }}
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Main Content Area -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
@@ -190,6 +257,87 @@ const stats = ref({
   ramSizeBytes: 0
 });
 
+// ─── Endpoint Config State ──────────────────────────────────────────────────
+const endpointConfigLoading = ref(true);
+const savingEndpoints = ref(false);
+const endpointSaveMessage = ref('');
+const endpointRegistry = ref({});
+const localActiveEndpoints = ref({});
+
+const fetchEndpointsConfig = async () => {
+  endpointConfigLoading.value = true;
+  try {
+    const res = await $fetch('/api/admin/endpoints-config');
+    if (res.success) {
+      endpointRegistry.value = res.data.registry;
+      // Deep clone to avoid mutation issues
+      localActiveEndpoints.value = JSON.parse(JSON.stringify(res.data.activeEndpoints));
+    }
+  } catch (error) {
+    console.error('Failed to load endpoints config', error);
+  } finally {
+    endpointConfigLoading.value = false;
+  }
+};
+
+const isEndpointActive = (group, endpoint) => {
+  return localActiveEndpoints.value[group]?.includes(endpoint) ?? false;
+};
+
+const toggleEndpoint = (group, endpoint) => {
+  if (!localActiveEndpoints.value[group]) {
+    localActiveEndpoints.value[group] = [];
+  }
+  const idx = localActiveEndpoints.value[group].indexOf(endpoint);
+  if (idx === -1) {
+    localActiveEndpoints.value[group].push(endpoint);
+  } else {
+    localActiveEndpoints.value[group].splice(idx, 1);
+  }
+};
+
+const isAllGroupActive = (group) => {
+  const registry = endpointRegistry.value[group];
+  if (!registry) return false;
+  return registry.every(item => isEndpointActive(group, item.endpoint));
+};
+
+const toggleAllGroup = (group) => {
+  const registry = endpointRegistry.value[group];
+  if (!registry) return;
+  
+  if (isAllGroupActive(group)) {
+    // Nonaktifkan semua
+    localActiveEndpoints.value[group] = [];
+  } else {
+    // Aktifkan semua
+    localActiveEndpoints.value[group] = registry.map(item => item.endpoint);
+  }
+};
+
+const saveEndpointsConfig = async () => {
+  savingEndpoints.value = true;
+  endpointSaveMessage.value = '';
+  try {
+    const res = await $fetch('/api/admin/endpoints-config', {
+      method: 'POST',
+      body: { activeEndpoints: localActiveEndpoints.value }
+    });
+    if (res.success) {
+      endpointSaveMessage.value = res.message;
+      setTimeout(() => { endpointSaveMessage.value = '' }, 3000);
+    } else {
+      alert('Gagal: ' + res.message);
+    }
+  } catch (error) {
+    alert('Terjadi kesalahan saat menyimpan konfigurasi endpoint');
+  } finally {
+    savingEndpoints.value = false;
+  }
+};
+
+// ─── Existing Functions ─────────────────────────────────────────────────────
+
 const fetchStats = async () => {
   loading.value = true;
   try {
@@ -285,5 +433,6 @@ const formatBytes = (bytes, decimals = 2) => {
 
 onMounted(() => {
   fetchStats();
+  fetchEndpointsConfig();
 });
 </script>
