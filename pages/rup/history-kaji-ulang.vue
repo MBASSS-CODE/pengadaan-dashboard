@@ -9,7 +9,7 @@
       
       <div class="flex items-center gap-3 w-full md:w-auto">
         <!-- Filter Tahun (Contoh) -->
-        <select v-model="selectedYear" class="px-4 py-2 bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="loadData(false)">
+        <select v-model="selectedYear" class="px-4 py-2 bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange(true)">
           <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
         </select>
         
@@ -32,6 +32,7 @@
             v-model="searchQuery" 
             placeholder="Cari nama satker atau alasan..." 
             size="sm"
+            @update:model-value="onSearchDebounced"
           >
             <template #left-icon>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-[color:hsl(var(--maz-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -47,11 +48,12 @@
             label="Tgl Kaji Ulang"
             v-model="filterDate" 
             size="sm"
+            @update:model-value="onFilterChange()"
           />
         </div>
 
         <div class="w-full lg:w-48">
-          <select v-model="filterJenisRevisi" class="w-full px-3 py-1.5 h-[2.25rem] text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors">
+          <select v-model="filterJenisRevisi" class="w-full px-3 py-1.5 h-[2.25rem] text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange()">
             <option value="">Semua Jenis Revisi</option>
             <option value="SATUKESATU">SATUKESATU</option>
             <option value="PEMBATALAN">PEMBATALAN</option>
@@ -76,7 +78,7 @@
       </div>
 
       <!-- Empty State -->
-      <div v-else-if="filteredData.length === 0" class="flex flex-col items-center justify-center py-20 text-[color:hsl(var(--maz-muted))]">
+      <div v-else-if="pageData.length === 0" class="flex flex-col items-center justify-center py-20 text-[color:hsl(var(--maz-muted))]">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
         </svg>
@@ -98,7 +100,7 @@
           </thead>
           <tbody>
             <tr 
-              v-for="(item, index) in paginatedData" 
+              v-for="(item, index) in pageData" 
               :key="item.last_update_ref || index"
               class="border-b border-[color:hsl(var(--maz-border))] hover:bg-[color:hsl(var(--maz-foreground)_/_3%)] transition-colors"
             >
@@ -141,27 +143,28 @@
       </div>
 
       <!-- Pagination Footer -->
-      <div v-if="filteredData.length > 0" class="p-4 border-t border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div v-if="totalItems > 0" class="p-4 border-t border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="text-sm text-[color:hsl(var(--maz-muted))]">
           Menampilkan <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ ((currentPage - 1) * itemsPerPage) + 1 }}</span> 
-          sampai <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ Math.min(currentPage * itemsPerPage, filteredData.length) }}</span> 
-          dari <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ filteredData.length }}</span> data
+          sampai <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ Math.min(currentPage * itemsPerPage, totalItems) }}</span> 
+          dari <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ totalItems }}</span> data
+          <span v-if="totalAllItems !== totalItems" class="text-xs opacity-70">(total keseluruhan: {{ totalAllItems }})</span>
         </div>
         
         <div class="flex gap-2">
           <MazBtn 
             size="sm" 
             outline 
-            :disabled="currentPage === 1" 
-            @click="currentPage--"
+            :disabled="currentPage === 1 || loading" 
+            @click="goToPage(currentPage - 1)"
           >
             Sebelumnya
           </MazBtn>
           <MazBtn 
             size="sm" 
             outline 
-            :disabled="currentPage >= totalPages" 
-            @click="currentPage++"
+            :disabled="currentPage >= totalPages || loading" 
+            @click="goToPage(currentPage + 1)"
           >
             Selanjutnya
           </MazBtn>
@@ -172,11 +175,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 
 const loading = ref(true);
 const error = ref(false);
-const rawData = ref([]);
+
+// Data dari server (sudah dipaginasi)
+const pageData = ref([]);
+const totalItems = ref(0);
+const totalPages = ref(0);
+const totalAllItems = ref(0);
 
 // Generate dynamic years (Current Year and 3 previous years)
 const currentYear = new Date().getFullYear();
@@ -195,6 +203,9 @@ const filterJenisRevisi = ref('');
 const currentPage = ref(1);
 const itemsPerPage = 10;
 
+// Debounce timer
+let searchTimer = null;
+
 const loadData = async (force = false) => {
   loading.value = true;
   error.value = false;
@@ -202,13 +213,19 @@ const loadData = async (force = false) => {
     const response = await $fetch('/api/data/rup/history-kaji-ulang', {
       params: { 
         tahun: selectedYear.value,
+        page: currentPage.value,
+        limit: itemsPerPage,
+        search: searchQuery.value || undefined,
+        filterDate: filterDate.value || undefined,
+        filterJenisRevisi: filterJenisRevisi.value || undefined,
         forceRefresh: force ? 'true' : undefined
       }
     });
     
-    // Asumsi response sesuai dengan struktur dari server/utils/dataManager
-    rawData.value = response.data || [];
-    currentPage.value = 1; // Reset page on new data
+    pageData.value = response.data || [];
+    totalItems.value = response.meta?.totalItems || 0;
+    totalPages.value = response.meta?.totalPages || 0;
+    totalAllItems.value = response.meta?.totalAllItems || 0;
   } catch (err) {
     console.error('Error fetching data:', err);
     error.value = true;
@@ -229,49 +246,28 @@ const formatDate = (dateString) => {
   }).format(date);
 };
 
-// Computed for filtering and pagination
-const filteredData = computed(() => {
-  let result = rawData.value;
-  
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter(item => 
-      (item.nama_satker && item.nama_satker.toLowerCase().includes(query)) ||
-      (item.alasan_kajiulang && item.alasan_kajiulang.toLowerCase().includes(query)) ||
-      (item.nama_klpd && item.nama_klpd.toLowerCase().includes(query)) ||
-      (item.kd_rup_lama && item.kd_rup_lama.toString().includes(query)) ||
-      (item.kd_rup_baru && item.kd_rup_baru.toString().includes(query))
-    );
-  }
+// Ketika filter berubah, reset ke halaman 1 lalu fetch
+const onFilterChange = (forceRefresh = false) => {
+  currentPage.value = 1;
+  loadData(forceRefresh);
+};
 
-  if (filterDate.value) {
-    result = result.filter(item => {
-      if (!item.tgl_kaji_ulang) return false;
-      return item.tgl_kaji_ulang.startsWith(filterDate.value);
-    });
-  }
+// Debounced search — tunggu 400ms setelah user berhenti mengetik
+const onSearchDebounced = () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentPage.value = 1;
+    loadData(false);
+  }, 400);
+};
 
-  if (filterJenisRevisi.value) {
-    result = result.filter(item => {
-      if (!item.jenis_revisi) return false;
-      return item.jenis_revisi.toUpperCase() === filterJenisRevisi.value.toUpperCase();
-    });
-  }
-
-  return result;
-});
-
-const totalPages = computed(() => {
-  return Math.ceil(filteredData.value.length / itemsPerPage);
-});
-
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return filteredData.value.slice(start, end);
-});
+// Navigasi halaman
+const goToPage = (page) => {
+  currentPage.value = page;
+  loadData(false);
+};
 
 onMounted(() => {
-  loadData();
+  loadData(false);
 });
 </script>

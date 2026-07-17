@@ -9,7 +9,7 @@
       
       <div class="flex items-center gap-3 w-full md:w-auto">
         <!-- Filter Tahun Dinamis -->
-        <select v-model="selectedYear" class="px-4 py-2 bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="loadData(false)">
+        <select v-model="selectedYear" class="px-4 py-2 bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange(true)">
           <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
         </select>
         
@@ -33,6 +33,7 @@
             v-model="searchQuery" 
             placeholder="Cari paket, RUP, Satker, Penyelenggara..." 
             size="sm"
+            @update:model-value="onSearchDebounced"
           >
             <template #left-icon>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-[color:hsl(var(--maz-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -45,7 +46,7 @@
         <div class="flex flex-col sm:flex-row w-full lg:w-2/3 gap-4">
           <div class="w-full sm:w-1/3">
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Aktif</label>
-            <select v-model="filterAktif" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors">
+            <select v-model="filterAktif" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange()">
               <option value="ALL">Semua Status Aktif</option>
               <option value="true">Aktif</option>
               <option value="false">Non-Aktif</option>
@@ -54,7 +55,7 @@
           
           <div class="w-full sm:w-1/3">
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Hapus</label>
-            <select v-model="filterDelete" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors">
+            <select v-model="filterDelete" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange()">
               <option value="ALL">Semua Status Hapus</option>
               <option value="false">Tidak Dihapus</option>
               <option value="true">Dihapus</option>
@@ -63,9 +64,9 @@
 
           <div class="w-full sm:w-1/3">
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Umumkan</label>
-            <select v-model="filterUmumkan" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors">
+            <select v-model="filterUmumkan" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange()">
               <option value="ALL">Semua Status Umumkan</option>
-              <option v-for="status in uniqueStatusUmumkan" :key="status" :value="status">{{ status }}</option>
+              <option v-for="status in filterOptionsUmumkan" :key="status" :value="status">{{ status }}</option>
             </select>
           </div>
         </div>
@@ -87,7 +88,7 @@
       </div>
 
       <!-- Empty State -->
-      <div v-else-if="filteredData.length === 0" class="flex flex-col items-center justify-center py-20 text-[color:hsl(var(--maz-muted))]">
+      <div v-else-if="pageData.length === 0" class="flex flex-col items-center justify-center py-20 text-[color:hsl(var(--maz-muted))]">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
         </svg>
@@ -108,7 +109,7 @@
           </thead>
           <tbody>
             <tr 
-              v-for="(item, index) in paginatedData" 
+              v-for="(item, index) in pageData" 
               :key="item.last_update_ref || item.kd_rup || index"
               class="border-b border-[color:hsl(var(--maz-border))] hover:bg-[color:hsl(var(--maz-foreground)_/_3%)] transition-colors"
             >
@@ -171,27 +172,28 @@
       </div>
 
       <!-- Pagination Footer -->
-      <div v-if="filteredData.length > 0" class="p-4 border-t border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div v-if="totalItems > 0" class="p-4 border-t border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col sm:flex-row items-center justify-between gap-4">
         <div class="text-sm text-[color:hsl(var(--maz-muted))]">
           Menampilkan <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ ((currentPage - 1) * itemsPerPage) + 1 }}</span> 
-          sampai <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ Math.min(currentPage * itemsPerPage, filteredData.length) }}</span> 
-          dari <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ filteredData.length }}</span> data
+          sampai <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ Math.min(currentPage * itemsPerPage, totalItems) }}</span> 
+          dari <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ totalItems }}</span> data
+          <span v-if="totalAllItems !== totalItems" class="text-xs opacity-70">(total keseluruhan: {{ totalAllItems }})</span>
         </div>
         
         <div class="flex gap-2">
           <MazBtn 
             size="sm" 
             outline 
-            :disabled="currentPage === 1" 
-            @click="currentPage--"
+            :disabled="currentPage === 1 || loading" 
+            @click="goToPage(currentPage - 1)"
           >
             Sebelumnya
           </MazBtn>
           <MazBtn 
             size="sm" 
             outline 
-            :disabled="currentPage >= totalPages" 
-            @click="currentPage++"
+            :disabled="currentPage >= totalPages || loading" 
+            @click="goToPage(currentPage + 1)"
           >
             Selanjutnya
           </MazBtn>
@@ -202,11 +204,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 
 const loading = ref(true);
 const error = ref(false);
-const rawData = ref([]);
+
+// Data dari server (sudah dipaginasi)
+const pageData = ref([]);
+const totalItems = ref(0);
+const totalPages = ref(0);
+const totalAllItems = ref(0);
+
+// Filter options dari server
+const filterOptionsUmumkan = ref([]);
 
 // Generate dynamic years
 const currentYear = new Date().getFullYear();
@@ -223,18 +233,12 @@ const filterAktif = ref('ALL');
 const filterDelete = ref('ALL');
 const filterUmumkan = ref('ALL');
 
-// Extract unique status_umumkan_rup for dropdown
-const uniqueStatusUmumkan = computed(() => {
-  const statuses = new Set();
-  rawData.value.forEach(item => {
-    if (item.status_umumkan_rup) statuses.add(item.status_umumkan_rup);
-  });
-  return Array.from(statuses).sort();
-});
-
 // Pagination state
 const currentPage = ref(1);
 const itemsPerPage = 10;
+
+// Debounce timer
+let searchTimer = null;
 
 const formatRupiah = (number) => {
   if (!number) return '0';
@@ -248,12 +252,25 @@ const loadData = async (force = false) => {
     const response = await $fetch('/api/data/rup/paket-swakelola', {
       params: { 
         tahun: selectedYear.value,
+        page: currentPage.value,
+        limit: itemsPerPage,
+        search: searchQuery.value || undefined,
+        filterAktif: filterAktif.value !== 'ALL' ? filterAktif.value : undefined,
+        filterDelete: filterDelete.value !== 'ALL' ? filterDelete.value : undefined,
+        filterUmumkan: filterUmumkan.value !== 'ALL' ? filterUmumkan.value : undefined,
         forceRefresh: force ? 'true' : undefined
       }
     });
     
-    rawData.value = response.data || [];
-    currentPage.value = 1; // Reset page on new data
+    pageData.value = response.data || [];
+    totalItems.value = response.meta?.totalItems || 0;
+    totalPages.value = response.meta?.totalPages || 0;
+    totalAllItems.value = response.meta?.totalAllItems || 0;
+
+    // Update filter options dari server
+    if (response.filterOptions?.statusUmumkan) {
+      filterOptionsUmumkan.value = response.filterOptions.statusUmumkan;
+    }
   } catch (err) {
     console.error('Error fetching data:', err);
     error.value = true;
@@ -262,56 +279,26 @@ const loadData = async (force = false) => {
   }
 };
 
-// Computed property for client-side search and filtering
-const filteredData = computed(() => {
-  return rawData.value.filter(item => {
-    // 1. Filter Status Aktif
-    if (filterAktif.value !== 'ALL') {
-      const boolAktif = filterAktif.value === 'true';
-      if (item.status_aktif_rup !== boolAktif) return false;
-    }
-    
-    // 2. Filter Status Delete
-    if (filterDelete.value !== 'ALL') {
-      const boolDelete = filterDelete.value === 'true';
-      if (item.status_delete_rup !== boolDelete) return false;
-    }
+// Ketika filter berubah, reset ke halaman 1 lalu fetch
+const onFilterChange = (forceRefresh = false) => {
+  currentPage.value = 1;
+  loadData(forceRefresh);
+};
 
-    // 3. Filter Status Umumkan
-    if (filterUmumkan.value !== 'ALL') {
-      if (item.status_umumkan_rup !== filterUmumkan.value) return false;
-    }
+// Debounced search — tunggu 400ms setelah user berhenti mengetik
+const onSearchDebounced = () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentPage.value = 1;
+    loadData(false);
+  }, 400);
+};
 
-    // 4. Text Search
-    if (searchQuery.value) {
-      const query = searchQuery.value.toLowerCase();
-      const matchSearch = (
-        (item.nama_paket && item.nama_paket.toLowerCase().includes(query)) ||
-        (item.nama_satker && item.nama_satker.toLowerCase().includes(query)) ||
-        (item.nama_satker_penyelenggara && item.nama_satker_penyelenggara.toLowerCase().includes(query)) ||
-        (item.nama_klpd_penyelenggara && item.nama_klpd_penyelenggara.toLowerCase().includes(query)) ||
-        (item.nama_ppk && item.nama_ppk.toLowerCase().includes(query)) ||
-        (item.kd_rup && item.kd_rup.toString().includes(query)) ||
-        (item.nip_ppk && item.nip_ppk.toString().includes(query))
-      );
-      if (!matchSearch) return false;
-    }
-
-    return true;
-  });
-});
-
-// Computed property for current page data
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return filteredData.value.slice(start, end);
-});
-
-// Total pages calculation
-const totalPages = computed(() => {
-  return Math.ceil(filteredData.value.length / itemsPerPage);
-});
+// Navigasi halaman
+const goToPage = (page) => {
+  currentPage.value = page;
+  loadData(false);
+};
 
 // Initial load
 onMounted(() => {

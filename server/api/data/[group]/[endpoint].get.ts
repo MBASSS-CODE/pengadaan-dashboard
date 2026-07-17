@@ -24,6 +24,8 @@ export default defineEventHandler(async (event) => {
   const filterAktif = query.filterAktif as string;
   const filterDelete = query.filterDelete as string;
   const filterUmumkan = query.filterUmumkan as string;
+  const filterDate = query.filterDate as string;
+  const filterJenisRevisi = query.filterJenisRevisi as string;
 
   // Pisahkan extra parameters yang bukan pagination/filter (untuk diteruskan ke API eksternal)
   const forceRefresh = query.forceRefresh === 'true';
@@ -36,6 +38,8 @@ export default defineEventHandler(async (event) => {
   delete extraParams.filterAktif;
   delete extraParams.filterDelete;
   delete extraParams.filterUmumkan;
+  delete extraParams.filterDate;
+  delete extraParams.filterJenisRevisi;
 
   try {
     const allData: any[] = await getEndpointData(group, endpoint, tahun, extraParams, forceRefresh);
@@ -60,18 +64,32 @@ export default defineEventHandler(async (event) => {
       filtered = filtered.filter((item: any) => item.status_umumkan_rup === filterUmumkan);
     }
 
-    // Search: multi-field text search
+    // Filter: filterDate (khusus kaji ulang)
+    if (filterDate) {
+      filtered = filtered.filter((item: any) => {
+        if (!item.tgl_kaji_ulang) return false;
+        return item.tgl_kaji_ulang.startsWith(filterDate);
+      });
+    }
+
+    // Filter: filterJenisRevisi (khusus kaji ulang)
+    if (filterJenisRevisi) {
+      filtered = filtered.filter((item: any) => {
+        if (!item.jenis_revisi) return false;
+        return item.jenis_revisi.toUpperCase() === filterJenisRevisi.toUpperCase();
+      });
+    }
+
+    // Search: dynamic multi-field text search (works for any endpoint)
     if (search) {
       filtered = filtered.filter((item: any) => {
-        return (
-          (item.nama_paket && item.nama_paket.toLowerCase().includes(search)) ||
-          (item.nama_satker && item.nama_satker.toLowerCase().includes(search)) ||
-          (item.nama_satker_penyelenggara && item.nama_satker_penyelenggara.toLowerCase().includes(search)) ||
-          (item.nama_klpd_penyelenggara && item.nama_klpd_penyelenggara.toLowerCase().includes(search)) ||
-          (item.nama_ppk && item.nama_ppk.toLowerCase().includes(search)) ||
-          (item.kd_rup && item.kd_rup.toString().includes(search)) ||
-          (item.nip_ppk && item.nip_ppk.toString().includes(search))
-        );
+        // Cek semua key di dalam object item
+        return Object.values(item).some(val => {
+          if (val && (typeof val === 'string' || typeof val === 'number')) {
+            return val.toString().toLowerCase().includes(search);
+          }
+          return false;
+        });
       });
     }
 
