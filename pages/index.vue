@@ -27,26 +27,31 @@
     <!-- Data Loaded -->
     <div v-else>
       <!-- Summary Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
+        <div class="card bg-info-light">
+          <h3>Total Belanja Pengadaan</h3>
+          <div class="value">{{ formatCurrency(dashboardData.belanja_barang_jasa) }}</div>
+          <div class="label">Total Pengadaan (Barang & Jasa)</div>
+        </div>
         <div class="card bg-primary-light">
           <h3>Total Nilai Perencanaan</h3>
           <div class="value">{{ formatCurrency(dashboardData.total_nilai_perencanaan) }}</div>
-          <div class="label">Total RUP: {{ dashboardData.total_rup }}</div>
+          <div class="label">Total RUP: {{ dashboardData.total_rup || 0 }} Paket</div>
         </div>
         <div class="card bg-secondary-light">
           <h3>Total Nilai Realisasi</h3>
           <div class="value">{{ formatCurrency(dashboardData.total_nilai_realisasi) }}</div>
-          <div class="label">Total Realisasi: {{ dashboardData.total_realisasi }}</div>
+          <div class="label">Total Realisasi: {{ dashboardData.total_realisasi || 0 }} Paket</div>
         </div>
         <div class="card bg-success-light">
           <h3>Total Realisasi PDN</h3>
           <div class="value">{{ formatCurrency(dashboardData.total_nilai_realisasi_pdn) }}</div>
-          <div class="label">Paket PDN: {{ dashboardData.total_pdn }}</div>
+          <div class="label">Rencana: {{ formatCurrency(dashboardData.total_pdn) }} ({{ dashboardData.pdn || 0 }} Paket)</div>
         </div>
         <div class="card bg-warning-light">
           <h3>Total Realisasi UMKK</h3>
           <div class="value">{{ formatCurrency(dashboardData.total_nilai_realisasi_umkk) }}</div>
-          <div class="label">Paket UMKK: {{ dashboardData.total_umkk }}</div>
+          <div class="label">Rencana: {{ formatCurrency(dashboardData.total_umkk) }} ({{ dashboardData.umkk || 0 }} Paket)</div>
         </div>
       </div>
 
@@ -199,7 +204,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
           <div class="chart-card lg:col-span-2">
-            <h3 class="chart-title">Realisasi Jenis Pengadaan (Penyedia) - Nilai</h3>
+            <h3 class="chart-title">Realisasi Jenis Pengadaan (Penyedia)</h3>
             <div class="chart-wrapper pie-wrapper">
               <Pie :data="realisasiJenisPengadaanChartData" :options="pieOptions" />
             </div>
@@ -288,7 +293,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
           <div class="chart-card lg:col-span-2">
-            <h3 class="chart-title">Metode Pemilihan (Penyedia) - Nilai</h3>
+            <h3 class="chart-title">Metode Pemilihan (Penyedia)</h3>
             <div class="chart-wrapper pie-wrapper">
               <Pie :data="perencanaanMetodePieData" :options="pieOptions" />
             </div>
@@ -328,7 +333,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
           <div class="chart-card lg:col-span-2">
-            <h3 class="chart-title">Jenis Pengadaan (Penyedia) - Nilai</h3>
+            <h3 class="chart-title">Jenis Pengadaan (Penyedia)</h3>
             <div class="chart-wrapper pie-wrapper">
               <Pie :data="perencanaanJenisPieData" :options="pieOptions" />
             </div>
@@ -362,6 +367,21 @@
                   </tr>
                 </tfoot>
               </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="chart-card">
+            <h3 class="chart-title">Proporsi Jumlah Paket PDN vs Impor</h3>
+            <div class="chart-wrapper doughnut-wrapper">
+              <Doughnut :data="perencanaanPDNDoughnutData" :options="doughnutOptions" />
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">Proporsi Jumlah Paket UMKK vs Non-UMKK</h3>
+            <div class="chart-wrapper doughnut-wrapper">
+              <Doughnut :data="perencanaanUMKKDoughnutData" :options="doughnutOptions" />
             </div>
           </div>
         </div>
@@ -758,6 +778,28 @@ const perencanaanJenisPieData = computed(() => {
         d.perencanaan_total_barang || 0,
         d.perencanaan_total_terintegrasi || 0
       ]
+    }]
+  };
+});
+
+const perencanaanPDNDoughnutData = computed(() => {
+  const d = dashboardData.value;
+  return {
+    labels: ['PDN', 'Non-PDN (Impor)'],
+    datasets: [{
+      backgroundColor: ['#4DD0E1', '#B0BEC5'],
+      data: [d.pdn || 0, d.non_pdn || 0]
+    }]
+  };
+});
+
+const perencanaanUMKKDoughnutData = computed(() => {
+  const d = dashboardData.value;
+  return {
+    labels: ['UMKK', 'Non-UMKK'],
+    datasets: [{
+      backgroundColor: ['#BA68C8', '#B0BEC5'],
+      data: [d.umkk || 0, d.non_umkk || 0]
     }]
   };
 });
