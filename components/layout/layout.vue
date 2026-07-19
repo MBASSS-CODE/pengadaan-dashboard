@@ -113,11 +113,11 @@
             <div class="sidebar-footer">
                 <div class="user-profile">
                     <div class="avatar">
-                        <span>A</span>
+                        <span>{{ displayAvatar }}</span>
                     </div>
                     <div class="user-info">
-                        <span class="user-name">Admin</span>
-                        <span class="user-role">Administrator</span>
+                        <span class="user-name">{{ displayUserName }}</span>
+                        <span class="user-role">{{ displayUserRole }}</span>
                     </div>
                     <button class="logout-btn" title="Logout" @click="handleLogout">
                         <svg xmlns="http://www.w3.org/2000/svg" class="logout-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -162,7 +162,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -170,6 +170,20 @@ const isMobile = ref(false);
 const isSidebarOpen = ref(true);
 const { toggleDarkMode, isDark } = useTheme();
 const userRole = useCookie('user_role');
+const userName = useCookie('user_name');
+
+const displayUserName = computed(() => {
+    if (userName.value) return userName.value;
+    return userRole.value === 'admin' ? 'Admin' : 'User';
+});
+
+const displayAvatar = computed(() => {
+    return displayUserName.value.charAt(0).toUpperCase();
+});
+
+const displayUserRole = computed(() => {
+    return userRole.value === 'admin' ? 'Administrator' : 'Standard User';
+});
 
 const { data: endpointConfig } = useAsyncData('endpoints-config', () => $fetch('/api/admin/endpoints-config'));
 
@@ -219,8 +233,10 @@ const handleLogout = async () => {
     try {
         const isLoggedIn = useCookie('is_logged_in');
         const roleCookie = useCookie('user_role');
+        const nameCookie = useCookie('user_name');
         isLoggedIn.value = null; // Hapus cookie
         roleCookie.value = null;
+        nameCookie.value = null;
         // Optional: Call the backend logout API if it exists
         // await $fetch('/api/auth/logout', { method: 'POST' });
     } catch (error) {
