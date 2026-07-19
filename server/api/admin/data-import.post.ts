@@ -1,6 +1,7 @@
 import AdmZip from 'adm-zip';
 import path from 'path';
 import fs from 'fs';
+import { invalidatePpkCache } from '../../utils/ppkManager';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -28,6 +29,9 @@ export default defineEventHandler(async (event) => {
 
     // Ekstrak isi ZIP dan timpa (overwrite) isi lama
     zip.extractAllTo(dataDir, true);
+
+    // Invalidate caches so the app reads fresh data from files
+    invalidatePpkCache();
 
     return {
       success: true,
