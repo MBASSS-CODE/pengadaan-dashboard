@@ -82,6 +82,8 @@ const handleLogin = async () => {
       isLoggedIn.value = 'true';
       const userRole = useCookie('user_role');
       userRole.value = response.user.role;
+      const userName = useCookie('user_name');
+      userName.value = response.user.username;
       router.push('/');
     }
   } catch (error) {

@@ -18,6 +18,8 @@ export default defineEventHandler(async (event) => {
   const filterRupMatch = query.filterRupMatch as string;
   const filterPpkComplete = query.filterPpkComplete as string;
   const filterNamaPpk = query.filterNamaPpk as string;
+  const filterStatusNontender = query.filterStatusNontender as string;
+  const filterSatker = query.filterSatker as string;
 
   try {
     const allData = await getMergedData(tahun);
@@ -53,6 +55,14 @@ export default defineEventHandler(async (event) => {
       filtered = filtered.filter((item: any) => item.ppk_nama_lengkap === filterNamaPpk);
     }
 
+    if (filterStatusNontender && filterStatusNontender !== 'ALL') {
+      filtered = filtered.filter((item: any) => item.status_nontender === filterStatusNontender);
+    }
+    
+    if (filterSatker && filterSatker !== 'ALL') {
+      filtered = filtered.filter((item: any) => item.nama_satker === filterSatker);
+    }
+
     // Search: dynamic multi-field text search
     if (search) {
       filtered = filtered.filter((item: any) => {
@@ -68,6 +78,8 @@ export default defineEventHandler(async (event) => {
     // ─── Extract unique filter options ─
     const uniqueMetode = [...new Set(allData.map((item: any) => item.mtd_pemilihan).filter(Boolean))].sort();
     const uniqueNamaPpk = [...new Set(allData.map((item: any) => item.ppk_nama_lengkap).filter(Boolean))].sort();
+    const uniqueStatusNontender = [...new Set(allData.map((item: any) => item.status_nontender).filter(Boolean))].sort();
+    const uniqueSatker = [...new Set(allData.map((item: any) => item.nama_satker).filter(Boolean))].sort();
 
     // ─── Pagination ──────────────────────────────────────────────────────
     const totalFiltered = filtered.length;
@@ -87,7 +99,9 @@ export default defineEventHandler(async (event) => {
       },
       filterOptions: {
         metodePemilihan: uniqueMetode,
-        namaPpk: uniqueNamaPpk
+        namaPpk: uniqueNamaPpk,
+        statusNontender: uniqueStatusNontender,
+        satker: uniqueSatker
       }
     };
   } catch (error: any) {

@@ -27,26 +27,31 @@
     <!-- Data Loaded -->
     <div v-else>
       <!-- Summary Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
+        <div class="card bg-info-light">
+          <h3>Total Belanja Pengadaan</h3>
+          <div class="value">{{ formatCurrency(dashboardData.belanja_barang_jasa) }}</div>
+          <div class="label">Total Pengadaan (Barang & Jasa)</div>
+        </div>
         <div class="card bg-primary-light">
           <h3>Total Nilai Perencanaan</h3>
           <div class="value">{{ formatCurrency(dashboardData.total_nilai_perencanaan) }}</div>
-          <div class="label">Total RUP: {{ dashboardData.total_rup }}</div>
+          <div class="label">Total RUP: {{ dashboardData.total_rup || 0 }} Paket</div>
         </div>
         <div class="card bg-secondary-light">
           <h3>Total Nilai Realisasi</h3>
           <div class="value">{{ formatCurrency(dashboardData.total_nilai_realisasi) }}</div>
-          <div class="label">Total Realisasi: {{ dashboardData.total_realisasi }}</div>
+          <div class="label">Total Realisasi: {{ dashboardData.total_realisasi || 0 }} Paket</div>
         </div>
         <div class="card bg-success-light">
           <h3>Total Realisasi PDN</h3>
           <div class="value">{{ formatCurrency(dashboardData.total_nilai_realisasi_pdn) }}</div>
-          <div class="label">Paket PDN: {{ dashboardData.total_pdn }}</div>
+          <div class="label">Rencana: {{ formatCurrency(dashboardData.total_pdn) }} ({{ dashboardData.pdn || 0 }} Paket)</div>
         </div>
         <div class="card bg-warning-light">
           <h3>Total Realisasi UMKK</h3>
           <div class="value">{{ formatCurrency(dashboardData.total_nilai_realisasi_umkk) }}</div>
-          <div class="label">Paket UMKK: {{ dashboardData.total_umkk }}</div>
+          <div class="label">Rencana: {{ formatCurrency(dashboardData.total_umkk) }} ({{ dashboardData.umkk || 0 }} Paket)</div>
         </div>
       </div>
 
@@ -112,9 +117,7 @@
                   </div>
                 </div>
               </div>
-              <div class="progress-footer">
-                {{ metric.footerText }}
-              </div>
+              <div class="progress-footer" v-html="metric.footerText"></div>
             </div>
           </div>
         </div>
@@ -134,6 +137,7 @@
                   <tr>
                     <th>JENIS PROSES</th>
                     <th class="text-right">JUMLAH PAKET</th>
+                    <th class="text-right">% PAGU</th>
                     <th class="text-right">TOTAL PAGU</th>
                   </tr>
                 </thead>
@@ -141,6 +145,7 @@
                   <tr v-for="(item, index) in realisasiRingkasanData" :key="index">
                     <td>{{ item.label }}</td>
                     <td class="text-right">{{ item.count }}</td>
+                    <td class="text-right font-medium text-[color:hsl(var(--maz-primary))]">{{ item.persentase }}</td>
                     <td class="text-right">{{ formatCurrency(item.pagu) }}</td>
                   </tr>
                 </tbody>
@@ -148,6 +153,7 @@
                   <tr class="font-bold">
                     <td>Total</td>
                     <td class="text-right">{{ realisasiRingkasanData.reduce((acc, curr) => acc + curr.count, 0) }}</td>
+                    <td class="text-right">100%</td>
                     <td class="text-right">{{ formatCurrency(realisasiRingkasanData.reduce((acc, curr) => acc + curr.pagu, 0)) }}</td>
                   </tr>
                 </tfoot>
@@ -156,26 +162,82 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
           <div class="chart-card lg:col-span-2">
-            <h3 class="chart-title">Nilai Realisasi Berdasarkan Metode Pelaksanaan</h3>
-            <div class="chart-wrapper">
-              <Bar :data="realisasiMetodeChartData" :options="chartOptions" />
-            </div>
-          </div>
-          <div class="chart-card lg:col-span-1">
             <h3 class="chart-title">Proporsi Jumlah Paket Pelaksanaan</h3>
             <div class="chart-wrapper doughnut-wrapper">
               <Doughnut :data="realisasiMetodeDoughnutData" :options="doughnutOptions" />
             </div>
           </div>
+          <div class="chart-card lg:col-span-3">
+            <h3 class="chart-title">Ringkasan Realisasi Metode Pelaksanaan</h3>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>METODE PELAKSANAAN</th>
+                    <th class="text-right">JUMLAH PAKET</th>
+                    <th class="text-right">% PAGU</th>
+                    <th class="text-right">TOTAL PAGU</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(item, index) in realisasiMetodeTableData" :key="index">
+                    <td>{{ item.label }}</td>
+                    <td class="text-right">{{ item.count }}</td>
+                    <td class="text-right font-medium text-[color:hsl(var(--maz-primary))]">{{ item.persentase }}</td>
+                    <td class="text-right">{{ formatCurrency(item.pagu) }}</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="font-bold">
+                    <td>Total</td>
+                    <td class="text-right">{{ realisasiMetodeTableData.reduce((acc, curr) => acc + curr.count, 0) }}</td>
+                    <td class="text-right">100%</td>
+                    <td class="text-right">{{ formatCurrency(realisasiMetodeTableData.reduce((acc, curr) => acc + curr.pagu, 0)) }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div class="chart-card">
-            <h3 class="chart-title">Realisasi Jenis Pengadaan (Penyedia) - Nilai</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
+          <div class="chart-card lg:col-span-2">
+            <h3 class="chart-title">Realisasi Jenis Pengadaan (Penyedia)</h3>
             <div class="chart-wrapper pie-wrapper">
               <Pie :data="realisasiJenisPengadaanChartData" :options="pieOptions" />
+            </div>
+          </div>
+          <div class="chart-card lg:col-span-3">
+            <h3 class="chart-title">Ringkasan Realisasi Jenis Pengadaan</h3>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>JENIS PENGADAAN</th>
+                    <th class="text-right">JUMLAH PAKET</th>
+                    <th class="text-right">% PAGU</th>
+                    <th class="text-right">TOTAL PAGU</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(item, index) in realisasiJenisPengadaanTableData" :key="index">
+                    <td>{{ item.label }}</td>
+                    <td class="text-right">{{ item.count }}</td>
+                    <td class="text-right font-medium text-[color:hsl(var(--maz-primary))]">{{ item.persentase }}</td>
+                    <td class="text-right">{{ formatCurrency(item.pagu) }}</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="font-bold">
+                    <td>Total</td>
+                    <td class="text-right">{{ realisasiJenisPengadaanTableData.reduce((acc, curr) => acc + curr.count, 0) }}</td>
+                    <td class="text-right">100%</td>
+                    <td class="text-right">{{ formatCurrency(realisasiJenisPengadaanTableData.reduce((acc, curr) => acc + curr.pagu, 0)) }}</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </div>
         </div>
@@ -223,25 +285,103 @@
                   </div>
                 </div>
               </div>
-              <div class="progress-footer" style="margin-top: 0; font-size: 0.75rem;">
-                {{ metric.footerText }}
-              </div>
+              <div class="progress-footer" style="margin-top: 0; font-size: 0.75rem;" v-html="metric.footerText"></div>
               <hr v-if="index < perencanaanProgressMetrics.length - 1" style="border: 0; border-top: 1px dashed hsl(var(--maz-border)); margin-top: 1rem; margin-bottom: 0;" />
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
+          <div class="chart-card lg:col-span-2">
+            <h3 class="chart-title">Metode Pemilihan (Penyedia)</h3>
+            <div class="chart-wrapper pie-wrapper">
+              <Pie :data="perencanaanMetodePieData" :options="pieOptions" />
+            </div>
+          </div>
+          <div class="chart-card lg:col-span-3">
+            <h3 class="chart-title">Ringkasan Metode Pemilihan (Penyedia)</h3>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>METODE PEMILIHAN</th>
+                    <th class="text-right">JUMLAH PAKET</th>
+                    <th class="text-right">% PAGU</th>
+                    <th class="text-right">TOTAL PAGU</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(item, index) in perencanaanMetodeTableData" :key="index">
+                    <td>{{ item.label }}</td>
+                    <td class="text-right">{{ item.count }}</td>
+                    <td class="text-right font-medium text-[color:hsl(var(--maz-primary))]">{{ item.persentase }}</td>
+                    <td class="text-right">{{ formatCurrency(item.pagu) }}</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="font-bold">
+                    <td>Total</td>
+                    <td class="text-right">{{ perencanaanMetodeTableData.reduce((acc, curr) => acc + curr.count, 0) }}</td>
+                    <td class="text-right">100%</td>
+                    <td class="text-right">{{ formatCurrency(perencanaanMetodeTableData.reduce((acc, curr) => acc + curr.pagu, 0)) }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
+          <div class="chart-card lg:col-span-2">
+            <h3 class="chart-title">Jenis Pengadaan (Penyedia)</h3>
+            <div class="chart-wrapper pie-wrapper">
+              <Pie :data="perencanaanJenisPieData" :options="pieOptions" />
+            </div>
+          </div>
+          <div class="chart-card lg:col-span-3">
+            <h3 class="chart-title">Ringkasan Jenis Pengadaan (Penyedia)</h3>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>JENIS PENGADAAN</th>
+                    <th class="text-right">JUMLAH PAKET</th>
+                    <th class="text-right">% PAGU</th>
+                    <th class="text-right">TOTAL PAGU</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(item, index) in perencanaanJenisTableData" :key="index">
+                    <td>{{ item.label }}</td>
+                    <td class="text-right">{{ item.count }}</td>
+                    <td class="text-right font-medium text-[color:hsl(var(--maz-primary))]">{{ item.persentase }}</td>
+                    <td class="text-right">{{ formatCurrency(item.pagu) }}</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="font-bold">
+                    <td>Total</td>
+                    <td class="text-right">{{ perencanaanJenisTableData.reduce((acc, curr) => acc + curr.count, 0) }}</td>
+                    <td class="text-right">100%</td>
+                    <td class="text-right">{{ formatCurrency(perencanaanJenisTableData.reduce((acc, curr) => acc + curr.pagu, 0)) }}</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div class="chart-card">
-            <h3 class="chart-title">Metode Pemilihan (Penyedia) - Nilai</h3>
-            <div class="chart-wrapper pie-wrapper">
-              <Pie :data="perencanaanMetodePieData" :options="pieOptions" />
+            <h3 class="chart-title">Proporsi Jumlah Paket PDN vs Impor</h3>
+            <div class="chart-wrapper doughnut-wrapper">
+              <Doughnut :data="perencanaanPDNDoughnutData" :options="doughnutOptions" />
             </div>
           </div>
           <div class="chart-card">
-            <h3 class="chart-title">Jenis Pengadaan (Penyedia) - Nilai</h3>
-            <div class="chart-wrapper pie-wrapper">
-              <Pie :data="perencanaanJenisPieData" :options="pieOptions" />
+            <h3 class="chart-title">Proporsi Jumlah Paket UMKK vs Non-UMKK</h3>
+            <div class="chart-wrapper doughnut-wrapper">
+              <Doughnut :data="perencanaanUMKKDoughnutData" :options="doughnutOptions" />
             </div>
           </div>
         </div>
@@ -339,11 +479,11 @@ const progressMetrics = computed(() => {
     
     let footerText = '';
     if (footerFormat === 'realisasi_first') {
-       footerText = `Realisasi: Rp ${fRealisasi} | Perencanaan: Rp ${fPerencanaan}`;
+       footerText = `Perencanaan: ${fPerencanaan} <br/> Realisasi: <span class="text-emerald-600">${fRealisasi}</span>`;
     } else if (footerFormat === 'umkk') {
-       footerText = `Total Nilai Perencanaan UMKK: Rp ${fPerencanaan} | Total Nilai Realisasi UMKK: Rp ${fRealisasi}`;
+       footerText = `Total Nilai Perencanaan UMKK: ${fPerencanaan}<br/>Total Nilai Realisasi UMKK: <span class="text-emerald-600">${fRealisasi}</span>`;
     } else if (footerFormat === 'pdn') {
-       footerText = `Total Nilai Perencanaan PDN: Rp ${fPerencanaan} | Total Nilai Realisasi PDN: Rp ${fRealisasi}`;
+       footerText = `Total Nilai Perencanaan PDN: ${fPerencanaan}<br/>Total Nilai Realisasi PDN: <span class="text-emerald-600">${fRealisasi}</span>`;
     }
 
     return { title, label, realisasi, perencanaan, percent, footerText };
@@ -355,6 +495,26 @@ const progressMetrics = computed(() => {
     createMetric('% Capaian Realisasi UMKK terhadap Rencana UMKK', 'Total Nilai\nRealisasi\nUMKK', d.total_nilai_realisasi_umkk || 0, d.total_umkk || 0, 'umkk'),
     createMetric('% Capaian Realisasi PDN terhadap Rencana PDN', 'Total Nilai\nRealisasi\nPDN', d.total_nilai_realisasi_pdn || 0, d.total_pdn || 0, 'pdn')
   ];
+});
+
+const realisasiMetodeTableData = computed(() => {
+  const d = dashboardData.value;
+  const data = [
+    { label: 'E-Purchasing', count: d.pelaksanaan_epurchasing || 0, pagu: d.pelaksanaan_total_epurchasing || 0 },
+    { label: 'Jasa Konsultasi', count: d.pelaksanaan_jasa_konsultasi || 0, pagu: d.pelaksanaan_total_jasa_konsultasi || 0 },
+    { label: 'Jasa Lainnya', count: d.pelaksanaan_jasa_lainnya || 0, pagu: d.pelaksanaan_total_jasa_lainnya || 0 },
+    { label: 'Langsung', count: d.pelaksanaan_langsung || 0, pagu: d.pelaksanaan_total_langsung || 0 },
+    { label: 'Seleksi', count: d.pelaksanaan_seleksi || 0, pagu: d.pelaksanaan_total_seleksi || 0 }
+  ];
+  
+  // Sort descending by pagu
+  data.sort((a, b) => b.pagu - a.pagu);
+  
+  const totalPagu = data.reduce((acc, curr) => acc + curr.pagu, 0);
+  return data.map(item => ({
+    ...item,
+    persentase: totalPagu > 0 ? ((item.pagu / totalPagu) * 100).toFixed(2) + '%' : '0.00%'
+  }));
 });
 
 const realisasiMetodeChartData = computed(() => {
@@ -420,13 +580,22 @@ const realisasiRingkasanData = computed(() => {
   const epurchasingCount = d.pelaksanaan_epurchasing || 0;
   const epurchasingPagu = d.pelaksanaan_total_epurchasing || 0;
   
-  return [
+  const data = [
     { label: 'Tender', count: tenderCount, pagu: tenderPagu },
     { label: 'Non-Tender', count: nonTenderCount, pagu: nonTenderPagu },
     { label: 'Pencatatan Non-Tender', count: pencatatanNonTenderCount, pagu: pencatatanNonTenderPagu },
     { label: 'Pencatatan Swakelola', count: swakelolaCount, pagu: swakelolaPagu },
     { label: 'E-Katalog/E-Purchasing', count: epurchasingCount, pagu: epurchasingPagu }
   ];
+  
+  // Sort descending by pagu
+  data.sort((a, b) => b.pagu - a.pagu);
+  
+  const totalPagu = data.reduce((acc, curr) => acc + curr.pagu, 0);
+  return data.map(item => ({
+    ...item,
+    persentase: totalPagu > 0 ? ((item.pagu / totalPagu) * 100).toFixed(2) + '%' : '0.00%'
+  }));
 });
 
 const realisasiPaguDoughnutData = computed(() => {
@@ -446,6 +615,25 @@ const realisasiPaguDoughnutData = computed(() => {
       }
     ]
   };
+});
+
+const realisasiJenisPengadaanTableData = computed(() => {
+  const d = dashboardData.value;
+  const data = [
+    { label: 'Jasa Konsultansi', count: d.pelaksanaan_jasa_konsultasi || 0, pagu: d.pelaksanaan_total_jasa_konsultasi || 0 },
+    { label: 'Jasa Lainnya', count: d.pelaksanaan_jasa_lainnya || 0, pagu: d.pelaksanaan_total_jasa_lainnya || 0 },
+    { label: 'Pekerjaan Konstruksi', count: d.pelaksanaan_pekerjaan_konstruksi || 0, pagu: d.pelaksanaan_total_pekerjaan_konstruksi || 0 },
+    { label: 'Pengadaan Barang', count: d.pelaksanaan_barang || 0, pagu: d.pelaksanaan_total_barang || 0 }
+  ];
+  
+  // Sort descending by pagu
+  data.sort((a, b) => b.pagu - a.pagu);
+  
+  const totalPagu = data.reduce((acc, curr) => acc + curr.pagu, 0);
+  return data.map(item => ({
+    ...item,
+    persentase: totalPagu > 0 ? ((item.pagu / totalPagu) * 100).toFixed(2) + '%' : '0.00%'
+  }));
 });
 
 const realisasiJenisPengadaanChartData = computed(() => {
@@ -509,7 +697,7 @@ const perencanaanProgressMetrics = computed(() => {
       labelLeft,
       labelRight,
       percent: percentLeft,
-      footerText: `${labelLeft}: ${formatCurrency(valLeft)} | ${labelRight}: ${formatCurrency(valRight)}`
+      footerText: `${labelLeft}: ${formatCurrency(valLeft)}<br/>${labelRight}: ${formatCurrency(valRight)}`
     };
   };
 
@@ -518,6 +706,26 @@ const perencanaanProgressMetrics = computed(() => {
     createComparison('PDN/Impor', 'PDN', 'Impor', d.total_pdn || 0, d.total_non_pdn || 0),
     createComparison('UMKK/Non UMKK', 'UMKK', 'Non UMKK', d.total_umkk || 0, d.total_non_umkk || 0)
   ];
+});
+
+const perencanaanMetodeTableData = computed(() => {
+  const d = dashboardData.value;
+  const data = [
+    { label: 'Dikecualikan', count: d.perencanaan_dikecualikan || 0, pagu: d.perencanaan_total_dikecualikan || 0 },
+    { label: 'E-Purchasing', count: d.perencanaan_epurchasing || 0, pagu: d.perencanaan_total_epurchasing || 0 },
+    { label: 'Lainnya', count: d.perencanaan_lainnya || 0, pagu: d.perencanaan_total_lainnya || 0 },
+    { label: 'Pengadaan Langsung', count: d.perencanaan_langsung || 0, pagu: d.perencanaan_total_langsung || 0 },
+    { label: 'Penunjukan Langsung', count: d.perencanaan_penunjukan || 0, pagu: d.perencanaan_total_penunjukan || 0 },
+    { label: 'Tender/Tender Cepat/Seleksi', count: (d.perencanaan_tender || 0) + (d.perencanaan_tender_cepat || 0) + (d.perencanaan_seleksi || 0), pagu: (d.perencanaan_total_tender || 0) + (d.perencanaan_total_tender_cepat || 0) + (d.perencanaan_total_seleksi || 0) }
+  ];
+  
+  data.sort((a, b) => b.pagu - a.pagu);
+  
+  const totalPagu = data.reduce((acc, curr) => acc + curr.pagu, 0);
+  return data.map(item => ({
+    ...item,
+    persentase: totalPagu > 0 ? ((item.pagu / totalPagu) * 100).toFixed(2) + '%' : '0.00%'
+  }));
 });
 
 const perencanaanMetodePieData = computed(() => {
@@ -538,6 +746,25 @@ const perencanaanMetodePieData = computed(() => {
   };
 });
 
+const perencanaanJenisTableData = computed(() => {
+  const d = dashboardData.value;
+  const data = [
+    { label: 'Jasa Konsultansi', count: d.perencanaan_jasa_konsultasi || 0, pagu: d.perencanaan_total_jasa_konsultasi || 0 },
+    { label: 'Jasa Lainnya', count: d.perencanaan_jasa_lainnya || 0, pagu: d.perencanaan_total_jasa_lainnya || 0 },
+    { label: 'Pekerjaan Konstruksi', count: d.perencanaan_pekerjaan_konstruksi || 0, pagu: d.perencanaan_total_pekerjaan_konstruksi || 0 },
+    { label: 'Pengadaan Barang', count: d.perencanaan_barang || 0, pagu: d.perencanaan_total_barang || 0 },
+    { label: 'Terintegrasi', count: d.perencanaan_terintegrasi || 0, pagu: d.perencanaan_total_terintegrasi || 0 }
+  ];
+  
+  data.sort((a, b) => b.pagu - a.pagu);
+  
+  const totalPagu = data.reduce((acc, curr) => acc + curr.pagu, 0);
+  return data.map(item => ({
+    ...item,
+    persentase: totalPagu > 0 ? ((item.pagu / totalPagu) * 100).toFixed(2) + '%' : '0.00%'
+  }));
+});
+
 const perencanaanJenisPieData = computed(() => {
   const d = dashboardData.value;
   return {
@@ -551,6 +778,28 @@ const perencanaanJenisPieData = computed(() => {
         d.perencanaan_total_barang || 0,
         d.perencanaan_total_terintegrasi || 0
       ]
+    }]
+  };
+});
+
+const perencanaanPDNDoughnutData = computed(() => {
+  const d = dashboardData.value;
+  return {
+    labels: ['PDN', 'Non-PDN (Impor)'],
+    datasets: [{
+      backgroundColor: ['#4DD0E1', '#B0BEC5'],
+      data: [d.pdn || 0, d.non_pdn || 0]
+    }]
+  };
+});
+
+const perencanaanUMKKDoughnutData = computed(() => {
+  const d = dashboardData.value;
+  return {
+    labels: ['UMKK', 'Non-UMKK'],
+    datasets: [{
+      backgroundColor: ['#BA68C8', '#B0BEC5'],
+      data: [d.umkk || 0, d.non_umkk || 0]
     }]
   };
 });

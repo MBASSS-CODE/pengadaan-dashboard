@@ -40,7 +40,8 @@
     <div v-else class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm overflow-hidden">
       
       <!-- Search/Filter Bar -->
-      <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 items-end">
+      <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col gap-4">
+        <!-- Search Row -->
         <div class="w-full">
           <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Pencarian</label>
           <MazInput 
@@ -57,38 +58,37 @@
           </MazInput>
         </div>
 
-        <div class="w-full">
-          <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Nama PPK</label>
-          <select v-model="filterNamaPpk" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange()">
-            <option value="ALL">Semua PPK</option>
-            <option v-for="opt in filterOptions.namaPpk" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
-        </div>
+        <!-- Filters Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 items-end">
+          <div class="w-full">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status (Inaproc)</label>
+            <MazSelect v-model="filterStatusNontender" :options="statusOptions" size="sm" @update:model-value="onFilterChange" />
+          </div>
+          
+          <div class="w-full">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Metode</label>
+            <MazSelect v-model="filterMetode" :options="metodeOptions" size="sm" @update:model-value="onFilterChange" />
+          </div>
 
-        <div class="w-full">
-          <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Metode</label>
-          <select v-model="filterMetode" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange()">
-            <option value="ALL">Semua Metode</option>
-            <option v-for="opt in filterOptions.metodePemilihan" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
-        </div>
-        
-        <div class="w-full">
-          <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status RUP</label>
-          <select v-model="filterRupMatch" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange()">
-            <option value="ALL">Semua</option>
-            <option value="true">RUP Ditemukan</option>
-            <option value="false">RUP Tidak Ditemukan</option>
-          </select>
-        </div>
+          <div class="w-full">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Satuan Kerja</label>
+            <MazSelect v-model="filterSatker" :options="satkerOptions" size="sm" search @update:model-value="onFilterChange" />
+          </div>
+          
+          <div class="w-full">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Nama PPK</label>
+            <MazSelect v-model="filterNamaPpk" :options="ppkOptions" size="sm" search @update:model-value="onFilterChange" />
+          </div>
+          
+          <div class="w-full">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status RUP</label>
+            <MazSelect v-model="filterRupMatch" :options="rupMatchOptions" size="sm" @update:model-value="onFilterChange" />
+          </div>
 
-        <div class="w-full">
-          <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status PPK</label>
-          <select v-model="filterPpkComplete" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange()">
-            <option value="ALL">Semua</option>
-            <option value="true">PPK Lengkap</option>
-            <option value="false">PPK Belum Lengkap</option>
-          </select>
+          <div class="w-full">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status PPK</label>
+            <MazSelect v-model="filterPpkComplete" :options="ppkCompleteOptions" size="sm" @update:model-value="onFilterChange" />
+          </div>
         </div>
       </div>
 
@@ -245,7 +245,6 @@ const pageData = ref([]);
 const totalItems = ref(0);
 const totalPages = ref(0);
 const totalAllItems = ref(0);
-const filterOptions = ref({ metodePemilihan: [], namaPpk: [] });
 
 // Generate dynamic years
 const currentYear = new Date().getFullYear();
@@ -258,10 +257,28 @@ const selectedYear = ref(currentYear.toString());
 const searchQuery = ref('');
 
 // Filters
+const filterStatusNontender = ref('ALL');
 const filterMetode = ref('ALL');
+const filterSatker = ref('ALL');
+const filterNamaPpk = ref('ALL');
 const filterRupMatch = ref('ALL');
 const filterPpkComplete = ref('ALL');
-const filterNamaPpk = ref('ALL');
+
+// Option lists
+const statusOptions = ref([{ label: 'Semua Status', value: 'ALL' }]);
+const metodeOptions = ref([{ label: 'Semua Metode', value: 'ALL' }]);
+const satkerOptions = ref([{ label: 'Semua Satker', value: 'ALL' }]);
+const ppkOptions = ref([{ label: 'Semua PPK', value: 'ALL' }]);
+const rupMatchOptions = ref([
+  { label: 'Semua Status', value: 'ALL' },
+  { label: 'Ditemukan di RUP', value: 'true' },
+  { label: 'Tidak Ditemukan', value: 'false' }
+]);
+const ppkCompleteOptions = ref([
+  { label: 'Semua Status', value: 'ALL' },
+  { label: 'PPK Lengkap', value: 'true' },
+  { label: 'PPK Belum Lengkap', value: 'false' }
+]);
 
 // Pagination state
 const currentPage = ref(1);
@@ -291,10 +308,12 @@ const loadData = async () => {
         page: currentPage.value,
         limit: itemsPerPage.value,
         search: searchQuery.value || undefined,
-        filterMetode: filterMetode.value,
-        filterRupMatch: filterRupMatch.value,
-        filterPpkComplete: filterPpkComplete.value,
-        filterNamaPpk: filterNamaPpk.value
+        filterStatusNontender: filterStatusNontender.value !== 'ALL' ? filterStatusNontender.value : undefined,
+        filterMetode: filterMetode.value !== 'ALL' ? filterMetode.value : undefined,
+        filterSatker: filterSatker.value !== 'ALL' ? filterSatker.value : undefined,
+        filterNamaPpk: filterNamaPpk.value !== 'ALL' ? filterNamaPpk.value : undefined,
+        filterRupMatch: filterRupMatch.value !== 'ALL' ? filterRupMatch.value : undefined,
+        filterPpkComplete: filterPpkComplete.value !== 'ALL' ? filterPpkComplete.value : undefined,
       }
     });
     
@@ -305,7 +324,30 @@ const loadData = async () => {
     totalAllItems.value = response.meta?.totalAllItems || 0;
     
     if (response.filterOptions) {
-      filterOptions.value = response.filterOptions;
+      if (response.filterOptions.statusNontender) {
+        statusOptions.value = [
+          { label: 'Semua Status', value: 'ALL' },
+          ...response.filterOptions.statusNontender.map(opt => ({ label: opt, value: opt }))
+        ];
+      }
+      if (response.filterOptions.metodePemilihan) {
+        metodeOptions.value = [
+          { label: 'Semua Metode', value: 'ALL' },
+          ...response.filterOptions.metodePemilihan.map(opt => ({ label: opt, value: opt }))
+        ];
+      }
+      if (response.filterOptions.satker) {
+        satkerOptions.value = [
+          { label: 'Semua Satker', value: 'ALL' },
+          ...response.filterOptions.satker.map(opt => ({ label: opt, value: opt }))
+        ];
+      }
+      if (response.filterOptions.namaPpk) {
+        ppkOptions.value = [
+          { label: 'Semua PPK', value: 'ALL' },
+          ...response.filterOptions.namaPpk.map(opt => ({ label: opt, value: opt }))
+        ];
+      }
     }
   } catch (err) {
     console.error('Error fetching data:', err);

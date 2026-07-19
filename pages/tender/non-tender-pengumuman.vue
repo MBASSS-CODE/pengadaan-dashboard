@@ -27,11 +27,11 @@
       
       <!-- Search/Filter Bar -->
       <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col lg:flex-row gap-4 items-end">
-        <div class="w-full">
+        <div class="w-full lg:w-1/4">
           <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Pencarian</label>
           <MazInput 
             v-model="searchQuery" 
-            placeholder="Cari paket, satker, kode RUP..." 
+            placeholder="Cari paket, satker..." 
             size="sm"
             @update:model-value="onSearchDebounced"
           >
@@ -41,6 +41,37 @@
               </svg>
             </template>
           </MazInput>
+        </div>
+        
+        <div class="w-full lg:w-1/4">
+          <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status</label>
+          <MazSelect
+            v-model="selectedStatus"
+            :options="statusOptions"
+            size="sm"
+            @update:model-value="onFilterChange(false)"
+          />
+        </div>
+        
+        <div class="w-full lg:w-1/4">
+          <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Metode Pengadaan</label>
+          <MazSelect
+            v-model="selectedMetode"
+            :options="metodeOptions"
+            size="sm"
+            @update:model-value="onFilterChange(false)"
+          />
+        </div>
+        
+        <div class="w-full lg:w-1/4">
+          <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Satuan Kerja</label>
+          <MazSelect
+            v-model="selectedSatker"
+            :options="satkerOptions"
+            size="sm"
+            search
+            @update:model-value="onFilterChange(false)"
+          />
         </div>
       </div>
 
@@ -164,6 +195,13 @@ const availableYears = [
 ];
 const selectedYear = ref(currentYear.toString());
 const searchQuery = ref('');
+const selectedStatus = ref('ALL');
+const selectedMetode = ref('ALL');
+const selectedSatker = ref('ALL');
+
+const statusOptions = ref([{ label: 'Semua Status', value: 'ALL' }]);
+const metodeOptions = ref([{ label: 'Semua Metode', value: 'ALL' }]);
+const satkerOptions = ref([{ label: 'Semua Satker', value: 'ALL' }]);
 
 // Pagination state
 const currentPage = ref(1);
@@ -203,6 +241,9 @@ const loadData = async (force = false) => {
         page: currentPage.value,
         limit: itemsPerPage.value,
         search: searchQuery.value || undefined,
+        filterStatusNontender: selectedStatus.value !== 'ALL' ? selectedStatus.value : undefined,
+        filterMtdPemilihan: selectedMetode.value !== 'ALL' ? selectedMetode.value : undefined,
+        filterSatker: selectedSatker.value !== 'ALL' ? selectedSatker.value : undefined,
         forceRefresh: force ? 'true' : undefined
       }
     });
@@ -212,6 +253,27 @@ const loadData = async (force = false) => {
     totalItems.value = response.meta?.totalItems || 0;
     totalPages.value = response.meta?.totalPages || 0;
     totalAllItems.value = response.meta?.totalAllItems || 0;
+    
+    if (response.filterOptions) {
+      if (response.filterOptions.statusNontender) {
+        statusOptions.value = [
+          { label: 'Semua Status', value: 'ALL' },
+          ...response.filterOptions.statusNontender.map(opt => ({ label: opt, value: opt }))
+        ];
+      }
+      if (response.filterOptions.mtdPemilihan) {
+        metodeOptions.value = [
+          { label: 'Semua Metode', value: 'ALL' },
+          ...response.filterOptions.mtdPemilihan.map(opt => ({ label: opt, value: opt }))
+        ];
+      }
+      if (response.filterOptions.satker) {
+        satkerOptions.value = [
+          { label: 'Semua Satker', value: 'ALL' },
+          ...response.filterOptions.satker.map(opt => ({ label: opt, value: opt }))
+        ];
+      }
+    }
   } catch (err) {
     console.error('Error fetching data:', err);
     error.value = true;
