@@ -79,6 +79,14 @@
                     </svg>
                     Non-Tender Pengumuman
                 </NuxtLink>
+
+                <div class="nav-label mt-5">Summary Table</div>
+                <NuxtLink to="/summary-table/non-tender-enriched" class="nav-item" @click="closeSidebar">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Non-Tender Enriched
+                </NuxtLink>
                 
                 <div class="nav-label mt-5">Admin</div>
                 <NuxtLink v-if="userRole === 'admin'" to="/admin/system" class="nav-item" @click="closeSidebar">
@@ -336,7 +344,7 @@ const handleLogout = async () => {
   border-radius: var(--maz-border-radius, 0.75rem);
   color: hsl(var(--maz-muted));
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.95rem;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
