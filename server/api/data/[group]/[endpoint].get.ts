@@ -26,6 +26,10 @@ export default defineEventHandler(async (event) => {
   const filterUmumkan = query.filterUmumkan as string;
   const filterDate = query.filterDate as string;
   const filterJenisRevisi = query.filterJenisRevisi as string;
+  
+  const filterStatusNontender = query.filterStatusNontender as string;
+  const filterMtdPemilihan = query.filterMtdPemilihan as string;
+  const filterSatker = query.filterSatker as string;
 
   // Pisahkan extra parameters yang bukan pagination/filter (untuk diteruskan ke API eksternal)
   const forceRefresh = query.forceRefresh === 'true';
@@ -40,6 +44,9 @@ export default defineEventHandler(async (event) => {
   delete extraParams.filterUmumkan;
   delete extraParams.filterDate;
   delete extraParams.filterJenisRevisi;
+  delete extraParams.filterStatusNontender;
+  delete extraParams.filterMtdPemilihan;
+  delete extraParams.filterSatker;
 
   try {
     const allData: any[] = await getEndpointData(group, endpoint, tahun, extraParams, forceRefresh);
@@ -80,6 +87,21 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    // Filter: status_nontender
+    if (filterStatusNontender && filterStatusNontender !== 'ALL') {
+      filtered = filtered.filter((item: any) => item.status_nontender === filterStatusNontender);
+    }
+
+    // Filter: mtd_pemilihan
+    if (filterMtdPemilihan && filterMtdPemilihan !== 'ALL') {
+      filtered = filtered.filter((item: any) => item.mtd_pemilihan === filterMtdPemilihan);
+    }
+
+    // Filter: nama_satker
+    if (filterSatker && filterSatker !== 'ALL') {
+      filtered = filtered.filter((item: any) => item.nama_satker === filterSatker);
+    }
+
     // Search: dynamic multi-field text search (works for any endpoint)
     if (search) {
       filtered = filtered.filter((item: any) => {
@@ -95,6 +117,9 @@ export default defineEventHandler(async (event) => {
 
     // ─── Extract unique filter options (from ALL data, before filtering) ─
     const uniqueStatusUmumkan = [...new Set(allData.map((item: any) => item.status_umumkan_rup).filter(Boolean))].sort();
+    const uniqueStatusNontender = [...new Set(allData.map((item: any) => item.status_nontender).filter(Boolean))].sort();
+    const uniqueMtdPemilihan = [...new Set(allData.map((item: any) => item.mtd_pemilihan).filter(Boolean))].sort();
+    const uniqueSatker = [...new Set(allData.map((item: any) => item.nama_satker).filter(Boolean))].sort();
 
     // ─── Pagination ──────────────────────────────────────────────────────
     const totalFiltered = filtered.length;
@@ -114,6 +139,9 @@ export default defineEventHandler(async (event) => {
       },
       filterOptions: {
         statusUmumkan: uniqueStatusUmumkan,
+        statusNontender: uniqueStatusNontender,
+        mtdPemilihan: uniqueMtdPemilihan,
+        satker: uniqueSatker
       }
     };
   } catch (error: any) {
