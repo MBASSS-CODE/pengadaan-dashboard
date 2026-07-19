@@ -71,6 +71,14 @@
                     </svg>
                     Swakelola Terumumkan
                 </NuxtLink>
+
+                <div class="nav-label mt-5">Tender</div>
+                <NuxtLink v-if="isEndpointActive('non-tender-pengumuman')" to="/tender/non-tender-pengumuman" class="nav-item" @click="closeSidebar">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Non-Tender Pengumuman
+                </NuxtLink>
                 
                 <div class="nav-label mt-5">Admin</div>
                 <NuxtLink v-if="userRole === 'admin'" to="/admin/system" class="nav-item" @click="closeSidebar">
@@ -154,8 +162,15 @@ const { data: endpointConfig } = useAsyncData('endpoints-config', () => $fetch('
 const isEndpointActive = (endpoint) => {
     // If config hasn't loaded yet, assume active to avoid UI flicker
     if (!endpointConfig.value || !endpointConfig.value.data) return true; 
-    const activeEndpoints = endpointConfig.value.data.activeEndpoints?.rup || [];
-    return activeEndpoints.includes(endpoint);
+    const activeEndpoints = endpointConfig.value.data.activeEndpoints || {};
+    
+    // Check across all groups
+    for (const group in activeEndpoints) {
+        if (activeEndpoints[group].includes(endpoint)) {
+            return true;
+        }
+    }
+    return false;
 };
 
 const checkMobile = () => {
