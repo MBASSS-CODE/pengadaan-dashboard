@@ -180,6 +180,53 @@
             {{ saveMessage }}
           </div>
         </div>
+
+        <!-- Manajemen Data (Backup/Restore) -->
+        <div class="bg-[color:hsl(var(--maz-background))] p-6 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm mt-6">
+          <h2 class="text-lg font-bold text-[color:hsl(var(--maz-foreground))] mb-4 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-[color:hsl(var(--maz-primary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+            </svg>
+            Backup & Restore Data
+          </h2>
+
+          <div class="mb-5 border-b border-[color:hsl(var(--maz-border))] pb-5">
+            <p class="text-xs text-[color:hsl(var(--maz-muted))] mb-3">
+              Unduh seluruh file data referensi ke dalam format ZIP untuk cadangan.
+            </p>
+            <MazBtn @click="downloadBackup" color="info" block outline>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Unduh Backup (.zip)
+            </MazBtn>
+          </div>
+
+          <div>
+            <p class="text-xs text-[color:hsl(var(--maz-muted))] mb-3">
+              Unggah file ZIP cadangan untuk memulihkan atau memasukkan data. <strong>Peringatan:</strong> Akan menimpa data yang ada jika nama file sama.
+            </p>
+            
+            <input 
+              type="file" 
+              ref="fileInputRef" 
+              accept=".zip" 
+              class="hidden" 
+              @change="handleFileUpload" 
+            />
+            
+            <MazBtn @click="triggerFileInput" :loading="isUploading" color="warning" block outline>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Upload Data (.zip)
+            </MazBtn>
+            
+            <div v-if="uploadMessage" class="mt-3 p-2 rounded-lg text-[11px] font-medium" :class="uploadSuccess ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+              {{ uploadMessage }}
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Log Aktivitas -->
@@ -333,6 +380,64 @@ const saveEndpointsConfig = async () => {
     alert('Terjadi kesalahan saat menyimpan konfigurasi endpoint');
   } finally {
     savingEndpoints.value = false;
+  }
+};
+
+// ─── Backup & Restore ───────────────────────────────────────────────────────
+const fileInputRef = ref(null);
+const isUploading = ref(false);
+const uploadMessage = ref('');
+const uploadSuccess = ref(false);
+
+const downloadBackup = () => {
+  // Buka rute download backup di tab baru
+  window.open('/api/admin/data-backup', '_blank');
+};
+
+const triggerFileInput = () => {
+  if (fileInputRef.value) {
+    fileInputRef.value.click();
+  }
+};
+
+const handleFileUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!file.name.endsWith('.zip')) {
+    uploadSuccess.value = false;
+    uploadMessage.value = 'Hanya menerima file berekstensi .zip';
+    return;
+  }
+
+  isUploading.value = true;
+  uploadMessage.value = '';
+  
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await $fetch('/api/admin/data-import', {
+      method: 'POST',
+      body: formData
+    });
+    
+    uploadSuccess.value = res.success;
+    uploadMessage.value = res.message;
+    
+    if (res.success) {
+      // Refresh stats setelah import berhasil
+      setTimeout(() => {
+        fetchStats();
+      }, 1000);
+    }
+  } catch (error) {
+    uploadSuccess.value = false;
+    uploadMessage.value = error.response?._data?.message || error.message || 'Gagal mengunggah file';
+  } finally {
+    isUploading.value = false;
+    // Reset input file agar bisa mengunggah file yang sama lagi jika perlu
+    if (fileInputRef.value) fileInputRef.value.value = '';
   }
 };
 

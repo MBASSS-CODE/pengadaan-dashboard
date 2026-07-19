@@ -6,6 +6,9 @@ import { syncEndpointData } from './dataManager';
 // ─── Master Registry: Daftar SEMUA endpoint yang tersedia ─────────────────────
 // Ini adalah "katalog" lengkap. Admin bisa mengaktifkan/menonaktifkan masing-masing.
 export const endpointRegistry: Record<string, { endpoint: string; label: string; description: string }[]> = {
+  tender: [
+    { endpoint: 'non-tender-pengumuman', label: 'Pengumuman Non-Tender', description: 'Pengumuman paket non-tender' }
+  ],
   rup: [
     { endpoint: 'history-kaji-ulang', label: 'History Kaji Ulang', description: 'Riwayat kaji ulang paket RUP' },
     { endpoint: 'master-satker', label: 'Master Satker', description: 'Daftar satuan kerja' },

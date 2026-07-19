@@ -82,9 +82,9 @@
       </div>
 
       <!-- MazTable Data Table -->
-      <MazTable
-        v-else
-        size="sm"
+      <div v-else class="overflow-x-auto w-full">
+        <MazTable
+          size="sm"
         v-model:page="currentPage"
         v-model:page-size="itemsPerPage"
         pagination
@@ -162,7 +162,8 @@
             </span>
           </div>
         </template>
-      </MazTable>
+        </MazTable>
+      </div>
     </div>
   </div>
 </template>
@@ -270,3 +271,9 @@ onMounted(() => {
   loadData(false);
 });
 </script>
+
+<style scoped>
+:deep(.m-table-wrapper) {
+  overflow-x: auto !important;
+}
+</style>

@@ -3,8 +3,8 @@
     <!-- Header Area -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
       <div>
-        <h1 class="text-2xl font-bold text-[color:hsl(var(--maz-foreground))]">Paket Swakelola</h1>
-        <p class="text-sm text-[color:hsl(var(--maz-muted))] mt-1">Daftar detil paket swakelola, penyelenggara, dan pagu</p>
+        <h1 class="text-2xl font-bold text-[color:hsl(var(--maz-foreground))]">Pengumuman Non-Tender</h1>
+        <p class="text-sm text-[color:hsl(var(--maz-muted))] mt-1">Daftar pengumuman paket pengadaan non-tender</p>
       </div>
       
       <div class="flex items-center gap-3 w-full md:w-auto">
@@ -27,11 +27,11 @@
       
       <!-- Search/Filter Bar -->
       <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col lg:flex-row gap-4 items-end">
-        <div class="w-full lg:w-1/3">
+        <div class="w-full">
           <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Pencarian</label>
           <MazInput 
             v-model="searchQuery" 
-            placeholder="Cari paket, RUP, Satker, Penyelenggara..." 
+            placeholder="Cari paket, satker, kode RUP..." 
             size="sm"
             @update:model-value="onSearchDebounced"
           >
@@ -41,34 +41,6 @@
               </svg>
             </template>
           </MazInput>
-        </div>
-
-        <div class="flex flex-col sm:flex-row w-full lg:w-2/3 gap-4">
-          <div class="w-full sm:w-1/3">
-            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Aktif</label>
-            <select v-model="filterAktif" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange()">
-              <option value="ALL">Semua Status Aktif</option>
-              <option value="true">Aktif</option>
-              <option value="false">Non-Aktif</option>
-            </select>
-          </div>
-          
-          <div class="w-full sm:w-1/3">
-            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Hapus</label>
-            <select v-model="filterDelete" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange()">
-              <option value="ALL">Semua Status Hapus</option>
-              <option value="false">Tidak Dihapus</option>
-              <option value="true">Dihapus</option>
-            </select>
-          </div>
-
-          <div class="w-full sm:w-1/3">
-            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Umumkan</label>
-            <select v-model="filterUmumkan" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange()">
-              <option value="ALL">Semua Status Umumkan</option>
-              <option v-for="status in filterOptionsUmumkan" :key="status" :value="status">{{ status }}</option>
-            </select>
-          </div>
         </div>
       </div>
 
@@ -96,10 +68,10 @@
         background-even
         :headers="[
           { label: 'No', key: 'index', align: 'center', width: '4rem', sortable: false },
-          { label: 'Informasi Paket', key: 'paket', sortable: false, classes: 'min-w-[250px]' },
-          { label: 'Penyelenggara & PPK', key: 'penyelenggara', sortable: false, classes: 'min-w-[200px]' },
-          { label: 'Pagu (Rp)', key: 'pagu', align: 'right', sortable: false },
-          { label: 'Status', key: 'status', align: 'center', sortable: false, classes: 'min-w-[120px]' }
+          { label: 'Informasi Paket', key: 'paket', sortable: false, classes: 'min-w-[280px]' },
+          { label: 'Satuan Kerja', key: 'satker', sortable: false, classes: 'min-w-[200px]' },
+          { label: 'Pagu & HPS (Rp)', key: 'nilai', align: 'right', sortable: false, classes: 'min-w-[150px]' },
+          { label: 'Status & Jadwal', key: 'status', align: 'center', sortable: false, classes: 'min-w-[150px]' }
         ]"
         :rows="pageData"
         @update:page="loadData(false)"
@@ -110,35 +82,42 @@
         </template>
         
         <template #cell-paket="{ row }">
-          <div class="font-bold text-[color:hsl(var(--maz-primary))]" :title="row.nama_paket">
+          <div class="font-bold text-[color:hsl(var(--maz-primary))] hover:underline cursor-pointer" :title="row.nama_paket" @click="row.url_lpse ? openUrl(row.url_lpse) : null">
             {{ row.nama_paket || '-' }}
           </div>
-          <div class="flex items-center gap-2 mt-1 flex-wrap">
+          <div class="flex items-center gap-2 mt-2 flex-wrap">
             <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border border-[color:hsl(var(--maz-border))]">
               RUP: {{ row.kd_rup }}
             </span>
-            <span v-if="row.tipe_swakelola" class="px-2 py-0.5 rounded text-[10px] font-medium bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border border-[color:hsl(var(--maz-border))]">
-              Tipe {{ row.tipe_swakelola }}
+            <span v-if="row.kd_nontender" class="px-2 py-0.5 rounded text-[10px] font-medium bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border border-[color:hsl(var(--maz-border))]">
+              ID: {{ row.kd_nontender }}
+            </span>
+            <span v-if="row.kualifikasi_paket" class="px-2 py-0.5 rounded text-[10px] font-medium bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border border-[color:hsl(var(--maz-border))]">
+              {{ row.kualifikasi_paket }}
             </span>
           </div>
-          <div v-if="row.uraian_pekerjaan" class="text-xs text-[color:hsl(var(--maz-muted))] mt-1 truncate max-w-xs" :title="row.uraian_pekerjaan">
-            {{ row.uraian_pekerjaan }}
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">
+            {{ row.jenis_pengadaan }}
           </div>
         </template>
         
-        <template #cell-penyelenggara="{ row }">
-          <div class="font-medium text-xs truncate max-w-[200px]" :title="row.nama_satker_penyelenggara || row.nama_klpd_penyelenggara || row.nama_satker">
-            {{ row.nama_satker_penyelenggara || row.nama_klpd_penyelenggara || row.nama_satker }}
+        <template #cell-satker="{ row }">
+          <div class="font-medium text-xs truncate max-w-[200px]" :title="row.nama_satker">{{ row.nama_satker }}</div>
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">
+            {{ row.mtd_pemilihan }}
           </div>
-          <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1 flex flex-col gap-0.5">
-            <span title="Pejabat Pembuat Komitmen" v-if="row.nama_ppk">PPK: <span class="font-medium">{{ row.nama_ppk }}</span></span>
-            <span v-if="row.nip_ppk">NIP: {{ row.nip_ppk }}</span>
+          <div class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-1">
+            {{ row.kabkota }}
           </div>
         </template>
         
-        <template #cell-pagu="{ row }">
-          <div class="font-bold text-sm">{{ formatRupiah(row.pagu) }}</div>
-          <div class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-1">TA: {{ row.tahun_anggaran }}</div>
+        <template #cell-nilai="{ row }">
+          <div class="flex flex-col items-end">
+            <div class="text-xs text-[color:hsl(var(--maz-muted))]">Pagu:</div>
+            <div class="font-bold text-sm text-[color:hsl(var(--maz-foreground))]">{{ formatRupiah(row.pagu) }}</div>
+            <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">HPS:</div>
+            <div class="font-semibold text-[color:hsl(var(--maz-primary))]">{{ formatRupiah(row.hps) }}</div>
+          </div>
         </template>
         
         <template #cell-status="{ row }">
@@ -146,21 +125,15 @@
             <span 
               class="px-2.5 py-1 text-[0.7rem] font-semibold rounded-full w-full text-center border border-transparent leading-none"
               :class="{
-                'bg-[color:hsl(var(--maz-success)_/_15%)] text-[color:hsl(var(--maz-success)_/_100%)] dark:bg-[color:hsl(var(--maz-success)_/_20%)]': row.status_aktif_rup && !row.status_delete_rup,
-                'bg-[color:hsl(var(--maz-destructive)_/_15%)] text-[color:hsl(var(--maz-destructive)_/_100%)] dark:bg-[color:hsl(var(--maz-destructive)_/_20%)]': row.status_delete_rup || !row.status_aktif_rup
+                'bg-[color:hsl(var(--maz-success)_/_15%)] text-[color:hsl(var(--maz-success)_/_100%)] dark:bg-[color:hsl(var(--maz-success)_/_20%)]': row.status_nontender === 'Selesai',
+                'bg-[color:hsl(var(--maz-primary)_/_15%)] text-[color:hsl(var(--maz-primary)_/_100%)] dark:bg-[color:hsl(var(--maz-primary)_/_20%)]': row.status_nontender === 'Berlangsung',
+                'bg-[color:hsl(var(--maz-muted)_/_15%)] text-[color:hsl(var(--maz-foreground)_/_80%)] dark:bg-[color:hsl(var(--maz-muted)_/_20%)]': !['Selesai', 'Berlangsung'].includes(row.status_nontender)
               }"
             >
-              {{ row.status_delete_rup ? 'Dihapus' : (row.status_aktif_rup ? 'Aktif' : 'Non-Aktif') }}
+              {{ row.status_nontender || 'Unknown' }}
             </span>
-            <span 
-              v-if="row.status_umumkan_rup"
-              class="px-2.5 py-1 text-[0.7rem] font-semibold rounded-full w-full text-center border border-transparent leading-none"
-              :class="{
-                'bg-[color:hsl(var(--maz-primary)_/_15%)] text-[color:hsl(var(--maz-primary)_/_100%)] dark:bg-[color:hsl(var(--maz-primary)_/_20%)]': row.status_umumkan_rup === 'Terumumkan',
-                'bg-[color:hsl(var(--maz-muted)_/_15%)] text-[color:hsl(var(--maz-foreground)_/_80%)] dark:bg-[color:hsl(var(--maz-muted)_/_20%)]': row.status_umumkan_rup !== 'Terumumkan'
-              }"
-            >
-              {{ row.status_umumkan_rup }}
+            <span v-if="row.tgl_pengumuman_nontender" class="text-[10px] text-[color:hsl(var(--maz-muted))] text-center mt-1">
+              {{ formatDate(row.tgl_pengumuman_nontender) }}
             </span>
           </div>
         </template>
@@ -182,23 +155,15 @@ const totalItems = ref(0);
 const totalPages = ref(0);
 const totalAllItems = ref(0);
 
-// Filter options dari server
-const filterOptionsUmumkan = ref([]);
-
 // Generate dynamic years
 const currentYear = new Date().getFullYear();
 const availableYears = [
-  (currentYear + 1).toString(),
+  (currentYear + 1).toString(), // For RUP, next year is often relevant
   currentYear.toString(), 
   (currentYear - 1).toString()
 ];
 const selectedYear = ref(currentYear.toString());
 const searchQuery = ref('');
-
-// Filter states
-const filterAktif = ref('ALL');
-const filterDelete = ref('ALL');
-const filterUmumkan = ref('ALL');
 
 // Pagination state
 const currentPage = ref(1);
@@ -212,19 +177,32 @@ const formatRupiah = (number) => {
   return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0 }).format(number);
 };
 
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).format(date);
+};
+
+const openUrl = (url) => {
+  if (url) {
+    window.open(url, '_blank');
+  }
+};
+
 const loadData = async (force = false) => {
   loading.value = true;
   error.value = false;
   try {
-    const response = await $fetch('/api/data/rup/paket-swakelola', {
+    const response = await $fetch('/api/data/tender/non-tender-pengumuman', {
       params: { 
         tahun: selectedYear.value,
         page: currentPage.value,
         limit: itemsPerPage.value,
         search: searchQuery.value || undefined,
-        filterAktif: filterAktif.value !== 'ALL' ? filterAktif.value : undefined,
-        filterDelete: filterDelete.value !== 'ALL' ? filterDelete.value : undefined,
-        filterUmumkan: filterUmumkan.value !== 'ALL' ? filterUmumkan.value : undefined,
         forceRefresh: force ? 'true' : undefined
       }
     });
@@ -234,11 +212,6 @@ const loadData = async (force = false) => {
     totalItems.value = response.meta?.totalItems || 0;
     totalPages.value = response.meta?.totalPages || 0;
     totalAllItems.value = response.meta?.totalAllItems || 0;
-
-    // Update filter options dari server
-    if (response.filterOptions?.statusUmumkan) {
-      filterOptionsUmumkan.value = response.filterOptions.statusUmumkan;
-    }
   } catch (err) {
     console.error('Error fetching data:', err);
     error.value = true;
@@ -253,19 +226,12 @@ const onFilterChange = (forceRefresh = false) => {
   loadData(forceRefresh);
 };
 
-// Debounced search — tunggu 400ms setelah user berhenti mengetik
+// Debounce pencarian agar tidak hit API setiap ketik huruf
 const onSearchDebounced = () => {
   if (searchTimer) clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
-    currentPage.value = 1;
-    loadData(false);
-  }, 400);
-};
-
-// Navigasi halaman
-const goToPage = (page) => {
-  currentPage.value = page;
-  loadData(false);
+    onFilterChange(false);
+  }, 500);
 };
 
 // Initial load
