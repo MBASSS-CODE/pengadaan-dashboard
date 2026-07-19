@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { isMergeSourceEndpoint, triggerAutoMerge } from './mergeManager';
 
 // In-memory cache
 const memoryCache: Record<string, any> = {};
@@ -174,6 +175,11 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
     // Save to memory cache
     const cacheKey = `${group}_${endpoint}_${tahun}`;
     memoryCache[cacheKey] = allData;
+
+    // ── Auto-merge: trigger if this endpoint is a merge source ──
+    if (isMergeSourceEndpoint(group, endpoint)) {
+      triggerAutoMerge(tahun, `auto_sync:${group}/${endpoint}`);
+    }
   }
 
   return allData;
