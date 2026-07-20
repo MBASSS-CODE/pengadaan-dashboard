@@ -6,12 +6,12 @@
         <!-- Sidebar -->
         <aside class="app-sidebar" :class="{ 'is-mobile': isMobile, 'is-open': isSidebarOpen }">
             <div class="sidebar-header">
-                <div class="logo-box">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="logo-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
+                <div class="flex items-center justify-center w-11 h-11 bg-white dark:bg-slate-800 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] border border-slate-100/80 dark:border-slate-700/80 shrink-0 transition-transform hover:scale-105 cursor-pointer">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/9/90/National_emblem_of_Indonesia_Garuda_Pancasila.svg" alt="Garuda Logo" class="w-7 h-7 object-contain drop-shadow-sm" />
                 </div>
-                <h1>ukkkk</h1>
+                <h1 class="text-lg font-extrabold tracking-tight text-slate-800 dark:text-slate-100 ml-3.5 mt-0.5" style="font-family: 'Inter', sans-serif;">
+                    PRISMA <span class="text-blue-600 dark:text-blue-400">MENPAN</span>
+                </h1>
             </div>
             
             <nav class="sidebar-nav">
