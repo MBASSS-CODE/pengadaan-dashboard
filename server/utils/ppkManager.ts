@@ -32,14 +32,23 @@ export const savePpkMaster = async (data: any[]): Promise<void> => {
 };
 
 /**
- * Get unique PPK identifiers from non-tender data
+ * Get unique PPK identifiers from RUP paket-penyedia data
  */
 export const extractUniquePpk = async (tahun: string): Promise<string[]> => {
-  const filePath = path.resolve(process.cwd(), `server/data/tender/non-tender-pengumuman_${tahun}.json`);
+  const filePath = path.resolve(process.cwd(), `server/data/rup/paket-penyedia_${tahun}.json`);
   try {
     const raw = await fs.readFile(filePath, 'utf-8');
     const data: any[] = JSON.parse(raw);
-    const uniquePpk = [...new Set(data.map((d: any) => d.nip_nama_ppk).filter(Boolean))];
+    const uniquePpk = [...new Set(
+      data
+        .map((d: any) => {
+          if (d.nip_ppk && d.nama_ppk) {
+            return `${d.nip_ppk} - ${d.nama_ppk}`;
+          }
+          return d.nip_ppk || d.nama_ppk || null;
+        })
+        .filter(Boolean)
+    )];
     return uniquePpk;
   } catch {
     return [];
