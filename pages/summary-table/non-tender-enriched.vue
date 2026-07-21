@@ -135,18 +135,16 @@
               {{ row.nama_paket || '-' }}
             </div>
             <div class="flex items-center gap-2 mt-2 flex-wrap">
-              <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border border-[color:hsl(var(--maz-border))]">
+              <span class="px-2 py-0.5 rounded text-[10px] font-medium text-[color:hsl(var(--maz-foreground))] border border-[color:hsl(var(--maz-border))]">
                 RUP: {{ row.kd_rup }}
-              </span>
-              <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border border-[color:hsl(var(--maz-border))]">
-                ID: {{ row.kd_nontender }}
               </span>
               <span v-if="row.status_nontender" 
                 class="px-2 py-0.5 rounded text-[10px] font-semibold border"
                 :class="{
-                  'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800': row.status_nontender === 'Selesai',
-                  'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800': row.status_nontender === 'Berlangsung',
-                  'bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border-[color:hsl(var(--maz-border))]': !['Selesai', 'Berlangsung'].includes(row.status_nontender)
+                  'bg-[#8cc63f] text-gray-900 border-[#8cc63f]': row.status_nontender === 'Selesai',
+                  'bg-[#fbbd08] text-gray-900 border-[#fbbd08]': row.status_nontender === 'Berlangsung',
+                  'bg-[#17a2b8] text-white border-[#17a2b8]': ['Pending', 'Persiapan', 'Draft', 'Belum Mulai'].includes(row.status_nontender),
+                  'bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border-[color:hsl(var(--maz-border))]': !['Selesai', 'Berlangsung', 'Pending', 'Persiapan', 'Draft', 'Belum Mulai'].includes(row.status_nontender)
                 }"
               >
                 {{ row.status_nontender }}
@@ -189,10 +187,10 @@
                 Ditemukan di Sirup
               </div>
               <div class="flex gap-1 mb-1">
-                <span v-if="row.rup_status_aktif" class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Aktif</span>
+                <span v-if="row.rup_status_aktif" class="px-2.5 py-1 text-[0.7rem] font-semibold rounded-full text-center border border-transparent bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Aktif</span>
                 <span v-if="row.rup_status_umumkan === 'Sudah'" class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Terumumkan</span>
               </div>
-              <div v-if="row._has_kaji_ulang" class="text-[10px] text-amber-600 dark:text-amber-400">
+              <div v-if="row._has_kaji_ulang" class="text-[10px] text-blue-600 dark:text-amber-800">
                 ⚠️ {{ row.kaji_ulang_count }}x Kaji Ulang ({{ row.kaji_ulang_jenis_revisi }})
               </div>
             </div>
@@ -222,7 +220,7 @@
               </div>
               
               <!-- Indicator beda harga -->
-              <div v-if="row._rup_matched && row.hps && row.rup_pagu && row.hps !== row.rup_pagu" class="text-[9px] text-amber-600 mt-0.5 text-right leading-tight">
+              <div v-if="row._rup_matched && row.hps && row.rup_pagu && row.hps !== row.rup_pagu" class="text-[9px] text-amber-600 dark:text-amber-400 mt-0.5 text-right leading-tight">
                 Selisih: {{ formatRupiah(Math.abs(row.hps - row.rup_pagu)) }}
               </div>
             </div>
