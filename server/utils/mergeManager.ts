@@ -165,6 +165,24 @@ export const executeMerge = async (tahun: string, trigger: string = 'manual'): P
       enriched.rup_jenis_pengadaan = rup.jenis_pengadaan;
       enriched.rup_metode_pengadaan = rup.metode_pengadaan;
       enriched.rup_uraian_pekerjaan = rup.urarian_pekerjaan;
+      
+      // Atribut Ekstra: Timeline & Jadwal
+      enriched.rup_tgl_awal_pemilihan = rup.tgl_awal_pemilihan;
+      enriched.rup_tgl_akhir_kontrak = rup.tgl_akhir_kontrak;
+      enriched.rup_tgl_buat_paket = rup.tgl_buat_paket;
+      enriched.rup_tgl_pengumuman_paket = rup.tgl_pengumuman_paket;
+      
+      // Atribut Ekstra: Kebijakan (PDN, UKM, SPP)
+      enriched.rup_status_pdn = rup.status_pdn;
+      enriched.rup_status_ukm = rup.status_ukm;
+      enriched.rup_spp_lingkungan = rup.spp_aspek_lingkungan;
+      enriched.rup_spp_sosial = rup.spp_aspek_sosial;
+      enriched.rup_spp_ekonomi = rup.spp_aspek_ekonomi;
+      
+      // Atribut Ekstra: Lainnya
+      enriched.rup_spesifikasi_pekerjaan = rup.spesifikasi_pekerjaan;
+      enriched.rup_kd_swakelola = rup.kd_rup_swakelola;
+
       enriched._rup_matched = true;
       rupMatched++;
     } else {

@@ -150,9 +150,13 @@
                 {{ row.status_nontender }}
               </span>
             </div>
-            <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1.5 flex gap-2">
+            <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1.5 flex flex-wrap gap-2">
               <span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800">{{ row.mtd_pemilihan }}</span>
               <span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800">{{ row.jenis_pengadaan }}</span>
+              <template v-if="row._rup_matched">
+                <span v-if="row.rup_status_pdn" class="px-1.5 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400 font-semibold" title="Produk Dalam Negeri">{{ row.rup_status_pdn }}</span>
+                <span v-if="row.rup_status_ukm" class="px-1.5 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400 font-semibold" title="Usaha Kecil/Mikro">{{ row.rup_status_ukm }}</span>
+              </template>
             </div>
           </template>
           
@@ -188,9 +192,15 @@
               </div>
               <div class="flex gap-1 mb-1">
                 <span v-if="row.rup_status_aktif" class="px-2.5 py-1 text-[0.7rem] font-semibold rounded-full text-center border border-transparent bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Aktif</span>
-                <span v-if="row.rup_status_umumkan === 'Sudah'" class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Terumumkan</span>
+                <span v-if="row.rup_status_umumkan === 'Sudah' || row.rup_status_umumkan === 'Terumumkan'" class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Terumumkan</span>
               </div>
-              <div v-if="row._has_kaji_ulang" class="text-[10px] text-blue-600 dark:text-amber-800">
+              <div v-if="row.rup_tgl_awal_pemilihan || row.rup_tgl_akhir_kontrak" class="mt-1.5 border-t border-[color:hsl(var(--maz-border))] pt-1.5">
+                <div class="text-[10px] text-[color:hsl(var(--maz-muted))] grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5">
+                  <span class="font-medium">Mulai Pemilihan:</span> <span>{{ row.rup_tgl_awal_pemilihan || '-' }}</span>
+                  <span class="font-medium">Akhir Kontrak:</span> <span>{{ row.rup_tgl_akhir_kontrak ? row.rup_tgl_akhir_kontrak.substring(0, 10) : '-' }}</span>
+                </div>
+              </div>
+              <div v-if="row._has_kaji_ulang" class="mt-1 text-[10px] text-blue-600 dark:text-amber-400">
                 ⚠️ {{ row.kaji_ulang_count }}x Kaji Ulang ({{ row.kaji_ulang_jenis_revisi }})
               </div>
             </div>
