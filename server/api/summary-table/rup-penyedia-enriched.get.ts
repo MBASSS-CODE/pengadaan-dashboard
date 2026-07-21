@@ -59,9 +59,18 @@ export default defineEventHandler(async (event) => {
       filteredData = filteredData.filter((item: any) => {
         if (!item.sumber_dana_list) return false;
         // Check if ANY of the selected sumber_dana is included in the item's sumber_dana_list
-        return sd.some(s => item.sumber_dana_list.includes(s));
+        return sd.some((s: string) => item.sumber_dana_list.includes(s));
       });
     }
+
+    const ppks = filterArray(query.ppk);
+    if (ppks.length > 0) {
+      filteredData = filteredData.filter((item: any) => ppks.includes(item.ppk_nama_lengkap) || ppks.includes(item.nama_ppk));
+    }
+
+    // Extract unique filter options
+    const uniqueNamaPpk = [...new Set(data.map((item: any) => item.ppk_nama_lengkap || item.nama_ppk).filter(Boolean))].sort();
+
 
     // Sort newest first or by RUP descending
     filteredData.sort((a: any, b: any) => b.kd_rup - a.kd_rup);
@@ -78,6 +87,9 @@ export default defineEventHandler(async (event) => {
         currentPage: page,
         itemsPerPage: limit,
         totalPages: Math.ceil(data.length / limit)
+      },
+      filterOptions: {
+        namaPpk: uniqueNamaPpk
       }
     };
   } catch (error: any) {
