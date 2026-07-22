@@ -42,20 +42,30 @@
       <!-- Search/Filter Bar -->
       <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col gap-4">
         <!-- Search Row -->
-        <div class="w-full">
-          <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Pencarian</label>
-          <MazInput 
-            v-model="searchQuery" 
-            placeholder="Cari paket, PPK, satker, kode..." 
-            size="sm"
-            @update:model-value="onSearchDebounced"
-          >
-            <template #left-icon>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-[color:hsl(var(--maz-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <div class="w-full flex items-center gap-4">
+          <div class="flex-grow">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Pencarian</label>
+            <MazInput 
+              v-model="searchQuery" 
+              placeholder="Cari paket, PPK, satker, kode..." 
+              size="sm"
+              @update:model-value="onSearchDebounced"
+            >
+              <template #left-icon>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-[color:hsl(var(--maz-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </template>
+            </MazInput>
+          </div>
+          <div class="mt-5 flex gap-2">
+            <MazBtn @click="exportModal = true" color="success" size="sm">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-            </template>
-          </MazInput>
+              Export Excel
+            </MazBtn>
+          </div>
         </div>
 
         <!-- Filters Row -->
@@ -239,11 +249,46 @@
         </MazTable>
       </div>
     </div>
+
+    <!-- Export Modal -->
+    <MazDialog v-model="exportModal" title="Export ke Excel (XLSX)">
+      <div class="flex flex-col gap-4 py-2">
+        <p class="text-sm text-[color:hsl(var(--maz-muted))]">
+          Pilih mode ekspor data Non-Tender Enriched untuk Tahun Anggaran {{ selectedYear }}:
+        </p>
+        
+        <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] border border-[color:hsl(var(--maz-border))] p-4 rounded-lg">
+          <div class="flex flex-col gap-3">
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="radio" v-model="exportMode" value="filtered" class="mt-1" />
+              <div>
+                <div class="font-semibold text-sm">Sesuai Filter Saat Ini</div>
+                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor data yang tampil pada tabel saat ini berdasarkan pencarian dan filter yang aktif (estimasi: {{ totalItems }} data).</div>
+              </div>
+            </label>
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="radio" v-model="exportMode" value="all" class="mt-1" />
+              <div>
+                <div class="font-semibold text-sm">Seluruh Data (Tahun {{ selectedYear }})</div>
+                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor seluruh data Non-Tender untuk tahun anggaran {{ selectedYear }} tanpa filter apapun.</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <MazBtn @click="exportModal = false" color="transparent" size="sm">Batal</MazBtn>
+          <MazBtn @click="executeExport" :loading="exportLoading" color="success" size="sm">Download Excel</MazBtn>
+        </div>
+      </template>
+    </MazDialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { utils, writeFile } from 'xlsx';
 
 const loading = ref(true);
 const error = ref(false);
@@ -377,6 +422,76 @@ const onSearchDebounced = () => {
   searchTimer = setTimeout(() => {
     onFilterChange();
   }, 500);
+};
+
+// ─── Export Logic ───────────────────────────────────────────
+const exportModal = ref(false);
+const exportMode = ref('filtered');
+const exportLoading = ref(false);
+
+const executeExport = async () => {
+  exportLoading.value = true;
+  try {
+    const params = {
+      tahun: selectedYear.value,
+      page: 1,
+      limit: 100000 // limit besar untuk mengambil seluruh data
+    };
+
+    if (exportMode.value === 'filtered') {
+      if (searchQuery.value) params.search = searchQuery.value;
+      if (filterStatusNontender.value !== 'ALL') params.statusNontender = filterStatusNontender.value;
+      if (filterMetode.value !== 'ALL') params.metode = filterMetode.value;
+      if (filterSatker.value !== 'ALL') params.satker = filterSatker.value;
+      if (filterNamaPpk.value !== 'ALL') params.namaPpk = filterNamaPpk.value;
+      if (filterRupMatch.value !== 'ALL') params.rupMatch = filterRupMatch.value;
+      if (filterPpkComplete.value !== 'ALL') params.ppkComplete = filterPpkComplete.value;
+    }
+
+    const res = await $fetch('/api/summary-table/non-tender-enriched', { params });
+
+    if (res.success && res.data) {
+      const flatData = res.data.map((row, i) => ({
+        'No': i + 1,
+        'Kode RUP': row.kd_rup || '-',
+        'Nama Paket': row.nama_paket || '-',
+        'Satuan Kerja': row.nama_satker || '-',
+        'Nama PPK': row.ppk_nama_lengkap || row.nama_ppk || '-',
+        'HPS (Rp)': row.hps || 0,
+        'Metode Pemilihan': row.mtd_pemilihan || '-',
+        'Jenis Pengadaan': row.jenis_pengadaan || '-',
+        'Status Inaproc': row.status_nontender || '-',
+        'Status RUP Match': row._rup_matched ? 'Match' : 'Not Match',
+        'Status PPK Lengkap': row._ppk_completed ? 'Lengkap' : 'Tidak Lengkap',
+        'Pagu Sirup (Rp)': row.rup_pagu || 0,
+        'Tanggal Mulai': row.tgl_mulai_nontender || '-',
+        'Tanggal Selesai': row.tgl_selesai_nontender || '-',
+        'Status PDN (RUP)': row.rup_status_pdn || '-',
+        'Status UKM (RUP)': row.rup_status_ukm || '-',
+        'Pernah Kaji Ulang': row._has_kaji_ulang ? 'Ya' : 'Tidak'
+      }));
+
+      const ws = utils.json_to_sheet(flatData);
+      const wb = utils.book_new();
+      utils.book_append_sheet(wb, ws, "Non Tender");
+
+      const wscols = [
+        {wch: 5}, {wch: 15}, {wch: 40}, {wch: 30}, {wch: 30}, {wch: 15},
+        {wch: 20}, {wch: 20}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15},
+        {wch: 15}, {wch: 15}, {wch: 10}, {wch: 10}, {wch: 10}
+      ];
+      ws['!cols'] = wscols;
+
+      const filename = `Non_Tender_Enriched_${selectedYear.value}${exportMode.value === 'filtered' ? '_Filtered' : ''}.xlsx`;
+      writeFile(wb, filename);
+      exportModal.value = false;
+    }
+  } catch (err) {
+    console.error('Failed to export:', err);
+    alert('Gagal melakukan ekspor data. Silakan coba lagi.');
+  } finally {
+    exportLoading.value = false;
+  }
 };
 
 // Initial load
