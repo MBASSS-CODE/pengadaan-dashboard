@@ -70,7 +70,23 @@ export default defineEventHandler(async (event) => {
 
     // Extract unique filter options
     const uniqueNamaPpk = [...new Set(data.map((item: any) => item.ppk_nama_lengkap || item.nama_ppk).filter(Boolean))].sort();
+    const uniqueStatusUmumkan = [...new Set(data.map((item: any) => item.status_umumkan_rup).filter(Boolean))].sort();
 
+    const um = query.statusUmumkan as string;
+    if (um && um !== 'ALL') {
+      filteredData = filteredData.filter((item: any) => item.status_umumkan_rup === um);
+    }
+
+    // Kalkulasi agregasi
+    let totalPagu = 0;
+    let realisasiCount = 0;
+    let ppkCount = 0;
+
+    for (const item of filteredData) {
+      if (item.pagu) totalPagu += Number(item.pagu) || 0;
+      if (item._has_realisasi) realisasiCount++;
+      if (item._ppk_completed) ppkCount++;
+    }
 
     // Sort newest first or by RUP descending
     filteredData.sort((a: any, b: any) => b.kd_rup - a.kd_rup);
@@ -83,13 +99,17 @@ export default defineEventHandler(async (event) => {
       success: true,
       data: paginated,
       meta: {
-        totalItems: data.length,
+        totalItems: filteredData.length,
         currentPage: page,
         itemsPerPage: limit,
-        totalPages: Math.ceil(data.length / limit)
+        totalPages: Math.ceil(filteredData.length / limit),
+        totalPagu,
+        realisasiCount,
+        ppkCount
       },
       filterOptions: {
-        namaPpk: uniqueNamaPpk
+        namaPpk: uniqueNamaPpk,
+        statusUmumkan: uniqueStatusUmumkan
       }
     };
   } catch (error: any) {

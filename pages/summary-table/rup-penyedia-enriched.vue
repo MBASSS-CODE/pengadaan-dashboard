@@ -65,7 +65,7 @@
         </div>
 
         <!-- Filters Row -->
-        <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 items-end">
+        <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 items-end">
           <div class="w-full">
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Realisasi</label>
             <MazSelect v-model="filterStatusRealisasi" :options="statusRealisasiOptions" size="sm" clearable multiple @update:model-value="onFilterChange" />
@@ -85,6 +85,13 @@
           <div class="w-full">
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">PPK</label>
             <MazSelect v-model="filterPpk" :options="ppkOptions" size="sm" clearable multiple search @update:model-value="onFilterChange" />
+          </div>
+          <div class="w-full">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Umumkan</label>
+            <select v-model="filterUmumkan" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange()">
+              <option value="ALL">Semua Status Umumkan</option>
+              <option v-for="status in filterOptionsUmumkan" :key="status" :value="status">{{ status }}</option>
+            </select>
           </div>
         </div>
       </div>
@@ -255,6 +262,8 @@ const filterStatusRealisasi = ref(null);
 const filterSumberDana = ref(null);
 const filterPpk = ref(null);
 const ppkOptions = ref([]);
+const filterUmumkan = ref('ALL');
+const filterOptionsUmumkan = ref([]);
 
 const hasActiveFilters = computed(() => {
   return searchQuery.value !== '' || 
@@ -262,7 +271,8 @@ const hasActiveFilters = computed(() => {
     (filterMetodePengadaan.value && filterMetodePengadaan.value.length > 0) ||
     (filterStatusRealisasi.value && filterStatusRealisasi.value.length > 0) ||
     (filterSumberDana.value && filterSumberDana.value.length > 0) ||
-    (filterPpk.value && filterPpk.value.length > 0);
+    (filterPpk.value && filterPpk.value.length > 0) ||
+    filterUmumkan.value !== 'ALL';
 });
 
 const onFilterChange = () => {
@@ -277,6 +287,7 @@ const resetFilters = () => {
   filterStatusRealisasi.value = null;
   filterSumberDana.value = null;
   filterPpk.value = null;
+  filterUmumkan.value = 'ALL';
   onFilterChange();
 };
 
@@ -357,7 +368,8 @@ const loadData = async () => {
         metodePengadaan: filterMetodePengadaan.value ? filterMetodePengadaan.value.join(',') : undefined,
         statusRealisasi: filterStatusRealisasi.value ? filterStatusRealisasi.value.join(',') : undefined,
         sumberDana: filterSumberDana.value ? filterSumberDana.value.join(',') : undefined,
-        ppk: filterPpk.value ? filterPpk.value.join(',') : undefined
+        ppk: filterPpk.value ? filterPpk.value.join(',') : undefined,
+        statusUmumkan: filterUmumkan.value !== 'ALL' ? filterUmumkan.value : undefined
       }
     });
 
@@ -372,13 +384,15 @@ const loadData = async () => {
         ppkOptions.value = res.filterOptions.namaPpk.map(opt => ({ label: opt, value: opt }));
       }
       
-      // Hitung agregasi jika ini halaman pertama (atau secara kasar)
-      if (currentPage.value === 1) {
-        // Karena API pagination hanya mengembalikan data 1 halaman, 
-        // kita perlu data global jika mau total realisasi yang akurat. 
-        // Untuk saat ini kita tampilkan '-' jika butuh global atau kita hitung dari per page
-        // Namun di masa depan lebih baik dikirim lewat `res.meta`.
-        totalPagu.value = 0; // Idealnya dari API
+      if (res.filterOptions && res.filterOptions.statusUmumkan) {
+        filterOptionsUmumkan.value = res.filterOptions.statusUmumkan;
+      }
+      
+      // Hitung agregasi jika ini halaman pertama
+      if (currentPage.value === 1 && res.meta) {
+        totalPagu.value = res.meta.totalPagu || 0;
+        realisasiCount.value = res.meta.realisasiCount || 0;
+        ppkCount.value = res.meta.ppkCount || 0;
       }
     } else {
       error.value = true;
