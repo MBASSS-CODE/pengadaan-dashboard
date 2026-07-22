@@ -10,7 +10,7 @@ export const customTheme: ThemePreset = {
   },
   colors: {
     light: {
-      "background": '0 2% 92%',
+      "background": '0 0% 100%',
       "foreground": '210 8% 14%',
       "primary": '210 100% 56%',
       "primary-foreground": '0 0% 100%',
@@ -18,7 +18,7 @@ export const customTheme: ThemePreset = {
       "secondary-foreground": '0 0% 100%',
       "accent": '164 76% 46%',
       "accent-foreground": '0 0% 100%',
-      "success": '80 75% 47%',
+      "success": '80 61% 50%',
       "success-foreground": '210 8% 14%',
       "warning": '40 97% 59%',
       "warning-foreground": '210 8% 14%',
