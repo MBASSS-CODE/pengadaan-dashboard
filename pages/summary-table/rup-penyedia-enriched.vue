@@ -59,8 +59,14 @@
               </template>
             </MazInput>
           </div>
-          <div v-if="hasActiveFilters" class="mt-5">
-            <MazBtn @click="resetFilters" color="danger" size="sm" outline>Reset Filter</MazBtn>
+          <div class="mt-5 flex gap-2">
+            <MazBtn v-if="hasActiveFilters" @click="resetFilters" color="danger" size="sm" outline>Reset Filter</MazBtn>
+            <MazBtn @click="exportModal = true" color="success" size="sm">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export Excel
+            </MazBtn>
           </div>
         </div>
 
@@ -237,11 +243,46 @@
         </MazTable>
       </div>
     </div>
+
+    <!-- Export Modal -->
+    <MazDialog v-model="exportModal" title="Export ke Excel (XLSX)">
+      <div class="flex flex-col gap-4 py-2">
+        <p class="text-sm text-[color:hsl(var(--maz-muted))]">
+          Pilih mode ekspor data RUP Penyedia Enriched untuk Tahun Anggaran {{ selectedYear }}:
+        </p>
+        
+        <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] border border-[color:hsl(var(--maz-border))] p-4 rounded-lg">
+          <div class="flex flex-col gap-3">
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="radio" v-model="exportMode" value="filtered" class="mt-1" />
+              <div>
+                <div class="font-semibold text-sm">Sesuai Filter Saat Ini</div>
+                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor data yang tampil pada tabel saat ini berdasarkan pencarian dan filter yang aktif (estimasi: {{ totalItems }} data).</div>
+              </div>
+            </label>
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="radio" v-model="exportMode" value="all" class="mt-1" />
+              <div>
+                <div class="font-semibold text-sm">Seluruh Data (Tahun {{ selectedYear }})</div>
+                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor seluruh data master untuk tahun anggaran {{ selectedYear }} tanpa filter apapun.</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <MazBtn @click="exportModal = false" color="transparent" size="sm">Batal</MazBtn>
+          <MazBtn @click="executeExport" :loading="exportLoading" color="success" size="sm">Download Excel</MazBtn>
+        </div>
+      </template>
+    </MazDialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { utils, writeFile } from 'xlsx';
 
 // ─── Filter State ───────────────────────────────────────────
 const searchQuery = ref('');
@@ -406,6 +447,74 @@ const loadData = async () => {
     totalItems.value = 0;
   } finally {
     loading.value = false;
+  }
+};
+// ─── Export Logic ───────────────────────────────────────────
+const exportModal = ref(false);
+const exportMode = ref('filtered');
+const exportLoading = ref(false);
+
+const executeExport = async () => {
+  exportLoading.value = true;
+  try {
+    const params = {
+      tahun: selectedYear.value,
+      page: 1,
+      limit: 100000 // limit besar untuk mengambil seluruh data
+    };
+
+    if (exportMode.value === 'filtered') {
+      if (searchQuery.value) params.search = searchQuery.value;
+      if (filterJenisPengadaan.value) params.jenisPengadaan = filterJenisPengadaan.value.join(',');
+      if (filterMetodePengadaan.value) params.metodePengadaan = filterMetodePengadaan.value.join(',');
+      if (filterStatusRealisasi.value) params.statusRealisasi = filterStatusRealisasi.value.join(',');
+      if (filterSumberDana.value) params.sumberDana = filterSumberDana.value.join(',');
+      if (filterPpk.value) params.ppk = filterPpk.value.join(',');
+      if (filterUmumkan.value !== 'ALL') params.statusUmumkan = filterUmumkan.value;
+    }
+
+    const res = await $fetch('/api/summary-table/rup-penyedia-enriched', { params });
+
+    if (res.success && res.data) {
+      const flatData = res.data.map((row, i) => ({
+        'No': i + 1,
+        'Kode RUP': row.kd_rup,
+        'Nama Paket': row.nama_paket,
+        'Pagu (Rp)': row.pagu,
+        'Metode Pengadaan': row.metode_pengadaan,
+        'Jenis Pengadaan': row.jenis_pengadaan,
+        'Sumber Dana': row.sumber_dana_list || '-',
+        'Nama PPK': row.ppk_nama_lengkap || row.nama_ppk || '-',
+        'Satuan Kerja': row.nama_satker || '-',
+        'Status Aktif': row.status_aktif_rup ? 'Aktif' : 'Non-Aktif',
+        'Status Umumkan': row.status_umumkan_rup || '-',
+        'Status Realisasi': row.realisasi_status || '-',
+        'HPS Realisasi (Rp)': row.realisasi_hps || 0,
+        'Metode Realisasi': row.realisasi_metode || '-',
+        'PDN': row.status_pdn || '-',
+        'UKM': row.status_ukm || '-',
+      }));
+
+      const ws = utils.json_to_sheet(flatData);
+      const wb = utils.book_new();
+      utils.book_append_sheet(wb, ws, "RUP Penyedia");
+
+      const wscols = [
+        {wch: 5}, {wch: 15}, {wch: 40}, {wch: 15}, {wch: 20}, {wch: 20},
+        {wch: 15}, {wch: 30}, {wch: 30}, {wch: 15}, {wch: 15}, {wch: 15},
+        {wch: 15}, {wch: 15}, {wch: 10}, {wch: 10}
+      ];
+      ws['!cols'] = wscols;
+
+      const filename = `RUP_Penyedia_Enriched_${selectedYear.value}${exportMode.value === 'filtered' ? '_Filtered' : ''}.xlsx`;
+      writeFile(wb, filename);
+      exportModal.value = false;
+    }
+  } catch (err) {
+    console.error('Failed to export:', err);
+    alert('Gagal melakukan ekspor data. Silakan coba lagi.');
+  } finally {
+    exportLoading.value = false;
   }
 };
 
