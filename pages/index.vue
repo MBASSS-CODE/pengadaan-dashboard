@@ -137,7 +137,7 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
+<style>
 .dashboard-container {
   padding: 1.5rem;
   max-width: 1400px;

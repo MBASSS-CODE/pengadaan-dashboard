@@ -3,7 +3,7 @@
             <div class="p-6 border-b border-[color:hsl(var(--maz-border))] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h2 class="text-lg font-bold text-[color:hsl(var(--maz-foreground))] flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-purple-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
                   Integrasi Data Master: RUP Penyedia
@@ -11,7 +11,7 @@
                 <p class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">Gabungkan RUP Penyedia (sebagai data induk) dengan Satker, Anggaran, Kaji Ulang, PPK, dan Swakelola Induk</p>
               </div>
               <MazBtn @click="runRpMerge" :loading="rpMergeLoading" color="secondary" size="sm" :disabled="!rpMergeStatus.allRequiredFound">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 Jalankan Merge RUP
@@ -22,25 +22,27 @@
               <!-- Alur / Stepper -->
               <div class="mb-6">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-[color:hsl(var(--maz-muted))] mb-3">Alur Integrasi RUP</h3>
-                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-0">
-                  <div v-for="(step, idx) in rpMergeSteps" :key="idx" class="flex items-center">
-                    <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border"
-                      :class="{
-                        'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400': step.status === 'done',
-                        'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400': step.status === 'waiting',
-                        'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400': step.status === 'error',
-                        'bg-[color:hsl(var(--maz-foreground)_/_5%)] border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-muted))]': step.status === 'idle'
-                      }"
-                    >
-                      <span v-if="step.status === 'done'">✅</span>
-                      <span v-else-if="step.status === 'waiting'">⏳</span>
-                      <span v-else-if="step.status === 'error'">❌</span>
-                      <span v-else>⬜</span>
-                      {{ step.label }}
+                <div class="w-full overflow-x-auto pb-2">
+                  <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-0 sm:w-max">
+                    <div v-for="(step, idx) in rpMergeSteps" :key="idx" class="flex items-center shrink-0">
+                      <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium border whitespace-nowrap"
+                        :class="{
+                          'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400': step.status === 'done',
+                          'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400': step.status === 'waiting',
+                          'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400': step.status === 'error',
+                          'bg-[color:hsl(var(--maz-foreground)_/_5%)] border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-muted))]': step.status === 'idle'
+                        }"
+                      >
+                        <span v-if="step.status === 'done'">✅</span>
+                        <span v-else-if="step.status === 'waiting'">⏳</span>
+                        <span v-else-if="step.status === 'error'">❌</span>
+                        <span v-else>⬜</span>
+                        {{ step.label }}
+                      </div>
+                      <svg v-if="idx < rpMergeSteps.length - 1" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mx-1 text-[color:hsl(var(--maz-muted))] hidden sm:block shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
-                    <svg v-if="idx < rpMergeSteps.length - 1" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mx-1 text-[color:hsl(var(--maz-muted))] hidden sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>
                   </div>
                 </div>
               </div>
@@ -58,8 +60,8 @@
                     }"
                   >
                     <span class="text-lg">{{ src.found ? '✅' : (src.required ? '❌' : '⬜') }}</span>
-                    <div class="min-w-0">
-                      <div class="font-semibold text-[color:hsl(var(--maz-foreground))]">
+                    <div class="min-w-0 flex-1">
+                      <div class="font-semibold text-[color:hsl(var(--maz-foreground))] truncate">
                         {{ src.label }}
                         <span v-if="src.required" class="text-red-500 text-[10px] ml-1">WAJIB</span>
                       </div>
