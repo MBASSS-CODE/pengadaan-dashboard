@@ -15,23 +15,56 @@
             </div>
             
             <nav class="sidebar-nav">
-                <template v-for="group in menuGroups" :key="group.label">
-                    <div class="nav-label" :class="{ 'mt-5': group.label !== 'Menu Utama' }">{{ group.label }}</div>
-                    
-                    <template v-for="item in group.items" :key="item.path">
-                        <NuxtLink 
-                            v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
-                            :to="item.path" 
-                            class="nav-item" 
-                            @click="closeSidebar"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path v-for="(path, idx) in item.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
-                            </svg>
-                            {{ item.name }}
-                        </NuxtLink>
-                    </template>
+                <!-- Menu tanpa parent (standalone, e.g. Dashboard) -->
+                <template v-for="item in standaloneMenuItems" :key="item.path">
+                    <NuxtLink 
+                        v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
+                        :to="item.path" 
+                        class="nav-item mb-2" 
+                        @click="closeSidebar"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path v-for="(path, idx) in item.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
+                        </svg>
+                        {{ item.name }}
+                    </NuxtLink>
                 </template>
+
+                <!-- Kelompok menu collapsible -->
+                <div v-for="group in menuGroups" :key="group.label" class="mb-1">
+                    <div 
+                        class="nav-label mt-2" 
+                        @click="toggleGroup(group.label)"
+                    >
+                        <span>{{ group.label }}</span>
+                        <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            class="collapse-icon" 
+                            :class="{ 'is-collapsed': isGroupCollapsed(group.label) }"
+                            fill="none" 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor"
+                        >
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                    
+                    <div v-show="!isGroupCollapsed(group.label)" class="nav-group-items">
+                        <template v-for="item in group.items" :key="item.path">
+                            <NuxtLink 
+                                v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
+                                :to="item.path" 
+                                class="nav-item" 
+                                @click="closeSidebar"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path v-for="(path, idx) in item.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
+                                </svg>
+                                {{ item.name }}
+                            </NuxtLink>
+                        </template>
+                    </div>
+                </div>
             </nav>
 
             <div class="sidebar-footer">
@@ -86,16 +119,45 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { menuGroups } from './menu';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { menuGroups, standaloneMenuItems } from './menu';
 
 const router = useRouter();
+const route = useRoute();
 const isMobile = ref(false);
 const isSidebarOpen = ref(true);
 const { toggleDarkMode, isDark } = useTheme();
 const userRole = useCookie('user_role');
 const userName = useCookie('user_name');
+
+// State kelompok menu (Boolean: true = collapsed, false = expanded)
+const collapsedGroups = ref({});
+
+// Inisialisasi & update state: buka grup rute baru tanpa menutup grup yang sudah dibuka pengguna
+const syncMenuCollapseState = (currentPath) => {
+  menuGroups.forEach(group => {
+    const hasActiveItem = group.items?.some(item => item.path === currentPath);
+    if (collapsedGroups.value[group.label] === undefined) {
+      collapsedGroups.value[group.label] = !hasActiveItem;
+    } else if (hasActiveItem) {
+      collapsedGroups.value[group.label] = false;
+    }
+  });
+};
+
+const isGroupCollapsed = (label) => {
+  return collapsedGroups.value[label] !== false;
+};
+
+const toggleGroup = (label) => {
+  collapsedGroups.value[label] = isGroupCollapsed(label) ? false : true;
+};
+
+// Pantau perubahan rute: buka grup rute baru TANPA menutup grup yang sudah pernah dibuka
+watch(() => route.path, (newPath) => {
+  syncMenuCollapseState(newPath);
+}, { immediate: true });
 
 const displayUserName = computed(() => {
     if (userName.value) return userName.value;
@@ -273,8 +335,36 @@ const handleLogout = async () => {
   font-weight: 700;
   color: hsl(var(--maz-muted));
   letter-spacing: 1px;
-  margin-bottom: 0.75rem;
-  padding-left: 1rem;
+  margin-bottom: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-label:hover {
+  background-color: hsl(var(--maz-foreground) / 5%);
+  color: hsl(var(--maz-foreground));
+}
+
+.collapse-icon {
+  width: 1rem;
+  height: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.collapse-icon.is-collapsed {
+  transform: rotate(-90deg);
+}
+
+.nav-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .nav-item {
