@@ -1,8 +1,8 @@
-import { endpointRegistry, getActiveEndpoints } from '../../utils/cronManager';
+import { endpointRegistry, loadEndpointsConfig } from '../../utils/cronManager';
 
 export default defineEventHandler(async (event) => {
   try {
-    const activeEndpoints = getActiveEndpoints();
+    const activeEndpoints = await loadEndpointsConfig();
 
     return {
       success: true,

@@ -1,0 +1,25 @@
+{
+  "success": true,
+  "data": [
+    {
+      "nilai_penawaran": null,
+      "npwp_penyedia_16": "0430178665542000",
+      "nama_penyedia": "CV. SEGITIGA SAMA SISI",
+      "npwp_penyedia": "43.017.866.5-542.000",
+      "kd_pkt_dce": 10135809000,
+      "alasan": null,
+      "pemenang_terverifikasi": 0,
+      "tahun_anggaran": 2026,
+      "kd_klpd": "K22",
+      "kd_satker": "807366",
+      "pemenang": 0,
+      "kd_penyedia": 23476884054,
+      "kd_satker_str": "427950",
+      "kd_lpse": 366,
+      "kd_tender": 10141777000,
+      "nilai_terkoreksi": null,
+      "kd_peserta": 11650794000,
+      "last_update_ref": "1882f9f8-b2f8-5052-b3cc-7812bd10b785.xrEgdrnuH2iFRQKQ.cdvZG4mO1FbyNKIce_7_OwFbTeBw1Io1yAIJzq7KKNY"
+    }
+  ]
+}

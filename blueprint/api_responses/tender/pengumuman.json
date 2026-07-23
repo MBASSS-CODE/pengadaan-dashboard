@@ -1,0 +1,58 @@
+{
+  "error": {
+    "details": "Success",
+    "code": "000",
+    "message": "Success"
+  },
+  "meta": {
+    "cursor": "eyJpZCI6NjQzMjk5NTc0OTYzMDk0MjAyN30=",
+    "limit": 100
+  },
+  "success": true,
+  "data": [
+    {
+      "mtd_evaluasi": "Kualitas dan Biaya",
+      "list_tahun_anggaran": "2026",
+      "ket_diulang": null,
+      "mtd_pemilihan": "Seleksi",
+      "versi_tender": 2,
+      "ket_ditutup": null,
+      "nama_pokja": "A**** R*** P******;H**** S**** D** J******;M. S**** D*******;S** U****;a******* p****",
+      "nip_ppk": "***************001",
+      "tahun_anggaran": 2026,
+      "jenis_klpd": "KEMENTERIAN",
+      "kd_tender": 10133199000,
+      "kontrak_pembayaran": "Lumsum",
+      "tanggal_status": "2026-06-08T00:00:00Z",
+      "kualifikasi_paket": null,
+      "kd_pkt_dce": 10119699000,
+      "status_tender": "Selesai",
+      "hps": 900000000,
+      "kd_satker": "807366",
+      "provinsi": "DKI Jakarta",
+      "tgl_buat_paket": "2026-05-04T13:40:42.201Z",
+      "kd_rup": "63681259",
+      "nama_satker": "MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA",
+      "pagu": 900000000,
+      "tgl_kolektif_kolegial": "2026-05-07T10:30:07.281Z",
+      "url_lpse": "https://lpse.menpan.go.id/eproc4",
+      "kd_satker_str": "427950",
+      "nama_ppk": "R*** P********",
+      "jenis_pengadaan": "Jasa Konsultansi Badan Usaha Non Konstruksi",
+      "nama_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "sumber_dana": "APBN",
+      "tgl_pengumuman_tender": "2026-05-07T13:00:00Z",
+      "kgr_id": 1,
+      "kgr_nama": "Jasa Konsultansi Badan Usaha Non Konstruksi",
+      "nama_paket": "PENGADAAN JASA KONSULTAN TENAGA KONSULTAN PENDUKUNG PELAKSANAAN TUGAS KOMITE PERCEPATAN TRANSFORMASI DIGITAL PEMERINTAH",
+      "nip_pokja": "*******************************************************************************************003",
+      "kabkota": "Jakarta Selatan (Kota)",
+      "kd_lpse": 366,
+      "nama_lpse": "LPSE Kementrian Pendayagunaan Aparatur Negara dan Reformasi Birokrasi",
+      "mtd_kualifikasi": "Pra Dua File Kualitas Biaya",
+      "lokasi_pekerjaan": "Jalan Jenderal Sudirman Kv.69 Jakarta Selatan",
+      "kd_klpd": "K22",
+      "last_update_ref": "b1bb2b51-c741-5e24-bece-10b9fb4a9bc4.JIIjSaUyjg760xq-.fcT1Ht9ioPBTqtGt4y0NqbTzPRGrJLc2xKHFLDUCBE8"
+    }
+  ]
+}

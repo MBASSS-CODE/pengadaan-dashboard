@@ -7,6 +7,8 @@ import { syncEndpointData } from './dataManager';
 // Ini adalah "katalog" lengkap. Admin bisa mengaktifkan/menonaktifkan masing-masing.
 export const endpointRegistry: Record<string, { endpoint: string; label: string; description: string }[]> = {
   tender: [
+    { endpoint: 'pengumuman', label: 'Pengumuman Tender', description: 'Pengumuman paket tender' },
+    { endpoint: 'peserta-tender', label: 'Peserta Tender', description: 'Daftar peserta dan pemenang tender' },
     { endpoint: 'non-tender-pengumuman', label: 'Pengumuman Non-Tender', description: 'Pengumuman paket non-tender' }
   ],
   rup: [
