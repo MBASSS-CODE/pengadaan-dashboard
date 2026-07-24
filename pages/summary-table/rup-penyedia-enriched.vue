@@ -38,245 +38,348 @@
       </div>
     </div>
 
-    <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm overflow-hidden">
-      <!-- Search/Filter Bar -->
-      <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col gap-4">
-        <!-- Search Row -->
-        <div class="w-full flex items-center gap-4">
-          <div class="flex-grow">
-            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Pencarian</label>
-            <MazInput 
-              v-model="searchQuery" 
-              placeholder="Cari RUP, Satker, Nama Paket, PPK..." 
-              size="sm"
-              @update:model-value="onSearch"
-              clearable
-            >
-              <template #left-icon>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-[color:hsl(var(--maz-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    <ClientOnly>
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm overflow-hidden">
+        <!-- Search/Filter Bar -->
+        <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col gap-4">
+          <!-- Search Row -->
+          <div class="w-full flex items-center gap-4">
+            <div class="flex-grow">
+              <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Pencarian</label>
+              <MazInput 
+                v-model="searchQuery" 
+                placeholder="Cari RUP, Satker, Nama Paket, PPK..." 
+                size="sm"
+                @update:model-value="onSearch"
+                clearable
+              >
+                <template #left-icon>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-[color:hsl(var(--maz-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </template>
+              </MazInput>
+            </div>
+            <div class="mt-5 flex gap-2">
+              <MazBtn @click="showFilters = !showFilters" :color="showFilters ? 'primary' : 'secondary'" size="sm" outline>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                 </svg>
-              </template>
-            </MazInput>
-          </div>
-          <div class="mt-5 flex gap-2">
-            <MazBtn v-if="hasActiveFilters" @click="resetFilters" color="danger" size="sm" outline>Reset Filter</MazBtn>
-            <MazBtn @click="exportModal = true" color="success" size="sm">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Export Excel
-            </MazBtn>
-          </div>
-        </div>
+                Filter {{ hasActiveFilters ? 'Active' : '' }}
+              </MazBtn>
 
-        <!-- Filters Row -->
-        <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 items-end">
-          <div class="w-full">
-            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Realisasi</label>
-            <MazSelect v-model="filterStatusRealisasi" :options="statusRealisasiOptions" size="sm" clearable multiple @update:model-value="onFilterChange" />
-          </div>
-          <div class="w-full">
-            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Sumber Dana</label>
-            <MazSelect v-model="filterSumberDana" :options="sumberDanaOptions" size="sm" clearable multiple @update:model-value="onFilterChange" />
-          </div>
-          <div class="w-full">
-            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Metode Pengadaan</label>
-            <MazSelect v-model="filterMetodePengadaan" :options="metodePengadaanOptions" size="sm" clearable multiple @update:model-value="onFilterChange" />
-          </div>
-          <div class="w-full">
-            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Jenis Pengadaan</label>
-            <MazSelect v-model="filterJenisPengadaan" :options="jenisPengadaanOptions" size="sm" clearable multiple @update:model-value="onFilterChange" />
-          </div>
-          <div class="w-full">
-            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">PPK</label>
-            <MazSelect v-model="filterPpk" :options="ppkOptions" size="sm" clearable multiple search @update:model-value="onFilterChange" />
-          </div>
-          <div class="w-full">
-            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Umumkan</label>
-            <select v-model="filterUmumkan" class="w-full px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange()">
-              <option value="ALL">Semua Status Umumkan</option>
-              <option v-for="status in filterOptionsUmumkan" :key="status" :value="status">{{ status }}</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <!-- Loading State -->
-      <div v-if="loading && pageData.length === 0" class="p-12 flex justify-center items-center flex-col gap-4">
-        <MazSpinner color="primary" />
-        <span class="text-[color:hsl(var(--maz-muted))] font-medium">Memuat data Enriched...</span>
-      </div>
-
-      <!-- Error State -->
-      <div v-else-if="error" class="p-12 flex justify-center items-center flex-col text-red-500">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p class="font-medium">Gagal memuat data dari server. Pastikan Anda sudah menjalankan proses Merge.</p>
-        <div class="flex gap-2 mt-4">
-          <MazBtn @click="loadData()" size="sm" outline>Coba Lagi</MazBtn>
-          <NuxtLink to="/admin/data-merge">
-            <MazBtn size="sm" color="secondary">Buka Kelola Merge</MazBtn>
-          </NuxtLink>
-        </div>
-      </div>
-
-      <!-- MazTable Data Table -->
-      <div v-else class="overflow-x-auto w-full">
-        <MazTable
-          size="sm"
-          v-model:page="currentPage"
-          v-model:page-size="itemsPerPage"
-          pagination
-          :paginate-rows="false"
-          :total-items="totalItems"
-          :loading="loading"
-          color="primary"
-          hoverable
-          background-even
-          :headers="[
-            { label: 'No', key: 'index', align: 'center', width: '4rem', sortable: false },
-            { label: 'Informasi RUP Penyedia', key: 'paket', sortable: false, classes: 'min-w-[300px]' },
-            { label: 'Anggaran & Pelaksanaan', key: 'pelaksanaan', sortable: false, classes: 'min-w-[220px]' },
-            { label: 'Profil PPK & Satker', key: 'entitas', sortable: false, classes: 'min-w-[250px]' }
-          ]"
-          :rows="pageData"
-          @update:page="loadData()"
-        >
-          <template #cell-index="{ row }">
-            <span class="font-medium">{{ (currentPage - 1) * itemsPerPage + (row._index || 0) + 1 }}</span>
-          </template>
-          
-          <template #cell-paket="{ row }">
-            <div class="font-bold text-[color:hsl(var(--maz-primary))]">
-              {{ row.nama_paket || '-' }}
+              <MazBtn @click="exportModal = true" color="success" size="sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export Excel
+              </MazBtn>
             </div>
-            <div class="flex items-center gap-2 mt-2 flex-wrap">
-              <span class="px-2 py-0.5 rounded text-[10px] font-medium text-[color:hsl(var(--maz-foreground))] border border-[color:hsl(var(--maz-border))]">
-                RUP: {{ row.kd_rup }}
-              </span>
-              <span v-if="row.status_aktif_rup" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                Aktif
-              </span>
-              <span v-if="row.status_umumkan_rup === 'Sudah' || row.status_umumkan_rup === 'Terumumkan'" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                Terumumkan
-              </span>
-            </div>
-            <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1.5 flex flex-wrap gap-2">
-              <span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800">{{ row.metode_pengadaan }}</span>
-              <span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800">{{ row.jenis_pengadaan }}</span>
-              
-              <span v-if="row.status_pdn" class="px-1.5 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400 font-semibold" title="Produk Dalam Negeri">{{ row.status_pdn }}</span>
-              <span v-if="row.status_ukm" class="px-1.5 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400 font-semibold" title="Usaha Kecil/Mikro">{{ row.status_ukm }}</span>
+          </div>
+
+          <!-- Expanded Filters Grid -->
+          <div v-if="showFilters" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-3 border-t border-[color:hsl(var(--maz-border))]">
+            <div>
+              <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Jenis Pengadaan</label>
+              <MazSelect
+                v-model="filterJenisPengadaan"
+                :options="jenisPengadaanOptions"
+                multiple
+                size="sm"
+                placeholder="Semua Jenis"
+                @update:model-value="onFilterChange"
+              />
             </div>
             
-            <div v-if="row._has_kaji_ulang" class="mt-2 text-[10px] text-blue-600 dark:text-amber-400 flex items-center">
-              ⚠️ Pernah Kaji Ulang ({{ row.kaji_ulang_count }}x) - Tipe: {{ row.kaji_ulang_jenis_revisi }}
+            <div>
+              <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Metode Pemilihan</label>
+              <MazSelect
+                v-model="filterMetodePengadaan"
+                :options="metodePengadaanOptions"
+                multiple
+                size="sm"
+                placeholder="Semua Metode"
+                @update:model-value="onFilterChange"
+              />
             </div>
-          </template>
 
-          <template #cell-pelaksanaan="{ row }">
-            <div class="flex flex-col gap-2">
-              <div class="flex flex-col items-start border-b border-[color:hsl(var(--maz-border))] pb-2">
-                <div class="text-[10px] text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Pagu RUP</div>
-                <div class="font-bold text-sm text-[color:hsl(var(--maz-foreground))]">{{ formatRupiah(row.pagu) }}</div>
-                <div v-if="row._has_anggaran" class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-1">
-                  SD: {{ row.sumber_dana_list }} 
-                  <span v-if="row.anggaran_list?.length">({{ row.anggaran_list.length }} MAK)</span>
-                </div>
-              </div>
-              
-              <div class="pt-1">
-                <div class="text-[10px] text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-1">Status Realisasi (Inaproc)</div>
-                <div v-if="row._has_realisasi" class="text-xs flex flex-col gap-1">
-                  <div class="flex items-center gap-1.5">
-                    <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold border"
-                      :class="{
-                        'bg-[#8cc63f] text-gray-900 border-[#8cc63f]': row.realisasi_status === 'Selesai',
-                        'bg-[#fbbd08] text-gray-900 border-[#fbbd08]': row.realisasi_status === 'Berlangsung',
-                        'bg-[#17a2b8] text-white border-[#17a2b8]': ['Pending', 'Persiapan', 'Draft', 'Belum Mulai'].includes(row.realisasi_status),
-                        'bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border-[color:hsl(var(--maz-border))]': !['Selesai', 'Berlangsung', 'Pending', 'Persiapan', 'Draft', 'Belum Mulai'].includes(row.realisasi_status)
-                      }"
-                    >
-                      {{ row.realisasi_status }}
-                    </span>
-                    <span class="text-[10px] text-[color:hsl(var(--maz-muted))]">via {{ row.realisasi_metode }}</span>
+            <div>
+              <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Realisasi (Inaproc)</label>
+              <MazSelect
+                v-model="filterStatusRealisasi"
+                :options="statusRealisasiOptions"
+                multiple
+                size="sm"
+                placeholder="Semua Status"
+                @update:model-value="onFilterChange"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Sumber Dana</label>
+              <MazSelect
+                v-model="filterSumberDana"
+                :options="sumberDanaOptions"
+                multiple
+                size="sm"
+                placeholder="Semua Sumber"
+                @update:model-value="onFilterChange"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Pejabat Pembuat Komitmen (PPK)</label>
+              <MazSelect
+                v-model="filterPpk"
+                :options="ppkOptions"
+                multiple
+                search
+                size="sm"
+                placeholder="Semua PPK"
+                @update:model-value="onFilterChange"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Pengumuman RUP</label>
+              <MazSelect
+                v-model="filterUmumkan"
+                :options="filterOptionsUmumkan"
+                size="sm"
+                placeholder="Semua Status"
+                @update:model-value="onFilterChange"
+              />
+            </div>
+
+            <div class="flex items-end">
+              <MazBtn @click="resetFilters" color="transparent" size="sm" class="text-xs">
+                Reset Semua Filter
+              </MazBtn>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error State -->
+        <div v-if="error" class="flex flex-col items-center justify-center py-20 text-[color:hsl(var(--maz-destructive))]">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="font-medium">Gagal memuat data dari server.</p>
+          <MazBtn @click="loadData()" size="sm" outline class="mt-4">Coba Lagi</MazBtn>
+        </div>
+
+        <!-- Data Table (Crash-Free Native Vue Table) -->
+        <div class="overflow-x-auto w-full">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] text-xs font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">
+                <th class="py-3 px-4 text-center w-16">No</th>
+                <th class="py-3 px-4 min-w-[300px]">Informasi RUP & Spesifikasi</th>
+                <th class="py-3 px-4 min-w-[280px]">Integrasi Realisasi (Inaproc)</th>
+                <th class="py-3 px-4 min-w-[220px]">Anggaran & Pelaksanaan</th>
+                <th class="py-3 px-4 min-w-[250px]">Profil PPK & Satker</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[color:hsl(var(--maz-border))] text-sm">
+              <tr v-if="loading" class="text-center">
+                <td colspan="5" class="py-12 text-[color:hsl(var(--maz-muted))]">
+                  <div class="flex items-center justify-center gap-2">
+                    <span class="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></span>
+                    <span>Memuat data...</span>
                   </div>
-                  <div class="text-[10px] mt-1">HPS: <span class="font-medium text-[color:hsl(var(--maz-primary))]">{{ formatRupiah(row.realisasi_hps) }}</span></div>
-                </div>
-                <div v-else class="text-[10px] text-amber-600 dark:text-amber-500 flex items-center mt-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Belum ada paket / Belum Tender
-                </div>
-              </div>
-            </div>
-          </template>
+                </td>
+              </tr>
+              <tr v-else-if="pageData.length === 0" class="text-center">
+                <td colspan="5" class="py-12 text-[color:hsl(var(--maz-muted))]">
+                  Tidak ada data yang sesuai filter / kriteria.
+                </td>
+              </tr>
+              <tr 
+                v-else
+                v-for="(row, idx) in pageData" 
+                :key="row.kd_rup || row._index || idx"
+                class="hover:bg-[color:hsl(var(--maz-foreground)_/_3%)] transition-colors"
+              >
+                <!-- Cell Index -->
+                <td class="py-3 px-4 text-center font-medium">
+                  {{ (currentPage - 1) * itemsPerPage + idx + 1 }}
+                </td>
+
+                <!-- Cell Paket -->
+                <td class="py-3 px-4">
+                  <div class="font-bold text-[color:hsl(var(--maz-primary))]">
+                    {{ row.nama_paket || '-' }}
+                  </div>
+                  <div class="flex items-center gap-2 mt-2 flex-wrap">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-medium text-[color:hsl(var(--maz-foreground))] border border-[color:hsl(var(--maz-border))]">
+                      RUP: {{ row.kd_rup }}
+                    </span>
+                    <span v-if="row.status_aktif_rup" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                      Aktif
+                    </span>
+                    <span v-if="row.status_umumkan_rup === 'Sudah' || row.status_umumkan_rup === 'Terumumkan'" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                      Terumumkan
+                    </span>
+                  </div>
+                  <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1.5 flex flex-wrap gap-2">
+                    <span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800">{{ row.metode_pengadaan }}</span>
+                    <span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800">{{ row.jenis_pengadaan }}</span>
+                    
+                    <span v-if="row.status_pdn" class="px-1.5 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400 font-semibold" title="Produk Dalam Negeri">{{ row.status_pdn }}</span>
+                    <span v-if="row.status_ukm" class="px-1.5 py-0.5 rounded border border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400 font-semibold" title="Usaha Kecil/Mikro">{{ row.status_ukm }}</span>
+                  </div>
+                  
+                  <div v-if="row._has_kaji_ulang" class="mt-2 text-[10px] text-blue-600 dark:text-amber-400 flex items-center">
+                    ⚠️ Pernah Kaji Ulang ({{ row.kaji_ulang_count }}x) - Tipe: {{ row.kaji_ulang_jenis_revisi }}
+                  </div>
+                </td>
+
+                <!-- Cell Realisasi -->
+                <td class="py-3 px-4">
+                  <div class="flex flex-col gap-1.5">
+                    <div v-if="row._has_realisasi" class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-2.5">
+                      <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="font-bold text-xs text-green-700 dark:text-green-400 truncate max-w-[180px]" :title="row.realisasi_nama_paket">
+                          {{ row.realisasi_nama_paket }}
+                        </span>
+                        <span class="text-[10px] font-mono bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 px-1.5 py-0.5 rounded">
+                          Kode: {{ row.realisasi_kd_paket }}
+                        </span>
+                      </div>
+                      <div class="flex items-center justify-between text-[10px]">
+                        <span class="px-1.5 py-0.5 rounded font-semibold"
+                          :class="{
+                            'bg-green-100 text-green-800': row.realisasi_status === 'Selesai',
+                            'bg-amber-100 text-amber-800': row.realisasi_status === 'Berlangsung'
+                          }"
+                        >
+                          {{ row.realisasi_status }}
+                        </span>
+                        <span class="text-[10px] text-[color:hsl(var(--maz-muted))]">via {{ row.realisasi_metode }}</span>
+                      </div>
+                    </div>
+                    <div v-else class="text-[10px] text-amber-600 dark:text-amber-500 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      Belum ada paket / Belum Tender
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Cell Pelaksanaan -->
+                <td class="py-3 px-4">
+                  <div class="flex flex-col gap-2">
+                    <div class="flex flex-col items-start border-b border-[color:hsl(var(--maz-border))] pb-2">
+                      <span class="text-[10px] text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Pagu Anggaran RUP</span>
+                      <span class="font-bold text-sm text-[color:hsl(var(--maz-primary))]">{{ formatRupiah(row.pagu) }}</span>
+                      <div v-if="row.sumber_dana_list" class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-0.5">
+                        Sumber: <span class="font-medium">{{ row.sumber_dana_list }}</span>
+                      </div>
+                    </div>
+                    
+                    <div class="text-[10px] text-[color:hsl(var(--maz-muted))]">
+                      <div class="font-medium mb-0.5 text-[color:hsl(var(--maz-foreground))]">Jadwal Pemilihan:</div>
+                      <div>{{ row.tgl_awal_pemilihan || '-' }} s/d {{ row.tgl_akhir_pemilihan || '-' }}</div>
+                      <div class="mt-1 font-medium text-[color:hsl(var(--maz-foreground))]">Jadwal Kontrak:</div>
+                      <div>{{ row.tgl_awal_kontrak ? row.tgl_awal_kontrak.substring(0,10) : '-' }} s/d {{ row.tgl_akhir_kontrak ? row.tgl_akhir_kontrak.substring(0,10) : '-' }}</div>
+                    </div>
+                  </div>
+                </td>
+                
+                <!-- Cell Entitas -->
+                <td class="py-3 px-4">
+                  <div class="mb-3">
+                    <div class="text-[10px] text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-1">Pejabat Pembuat Komitmen</div>
+                    <div v-if="row._ppk_completed" class="flex flex-col">
+                      <div class="font-bold text-xs text-[color:hsl(var(--maz-foreground))] flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        {{ row.ppk_nama_lengkap }}
+                      </div>
+                      <div class="text-[10px] text-[color:hsl(var(--maz-muted))] font-mono mt-0.5">{{ row.ppk_nip_asli }}</div>
+                    </div>
+                    <div v-else class="text-xs flex flex-col">
+                      <span class="font-medium text-[color:hsl(var(--maz-foreground))]">{{ row.nama_ppk }}</span>
+                      <span class="text-[10px] text-amber-600 dark:text-amber-500">⚠️ Masked: {{ row.nip_ppk }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="border-t border-[color:hsl(var(--maz-border))] pt-2 mt-2">
+                    <div class="text-[10px] text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-1">Satuan Kerja</div>
+                    <div class="text-xs font-semibold text-[color:hsl(var(--maz-foreground))] max-w-[250px] truncate" :title="row.nama_satker">
+                      {{ row.nama_satker }}
+                    </div>
+                    <div class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-0.5">Kode: {{ row.kd_satker }}</div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Controls Bar -->
+        <div class="p-4 border-t border-[color:hsl(var(--maz-border))] flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[color:hsl(var(--maz-muted))]">
+          <div>
+            Menampilkan <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0 }}</span>
+            sampai <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ Math.min(currentPage * itemsPerPage, totalItems) }}</span>
+            dari <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ totalItems }}</span> data
+          </div>
           
-          <template #cell-entitas="{ row }">
-            <div class="mb-3">
-              <div class="text-[10px] text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-1">Pejabat Pembuat Komitmen</div>
-              <div v-if="row._ppk_completed" class="flex flex-col">
-                <div class="font-bold text-xs text-[color:hsl(var(--maz-foreground))] flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                  </svg>
-                  {{ row.ppk_nama_lengkap }}
-                </div>
-                <div class="text-[10px] text-[color:hsl(var(--maz-muted))] font-mono mt-0.5">{{ row.ppk_nip_asli }}</div>
-              </div>
-              <div v-else class="text-xs flex flex-col">
-                <span class="font-medium text-[color:hsl(var(--maz-foreground))]">{{ row.nama_ppk }}</span>
-                <span class="text-[10px] text-amber-600 dark:text-amber-500">⚠️ Masked: {{ row.nip_ppk }}</span>
-              </div>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5">
+              <span>Per halaman:</span>
+              <select v-model="itemsPerPage" class="px-2 py-1 bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded text-xs focus:outline-none" @change="onFilterChange()">
+                <option :value="10">10</option>
+                <option :value="25">25</option>
+                <option :value="50">50</option>
+                <option :value="100">100</option>
+              </select>
             </div>
             
-            <div class="border-t border-[color:hsl(var(--maz-border))] pt-2 mt-2">
-              <div class="text-[10px] text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-1">Satuan Kerja</div>
-              <div class="text-xs font-semibold text-[color:hsl(var(--maz-foreground))] max-w-[250px] truncate" :title="row.nama_satker">
-                {{ row.nama_satker }}
-              </div>
-              <div class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-0.5">Kode: {{ row.kd_satker }}</div>
+            <div class="flex gap-2">
+              <MazBtn size="sm" outline :disabled="currentPage === 1 || loading" @click="currentPage--; loadData()">Sebelumnya</MazBtn>
+              <MazBtn size="sm" outline :disabled="currentPage >= Math.ceil(totalItems / itemsPerPage) || loading" @click="currentPage++; loadData()">Selanjutnya</MazBtn>
             </div>
-          </template>
-        </MazTable>
-      </div>
-    </div>
-
-    <!-- Export Modal -->
-    <MazDialog v-model="exportModal" title="Export ke Excel (XLSX)">
-      <div class="flex flex-col gap-4 py-2">
-        <p class="text-sm text-[color:hsl(var(--maz-muted))]">
-          Pilih mode ekspor data RUP Penyedia Enriched untuk Tahun Anggaran {{ selectedYear }}:
-        </p>
-        
-        <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] border border-[color:hsl(var(--maz-border))] p-4 rounded-lg">
-          <div class="flex flex-col gap-3">
-            <label class="flex items-start gap-3 cursor-pointer">
-              <input type="radio" v-model="exportMode" value="filtered" class="mt-1" />
-              <div>
-                <div class="font-semibold text-sm">Sesuai Filter Saat Ini</div>
-                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor data yang tampil pada tabel saat ini berdasarkan pencarian dan filter yang aktif (estimasi: {{ totalItems }} data).</div>
-              </div>
-            </label>
-            <label class="flex items-start gap-3 cursor-pointer">
-              <input type="radio" v-model="exportMode" value="all" class="mt-1" />
-              <div>
-                <div class="font-semibold text-sm">Seluruh Data (Tahun {{ selectedYear }})</div>
-                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor seluruh data master untuk tahun anggaran {{ selectedYear }} tanpa filter apapun.</div>
-              </div>
-            </label>
           </div>
         </div>
       </div>
-      <template #footer>
-        <div class="flex justify-end gap-2 w-full">
-          <MazBtn @click="exportModal = false" color="transparent" size="sm">Batal</MazBtn>
-          <MazBtn @click="executeExport" :loading="exportLoading" color="success" size="sm">Download Excel</MazBtn>
+
+      <!-- Export Modal -->
+      <MazDialog v-model="exportModal" title="Export ke Excel (XLSX)">
+        <div class="flex flex-col gap-4 py-2">
+          <p class="text-sm text-[color:hsl(var(--maz-muted))]">
+            Pilih mode ekspor data RUP Penyedia Enriched untuk Tahun Anggaran {{ selectedYear }}:
+          </p>
+          
+          <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] border border-[color:hsl(var(--maz-border))] p-4 rounded-lg">
+            <div class="flex flex-col gap-3">
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input type="radio" v-model="exportMode" value="filtered" class="mt-1" />
+                <div>
+                  <div class="font-semibold text-sm">Sesuai Filter Saat Ini</div>
+                  <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor data yang tampil pada tabel saat ini berdasarkan pencarian dan filter yang aktif (estimasi: {{ totalItems }} data).</div>
+                </div>
+              </label>
+              <label class="flex items-start gap-3 cursor-pointer">
+                <input type="radio" v-model="exportMode" value="all" class="mt-1" />
+                <div>
+                  <div class="font-semibold text-sm">Seluruh Data (Tahun {{ selectedYear }})</div>
+                  <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor seluruh data master untuk tahun anggaran {{ selectedYear }} tanpa filter apapun.</div>
+                </div>
+              </label>
+            </div>
+          </div>
         </div>
-      </template>
-    </MazDialog>
+        <template #footer>
+          <div class="flex justify-end gap-2 w-full">
+            <MazBtn @click="exportModal = false" color="transparent" size="sm">Batal</MazBtn>
+            <MazBtn @click="executeExport" :loading="exportLoading" color="success" size="sm">Download Excel</MazBtn>
+          </div>
+        </template>
+      </MazDialog>
+    </ClientOnly>
   </div>
 </template>
 

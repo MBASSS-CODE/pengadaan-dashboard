@@ -15,7 +15,9 @@
 
     <!-- Loading State -->
     <div v-if="loading" class="loading-state">
-      <MazSpinner color="primary" size="3rem" />
+      <ClientOnly>
+        <MazSpinner color="primary" size="3rem" />
+      </ClientOnly>
       <p>Memuat data profil pengadaan...</p>
     </div>
 

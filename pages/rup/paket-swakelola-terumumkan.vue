@@ -7,23 +7,26 @@
         <p class="text-sm text-[color:hsl(var(--maz-muted))] mt-1">Daftar detil paket swakelola terumumkan, penyelenggara, dan pagu</p>
       </div>
       
-      <div class="flex items-center gap-3 w-full md:w-auto">
-        <!-- Filter Tahun Dinamis -->
-        <select v-model="selectedYear" class="px-4 py-2 bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange(true)">
-          <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
-        </select>
-        
-        <MazBtn @click="loadData(true)" :loading="loading" color="primary">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          Refresh Data
-        </MazBtn>
-      </div>
+      <ClientOnly>
+        <div class="flex items-center gap-3 w-full md:w-auto">
+          <!-- Filter Tahun Dinamis -->
+          <select v-model="selectedYear" class="px-4 py-2 bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange(true)">
+            <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
+          </select>
+          
+          <MazBtn @click="loadData(true)" :loading="loading" color="primary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh Data
+          </MazBtn>
+        </div>
+      </ClientOnly>
     </div>
 
-    <!-- Main Content Card -->
-    <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm overflow-hidden">
+    <ClientOnly>
+      <!-- Main Content Card -->
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm overflow-hidden">
       
       <!-- Search/Filter Bar -->
       <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col lg:flex-row gap-4 items-end">
@@ -200,6 +203,7 @@
         </div>
       </div>
     </div>
+    </ClientOnly>
   </div>
 </template>
 
