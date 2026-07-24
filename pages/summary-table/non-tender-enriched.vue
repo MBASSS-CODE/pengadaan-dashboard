@@ -22,22 +22,8 @@
       </div>
     </div>
 
-    <!-- Empty State (No Data merged) -->
-    <div v-if="!loading && !error && totalAllItems === 0" class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-12 text-center shadow-sm">
-      <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 mb-4">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-        </svg>
-      </div>
-      <h2 class="text-xl font-bold text-[color:hsl(var(--maz-foreground))] mb-2">Data Belum Di-merge</h2>
-      <p class="text-[color:hsl(var(--maz-muted))] mb-6 max-w-md mx-auto">Tidak ada data hasil merge untuk tahun {{ selectedYear }}. Silakan jalankan proses "Integrasi Data" melalui akses Admin terlebih dahulu.</p>
-      <NuxtLink to="/admin/system">
-        <MazBtn color="primary">Buka Akses Admin</MazBtn>
-      </NuxtLink>
-    </div>
-
     <!-- Main Content Card -->
-    <div v-else class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm overflow-hidden">
+    <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm overflow-hidden">
       
       <!-- Search/Filter Bar -->
       <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col gap-4">
@@ -102,17 +88,31 @@
         </div>
       </div>
 
-      <!-- Error State -->
-      <div v-if="error" class="flex flex-col items-center justify-center py-20 text-[color:hsl(var(--maz-destructive))]">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p class="font-medium">Gagal memuat data dari server.</p>
-        <MazBtn @click="loadData()" size="sm" outline class="mt-4">Coba Lagi</MazBtn>
+      <!-- Empty State Banner (No Data merged) -->
+      <div v-if="!loading && !error && totalAllItems === 0" class="p-8 text-center bg-amber-500/10 border-b border-[color:hsl(var(--maz-border))]">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 mb-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <h2 class="text-lg font-bold text-[color:hsl(var(--maz-foreground))] mb-1">Data Belum Di-merge</h2>
+        <p class="text-xs text-[color:hsl(var(--maz-muted))] mb-4 max-w-md mx-auto">Tidak ada data hasil merge untuk tahun {{ selectedYear }}. Silakan jalankan proses "Integrasi Data" melalui akses Admin terlebih dahulu.</p>
+        <NuxtLink to="/admin/system">
+          <MazBtn color="primary" size="sm">Buka Akses Admin</MazBtn>
+        </NuxtLink>
       </div>
 
-      <!-- MazTable Data Table -->
-      <div v-else class="overflow-x-auto w-full">
+      <!-- Error State Banner -->
+      <div v-if="error" class="flex flex-col items-center justify-center py-12 text-[color:hsl(var(--maz-destructive))] border-b border-[color:hsl(var(--maz-border))]">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p class="font-medium text-sm">Gagal memuat data dari server.</p>
+        <MazBtn @click="loadData()" size="sm" outline class="mt-3">Coba Lagi</MazBtn>
+      </div>
+
+      <!-- MazTable Data Table (Permanently Mounted) -->
+      <div class="overflow-x-auto w-full">
         <MazTable
           size="sm"
           v-model:page="currentPage"
@@ -377,30 +377,22 @@ const loadData = async () => {
     totalAllItems.value = response.meta?.totalAllItems || 0;
     
     if (response.filterOptions) {
-      if (response.filterOptions.statusNontender) {
-        statusOptions.value = [
-          { label: 'Semua Status', value: 'ALL' },
-          ...response.filterOptions.statusNontender.map(opt => ({ label: opt, value: opt }))
-        ];
-      }
-      if (response.filterOptions.metodePemilihan) {
-        metodeOptions.value = [
-          { label: 'Semua Metode', value: 'ALL' },
-          ...response.filterOptions.metodePemilihan.map(opt => ({ label: opt, value: opt }))
-        ];
-      }
-      if (response.filterOptions.satker) {
-        satkerOptions.value = [
-          { label: 'Semua Satker', value: 'ALL' },
-          ...response.filterOptions.satker.map(opt => ({ label: opt, value: opt }))
-        ];
-      }
-      if (response.filterOptions.namaPpk) {
-        ppkOptions.value = [
-          { label: 'Semua PPK', value: 'ALL' },
-          ...response.filterOptions.namaPpk.map(opt => ({ label: opt, value: opt }))
-        ];
-      }
+      statusOptions.value = [
+        { label: 'Semua Status', value: 'ALL' },
+        ...(response.filterOptions.statusNontender || []).map(opt => ({ label: opt, value: opt }))
+      ];
+      metodeOptions.value = [
+        { label: 'Semua Metode', value: 'ALL' },
+        ...(response.filterOptions.metodePemilihan || []).map(opt => ({ label: opt, value: opt }))
+      ];
+      satkerOptions.value = [
+        { label: 'Semua Satker', value: 'ALL' },
+        ...(response.filterOptions.satker || []).map(opt => ({ label: opt, value: opt }))
+      ];
+      ppkOptions.value = [
+        { label: 'Semua PPK', value: 'ALL' },
+        ...(response.filterOptions.namaPpk || []).map(opt => ({ label: opt, value: opt }))
+      ];
     }
   } catch (err) {
     console.error('Error fetching data:', err);
