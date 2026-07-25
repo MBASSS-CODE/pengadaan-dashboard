@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { findUserByUsername, createUser } from '../../utils/userManager';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -14,7 +15,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Username sudah digunakan' });
   }
 
-  const users = await getUsers();
   const newUser = {
     id: Date.now().toString(),
     username,
@@ -22,8 +22,7 @@ export default defineEventHandler(async (event) => {
     role: role || 'admin'
   };
 
-  users.push(newUser);
-  await saveUsers(users);
+  await createUser(newUser);
 
   return { 
     success: true, 

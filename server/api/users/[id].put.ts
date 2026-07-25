@@ -1,4 +1,6 @@
 import bcrypt from 'bcryptjs';
+import { pool } from '../../utils/db'; // Ensure we can query directly or we can use getUsers, but let's just use getUsers and updateUser
+import { getUsers, updateUser } from '../../utils/userManager';
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id');
@@ -6,9 +8,9 @@ export default defineEventHandler(async (event) => {
   const { username, password, role } = body;
 
   const users = await getUsers();
-  const userIndex = users.findIndex(u => u.id === id);
+  const userToUpdate = users.find(u => u.id === id);
 
-  if (userIndex === -1) {
+  if (!userToUpdate) {
     throw createError({ statusCode: 404, statusMessage: 'User tidak ditemukan' });
   }
 
@@ -17,18 +19,18 @@ export default defineEventHandler(async (event) => {
     if (existing) {
       throw createError({ statusCode: 400, statusMessage: 'Username sudah digunakan oleh akun lain' });
     }
-    users[userIndex].username = username;
+    userToUpdate.username = username;
   }
 
   if (password) {
-    users[userIndex].passwordHash = bcrypt.hashSync(password, 10);
+    userToUpdate.passwordHash = bcrypt.hashSync(password, 10);
   }
 
   if (role) {
-    users[userIndex].role = role;
+    userToUpdate.role = role;
   }
 
-  await saveUsers(users);
+  await updateUser(userToUpdate);
 
   return { success: true, message: 'User berhasil diperbarui' };
 });

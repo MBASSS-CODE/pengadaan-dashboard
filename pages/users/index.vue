@@ -75,14 +75,23 @@ const loading = ref(true);
 const userDialog = ref(false);
 const userForm = ref({});
 const submitted = ref(false);
+const router = useRouter();
 
 const loadUsers = async () => {
   loading.value = true;
   try {
-    const res = await $fetch('/api/users');
-    users.value = res.data;
+    const res = await $fetch('/api/users', {
+      headers: useRequestHeaders(['cookie']) // Ensure cookies are passed if running in SSR
+    });
+    users.value = res.data || [];
   } catch (error) {
     console.error('Error fetching users:', error);
+    if (error.response?.status === 401 || error.statusCode === 401) {
+      const isLoggedIn = useCookie('is_logged_in');
+      isLoggedIn.value = null; // Clear the cookie
+      if (router) router.push('/login');
+      else window.location.href = '/login';
+    }
   } finally {
     loading.value = false;
   }
