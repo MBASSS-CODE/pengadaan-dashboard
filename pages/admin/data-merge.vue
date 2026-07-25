@@ -13,20 +13,27 @@
     </div>
 
     <!-- Tabs -->
-    <div class="flex gap-4 mb-6 pb-2 border-b border-[color:hsl(var(--maz-border))]">
+    <div class="flex gap-4 mb-6 pb-2 border-b border-[color:hsl(var(--maz-border))] overflow-x-auto">
       <button 
-        class="tab-btn" 
+        class="tab-btn whitespace-nowrap" 
         :class="{ active: activeTab === 'rup-penyedia' }"
         @click="activeTab = 'rup-penyedia'"
       >
         RUP Penyedia Master
       </button>
       <button 
-        class="tab-btn" 
+        class="tab-btn whitespace-nowrap" 
         :class="{ active: activeTab === 'non-tender' }"
         @click="activeTab = 'non-tender'"
       >
         Non-Tender
+      </button>
+      <button 
+        class="tab-btn whitespace-nowrap" 
+        :class="{ active: activeTab === 'pencatatan-nontender' }"
+        @click="activeTab = 'pencatatan-nontender'"
+      >
+        Pencatatan Non-Tender
       </button>
     </div>
 
@@ -35,6 +42,7 @@
       <Transition name="fade" mode="out-in">
         <MergeRupPenyedia v-if="activeTab === 'rup-penyedia'" />
         <MergeNonTender v-else-if="activeTab === 'non-tender'" />
+        <MergePencatatanNonTender v-else-if="activeTab === 'pencatatan-nontender'" />
       </Transition>
     </div>
   </div>
@@ -44,6 +52,7 @@
 import { ref } from 'vue';
 import MergeRupPenyedia from '~/components/admin/MergeRupPenyedia.vue';
 import MergeNonTender from '~/components/admin/MergeNonTender.vue';
+import MergePencatatanNonTender from '~/components/admin/MergePencatatanNonTender.vue';
 
 const activeTab = ref('rup-penyedia');
 </script>

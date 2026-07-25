@@ -221,6 +221,9 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
   }
 
   // 3. Jika kosong di RAM dan File (atau jika di-refresh paksa), jalankan syncEndpointData
+  if (group === 'merged') {
+    return []; // Never sync merged from external API
+  }
   return await syncEndpointData(group, endpoint, tahun, extraParams);
 };
 

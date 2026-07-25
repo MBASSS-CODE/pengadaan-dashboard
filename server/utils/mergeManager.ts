@@ -22,6 +22,8 @@ export const MERGE_SOURCE_ENDPOINTS = [
   { group: 'rup', endpoint: 'master-satker', label: 'Master Satker', required: false },
   { group: 'rup', endpoint: 'history-kaji-ulang', label: 'History Kaji Ulang', required: false },
   { group: 'rup', endpoint: 'paket-anggaran-penyedia', label: 'Anggaran Penyedia', required: false },
+  { group: 'tender', endpoint: 'pencatatan-non-tender', label: 'Pencatatan Non-Tender', required: false },
+  { group: 'tender', endpoint: 'pencatatan-non-tender-realisasi', label: 'Realisasi Pencatatan', required: false },
 ];
 
 // ─── Helper: Read JSON safely ───────────────────────────────────────────────
@@ -390,6 +392,8 @@ export const triggerAutoMerge = (tahun: string, trigger: string) => {
       await executeMerge(tahun, trigger);
       // 2. Merge RUP Penyedia
       await executeRupPenyediaMerge(tahun, trigger);
+      // 3. Merge Pencatatan Non-Tender
+      await executePencatatanNonTenderMerge(tahun, trigger);
     } catch (error) {
       console.error(`[Auto-Merge] Failed for year ${tahun}:`, error);
     } finally {
@@ -589,3 +593,153 @@ export const executeRupPenyediaMerge = async (tahun: string, trigger: string = '
     return result;
   }
 };
+
+// ─── Pencatatan Non-Tender Merge ──────────────────────────────────────────────
+export const executePencatatanNonTenderMerge = async (tahun: string, trigger: string = 'manual') => {
+  const startTime = Date.now();
+  
+  try {
+    const dataDir = path.resolve(process.cwd(), 'server', 'data');
+    
+    // Load data sources
+    const pencatatanData: any[] = (await readJsonSafe(path.resolve(dataDir, `tender/pencatatan-non-tender_${tahun}.json`))) || [];
+    if (pencatatanData.length === 0) return null; // No data to merge
+
+    const realisasiData: any[] = (await readJsonSafe(path.resolve(dataDir, `tender/pencatatan-non-tender-realisasi_${tahun}.json`))) || [];
+    const paketPenyediaData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-penyedia_${tahun}.json`))) || [];
+    const masterSatkerData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/master-satker_${tahun}.json`))) || [];
+    const ppkData: any[] = await loadPpkMaster();
+
+    // Build lookup maps
+    const realisasiMap = new Map<string, any[]>();
+    for (const item of realisasiData) {
+      if (item.kd_nontender_pct) {
+        const key = String(item.kd_nontender_pct);
+        if (!realisasiMap.has(key)) realisasiMap.set(key, []);
+        realisasiMap.get(key)!.push(item);
+      }
+    }
+
+    const rupMap = new Map<string, any>();
+    for (const item of paketPenyediaData) {
+      if (item.kd_rup) rupMap.set(String(item.kd_rup), item);
+    }
+
+    const satkerMap = new Map<string, any>();
+    for (const item of masterSatkerData) {
+      if (item.kd_satker) satkerMap.set(String(item.kd_satker), item);
+    }
+
+    const ppkMap = new Map<string, any>();
+    for (const item of ppkData) {
+      if (item.nip_nama_masked) ppkMap.set(item.nip_nama_masked, item);
+    }
+
+    const anomalies: string[] = [];
+    
+    const mergedData = pencatatanData.map(item => {
+      const enriched = { ...item };
+      const kdNontenderPct = String(item.kd_nontender_pct || '');
+      const kdRup = String(item.kd_rup || '');
+      const kdSatker = String(item.kd_satker || '');
+
+      // 1. Merge: Realisasi
+      const realisasiList = realisasiMap.get(kdNontenderPct);
+      if (realisasiList && realisasiList.length > 0) {
+        enriched.realisasi_list = realisasiList;
+        enriched._has_realisasi_detail = true;
+      } else {
+        enriched.realisasi_list = [];
+        enriched._has_realisasi_detail = false;
+      }
+
+      // 2. Merge: RUP Penyedia
+      const rup = rupMap.get(kdRup);
+      if (rup) {
+        enriched.rup_status_aktif = rup.status_aktif_rup;
+        enriched.rup_pagu = rup.pagu;
+        enriched.rup_jenis_pengadaan = rup.jenis_pengadaan;
+        enriched.rup_metode_pengadaan = rup.metode_pengadaan;
+        enriched.rup_status_pdn = rup.status_pdn;
+        enriched.rup_status_ukm = rup.status_ukm;
+      }
+
+      // 3. Merge: Master Satker
+      const satker = satkerMap.get(kdSatker);
+      if (satker) {
+        enriched.satker_status = satker.status_satker;
+        enriched.satker_jenis = satker.jenis_satker;
+        enriched.satker_alamat = satker.alamat;
+      }
+
+      // 4. Merge: PPK Master
+      const nip = item.nip_ppk || '';
+      const nama = item.nama_ppk || '';
+      let maskedKey = '';
+      if (nip && nama) {
+        maskedKey = `${nip} - ${nama}`;
+      } else {
+        maskedKey = nip || nama || '';
+      }
+
+      const ppk = ppkMap.get(maskedKey);
+      if (ppk) {
+        enriched.ppk_nama_lengkap = ppk.nama_lengkap;
+        enriched.ppk_nip_asli = ppk.nip_asli;
+        enriched.ppk_jabatan = ppk.jabatan;
+        enriched.ppk_email = ppk.email;
+        enriched.ppk_telepon = ppk.telepon;
+        enriched._ppk_completed = true;
+      } else {
+        enriched._ppk_completed = false;
+      }
+
+      return enriched;
+    });
+
+    // Save to disk
+    await fs.mkdir(mergedDir, { recursive: true });
+    const outputPath = path.resolve(mergedDir, `pencatatan-nontender-enriched_${tahun}.json`);
+    await fs.writeFile(outputPath, JSON.stringify(mergedData, null, 2), 'utf-8');
+
+    // Also cache if needed, although mostly fetched directly.
+    const cacheKey = `pencatatan_nontender_enriched_${tahun}`;
+    mergedCache[cacheKey] = mergedData;
+
+    const duration = Date.now() - startTime;
+    const result = {
+      id: crypto.randomUUID(),
+      type: 'pencatatan-nontender',
+      timestamp: new Date().toISOString(),
+      tahun,
+      trigger,
+      status: 'success',
+      duration_ms: duration,
+      result: {
+        total_records: mergedData.length
+      },
+      anomalies
+    };
+
+    await appendMergeHistory(result);
+    console.log(`[Merge Pencatatan Non-Tender] Selesai: ${mergedData.length} records merged dalam ${duration}ms (trigger: ${trigger})`);
+    return result;
+
+  } catch (error: any) {
+    console.error('[Merge Pencatatan Non-Tender] Error:', error);
+    const result = {
+      id: crypto.randomUUID(),
+      type: 'pencatatan-nontender',
+      timestamp: new Date().toISOString(),
+      tahun,
+      trigger,
+      status: 'failed',
+      duration_ms: Date.now() - startTime,
+      error: error.message,
+      anomalies: []
+    };
+    await appendMergeHistory(result);
+    return result;
+  }
+};
+

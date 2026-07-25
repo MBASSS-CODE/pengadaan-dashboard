@@ -1,4 +1,4 @@
-import { executeMerge, checkMergePrerequisites, getMergeHistory } from '../../utils/mergeManager';
+import { executeMerge, executeRupPenyediaMerge, executePencatatanNonTenderMerge, checkMergePrerequisites, getMergeHistory } from '../../utils/mergeManager';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);

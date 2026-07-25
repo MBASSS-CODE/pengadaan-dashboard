@@ -25,3 +25,13 @@ Setiap kali diberikan struktur JSON dari endpoint baru, otomatis jalankan langka
 * **Langkah C (Registrasi Cron/Backend):** Daftarkan endpoint baru tersebut ke dalam `endpointRegistry` di `server/utils/cronManager.ts` agar sistem secara otomatis melakukan sinkronisasi dan caching.
 * **Langkah D (Registrasi Menu):** Tambahkan halaman yang baru dibuat ke dalam navigasi *Sidebar* dengan mengedit file konfigurasi menu di `components/layout/menu.ts`.
 * **Langkah E (Registrasi Auto-Merge):** Jika endpoint berkaitan dengan penggabungan data (merge), pastikan untuk menambahkannya ke `MERGE_SOURCE_ENDPOINTS` di `server/utils/mergeManager.ts` dan pastikan fungsi eksekusinya (misal `executeMerge` atau `executeRupPenyediaMerge`) dipanggil di dalam `triggerAutoMerge`.
+
+## 5. Workflow Data Merge (Enriched Data)
+* **Penyimpanan:** Data hasil merge harus disimpan secara lokal di dalam folder `server/data/merged`. Data ini di-generate secara internal, BUKAN dari API eksternal.
+* **Mekanisme Endpoint:** Karena tidak ada API eksternal untuk grup `merged`, pastikan `getEndpointData` di `dataManager.ts` melewati proses `syncAPI` khusus untuk grup ini.
+* **API Pengambilan Data Frontend:** Buat endpoint khusus (contoh: `server/api/data/merged/namadata-enriched.get.ts`) yang membaca data lokal via `getEndpointData` dan wajib memiliki logika paginasi serta *server-side filtering* sebelum dikirim ke UI.
+* **Kelola Merge Data (Admin):** Setiap fitur merge baru harus memiliki:
+  1. Fungsi eksekusi di `mergeManager.ts` (dengan type UUID spesifik).
+  2. Rute API POST untuk eksekusi (`server/api/admin/merge-[name].post.ts`).
+  3. Rute API GET untuk status & riwayat (`server/api/admin/merge-[name]-status.get.ts`).
+  4. Komponen antarmuka di `components/admin/Merge[Name].vue` yang diintegrasikan sebagai tab baru di `pages/admin/data-merge.vue`.
