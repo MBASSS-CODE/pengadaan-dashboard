@@ -386,7 +386,10 @@ export const triggerAutoMerge = (tahun: string, trigger: string) => {
   mergeDebounceTimers[tahun] = setTimeout(async () => {
     try {
       console.log(`[Auto-Merge] Triggered by: ${trigger} for year ${tahun}`);
+      // 1. Merge Non-Tender
       await executeMerge(tahun, trigger);
+      // 2. Merge RUP Penyedia
+      await executeRupPenyediaMerge(tahun, trigger);
     } catch (error) {
       console.error(`[Auto-Merge] Failed for year ${tahun}:`, error);
     } finally {
