@@ -166,9 +166,7 @@ const totalAllItems = ref(0);
 const currentYear = new Date().getFullYear();
 const availableYears = [
   currentYear.toString(), 
-  (currentYear - 1).toString(), 
-  // (currentYear - 2).toString(), 
-  // (currentYear - 3).toString()
+  (currentYear - 1).toString()
 ];
 const selectedYear = ref(currentYear.toString());
 const searchQuery = ref('');

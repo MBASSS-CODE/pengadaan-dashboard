@@ -189,7 +189,6 @@ const totalAllItems = ref(0);
 // Generate dynamic years
 const currentYear = new Date().getFullYear();
 const availableYears = [
-  (currentYear + 1).toString(), // For RUP, next year is often relevant
   currentYear.toString(), 
   (currentYear - 1).toString()
 ];

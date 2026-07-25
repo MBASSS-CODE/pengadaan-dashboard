@@ -225,7 +225,6 @@ const filterOptionsUmumkan = ref([]);
 // Generate dynamic years
 const currentYear = new Date().getFullYear();
 const availableYears = [
-  (currentYear + 1).toString(),
   currentYear.toString(), 
   (currentYear - 1).toString()
 ];

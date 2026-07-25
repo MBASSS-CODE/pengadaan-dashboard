@@ -478,10 +478,8 @@ const ppkCount = ref(0);
 
 const currentYear = new Date().getFullYear();
 const availableYears = [
-  (currentYear + 1).toString(),
   currentYear.toString(),
-  (currentYear - 1).toString(),
-  (currentYear - 2).toString()
+  (currentYear - 1).toString()
 ].map(y => ({ label: y, value: y }));
 
 const selectedYear = ref(currentYear.toString());
