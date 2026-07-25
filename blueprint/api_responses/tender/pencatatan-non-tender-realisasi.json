@@ -1,0 +1,68 @@
+{
+  "success": true,
+  "data": [
+    {
+      "nip_ppk": "***************001",
+      "nama_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "jenis_klpd": "KEMENTERIAN",
+      "ket_realisasi": "Biaya Pembelian Lisensi Cursor pada tanggal 6 Maret 2026",
+      "kd_klpd": "K22",
+      "kd_paket_dce": 11921969000,
+      "nama_penyedia": "Cursor ",
+      "tahun_anggaran": 2026,
+      "dok_realisasi": null,
+      "nama_paket": "BMKKS_TW2_52_Pengadaan Lisensi Cursor",
+      "npwp_penyedia": "00.000.000.0-012.000",
+      "jenis_realisasi": "Bukti Pembelian",
+      "pagu": 3378000,
+      "kd_satker_str": "427950",
+      "nama_ppk": "M**** A******",
+      "nama_satker": "MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA",
+      "nama_lpse": "LPSE Kementrian Pendayagunaan Aparatur Negara dan Reformasi Birokrasi",
+      "kd_nontender_pct": 11004988000,
+      "kd_satker": "807366",
+      "tgl_realisasi": "2026-04-02T00:00:00.000000Z",
+      "kd_lpse": 366,
+      "kd_rup_paket": "66994985",
+      "nilai_realisasi": 3377588,
+      "no_realisasi": "00268/PB/KKP/427950/2026",
+      "last_update_ref": "9ef77511-5c3e-5646-84f6-dfaa548cb791.HPu65jITg786YMRd.0erS-519Rznk1BWKiJqQSae-X4r9WM9Dztqvru69yKI"
+    },
+    {
+      "kd_rup_paket": "65486858",
+      "nilai_realisasi": 46000000,
+      "npwp_penyedia": "86.693.539.8-014.000",
+      "jenis_realisasi": "Kwitansi",
+      "nama_satker": "MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA",
+      "tgl_realisasi": "2026-02-27T00:00:00.000000Z",
+      "kd_nontender_pct": 10989288000,
+      "ket_realisasi": "",
+      "nama_penyedia": "BINA GRAHA MAKMUR (Hotel Mercure Jakarta Gatot Subroto)",
+      "nip_ppk": "***************004",
+      "kd_satker_str": "427950",
+      "nama_lpse": "LPSE Kementrian Pendayagunaan Aparatur Negara dan Reformasi Birokrasi",
+      "no_realisasi": "001465/KWT/MJGS-AR/II/2026",
+      "jenis_klpd": "KEMENTERIAN",
+      "kd_lpse": 366,
+      "nama_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "tahun_anggaran": 2026,
+      "dok_realisasi": null,
+      "kd_paket_dce": 11890492000,
+      "nama_ppk": "E**** A********",
+      "pagu": 46000000,
+      "kd_klpd": "K22",
+      "kd_satker": "807366",
+      "nama_paket": "Yanlik_Asdep EVFA_Belanja Paket Meeting Dalkot 524114 Konsi 13_2_2026",
+      "last_update_ref": "9ef77511-5c3e-5646-84f6-dfaa548cb791.HPu65jITg786YMRd.0erS-519Rznk1BWKiJqQSae-X4r9WM9Dztqvru69yKI"
+    }
+  ],
+  "error": {
+    "code": "000",
+    "message": "Success",
+    "details": "Success"
+  },
+  "meta": {
+    "cursor": "eyJpZCI6MTkwMDQ3MTg2ODk2Nzk5OTcxM30=",
+    "limit": 100
+  }
+}
