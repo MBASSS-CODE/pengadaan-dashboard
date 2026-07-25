@@ -121,18 +121,22 @@ export const logEndpointActivity = async (group: string, endpoint: string, statu
 };
 
 export const triggerSyncAll = async () => {
-  const currentYear = new Date().getFullYear().toString();
+  const currentYear = new Date().getFullYear();
+  const yearsToSync = [currentYear.toString(), (currentYear - 1).toString()];
+  
   // Do not block the caller, run in background
   setTimeout(async () => {
-    for (const [group, endpoints] of Object.entries(activeEndpoints)) {
-      if (!endpoints) continue;
-      for (const endpoint of endpoints) {
-        try {
-          const data = await syncEndpointData(group, endpoint, currentYear);
-          await logEndpointActivity(group, endpoint, 'Success', data.length);
-        } catch (error) {
-          console.error(`[Manual Sync] Gagal melakukan sinkronisasi ${group}/${endpoint}:`, error);
-          await logEndpointActivity(group, endpoint, 'Error', 0);
+    for (const year of yearsToSync) {
+      for (const [group, endpoints] of Object.entries(activeEndpoints)) {
+        if (!endpoints) continue;
+        for (const endpoint of endpoints) {
+          try {
+            const data = await syncEndpointData(group, endpoint, year);
+            await logEndpointActivity(group, endpoint, `Success (${year})`, data.length);
+          } catch (error) {
+            console.error(`[Manual Sync] Gagal melakukan sinkronisasi ${group}/${endpoint} tahun ${year}:`, error);
+            await logEndpointActivity(group, endpoint, `Error (${year})`, 0);
+          }
         }
       }
     }
@@ -149,17 +153,20 @@ export const reloadCronJob = async () => {
   
   currentTask = cron.schedule(currentScheduleStr, async () => {
     console.log('[Cron Job] Memulai sinkronisasi data otomatis dengan jadwal:', currentScheduleStr);
-    const currentYear = new Date().getFullYear().toString();
+    const currentYear = new Date().getFullYear();
+    const yearsToSync = [currentYear.toString(), (currentYear - 1).toString()];
 
-    for (const [group, endpoints] of Object.entries(activeEndpoints)) {
-      if (!endpoints) continue;
-      for (const endpoint of endpoints) {
-        try {
-          const data = await syncEndpointData(group, endpoint, currentYear);
-          await logEndpointActivity(group, endpoint, 'Success', data.length);
-        } catch (error) {
-          console.error(`[Cron Job] Gagal melakukan sinkronisasi ${group}/${endpoint}:`, error);
-          await logEndpointActivity(group, endpoint, 'Error', 0);
+    for (const year of yearsToSync) {
+      for (const [group, endpoints] of Object.entries(activeEndpoints)) {
+        if (!endpoints) continue;
+        for (const endpoint of endpoints) {
+          try {
+            const data = await syncEndpointData(group, endpoint, year);
+            await logEndpointActivity(group, endpoint, `Success (${year})`, data.length);
+          } catch (error) {
+            console.error(`[Cron Job] Gagal melakukan sinkronisasi ${group}/${endpoint} tahun ${year}:`, error);
+            await logEndpointActivity(group, endpoint, `Error (${year})`, 0);
+          }
         }
       }
     }

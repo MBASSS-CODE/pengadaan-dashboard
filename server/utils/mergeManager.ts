@@ -7,7 +7,7 @@ let mergedCache: Record<string, any[]> = {};
 let mergeHistoryCache: any[] | null = null;
 
 // Debounce state to prevent rapid re-merges during batch sync
-let mergeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+let mergeDebounceTimers: Record<string, ReturnType<typeof setTimeout> | null> = {};
 const MERGE_DEBOUNCE_MS = 5000;
 
 // ─── File Paths ─────────────────────────────────────────────────────────────
@@ -379,13 +379,18 @@ export const getMergeHistory = async (): Promise<any[]> => {
 
 // ─── Debounced Auto-Merge ───────────────────────────────────────────────────
 export const triggerAutoMerge = (tahun: string, trigger: string) => {
-  if (mergeDebounceTimer) clearTimeout(mergeDebounceTimer);
-  mergeDebounceTimer = setTimeout(async () => {
+  if (mergeDebounceTimers[tahun]) {
+    clearTimeout(mergeDebounceTimers[tahun]!);
+  }
+  
+  mergeDebounceTimers[tahun] = setTimeout(async () => {
     try {
-      console.log(`[Auto-Merge] Triggered by: ${trigger}`);
+      console.log(`[Auto-Merge] Triggered by: ${trigger} for year ${tahun}`);
       await executeMerge(tahun, trigger);
     } catch (error) {
-      console.error('[Auto-Merge] Failed:', error);
+      console.error(`[Auto-Merge] Failed for year ${tahun}:`, error);
+    } finally {
+      mergeDebounceTimers[tahun] = null;
     }
   }, MERGE_DEBOUNCE_MS);
 };

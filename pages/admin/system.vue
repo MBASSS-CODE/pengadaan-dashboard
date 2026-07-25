@@ -241,9 +241,9 @@
             </h2>
           </div>
           
-          <div class="overflow-x-auto flex-1">
-            <table class="w-full text-left text-sm text-[color:hsl(var(--maz-foreground))]">
-              <thead class="text-xs uppercase bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))]">
+          <div class="overflow-auto flex-1 max-h-[400px]">
+            <table class="w-full text-left text-sm text-[color:hsl(var(--maz-foreground))] relative">
+              <thead class="text-xs uppercase bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] sticky top-0 z-10 backdrop-blur-md">
                 <tr>
                   <th scope="col" class="px-6 py-4 font-semibold border-b border-[color:hsl(var(--maz-border))]">Grup</th>
                   <th scope="col" class="px-6 py-4 font-semibold border-b border-[color:hsl(var(--maz-border))]">Endpoint</th>
@@ -269,8 +269,8 @@
                     <span 
                       class="px-2.5 py-1 text-xs font-semibold rounded-full border border-transparent"
                       :class="{
-                        'bg-[color:hsl(var(--maz-success)_/_15%)] text-[color:hsl(var(--maz-success)_/_100%)] dark:bg-[color:hsl(var(--maz-success)_/_20%)]': log.status === 'Success',
-                        'bg-[color:hsl(var(--maz-destructive)_/_15%)] text-[color:hsl(var(--maz-destructive)_/_100%)] dark:bg-[color:hsl(var(--maz-destructive)_/_20%)]': log.status !== 'Success'
+                        'bg-[color:hsl(var(--maz-success)_/_15%)] text-[color:hsl(var(--maz-success)_/_100%)] dark:bg-[color:hsl(var(--maz-success)_/_20%)]': log.status && log.status.includes('Success'),
+                        'bg-[color:hsl(var(--maz-destructive)_/_15%)] text-[color:hsl(var(--maz-destructive)_/_100%)] dark:bg-[color:hsl(var(--maz-destructive)_/_20%)]': !log.status || !log.status.includes('Success')
                       }"
                     >
                       {{ log.status }}
