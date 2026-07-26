@@ -3,7 +3,7 @@
     <!-- Header Area -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
       <div>
-        <h1 class="text-2xl font-bold text-[color:hsl(var(--maz-foreground))]">Pencatatan Non-Tender</h1>
+        <h1 class="text-2xl font-bold text-[color:hsl(var(--maz-foreground))]">Pencatatan Non-Tender (Merge)</h1>
         <p class="text-sm text-[color:hsl(var(--maz-muted))] mt-1">Daftar pencatatan paket pengadaan non-tender (Enriched)</p>
       </div>
       
@@ -139,7 +139,16 @@
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
               </svg>
-              {{ row.nama_ppk || '-' }}
+              {{ row.ppk_nama_lengkap || row.nama_ppk || '-' }}
+            </div>
+            <div v-if="getUniquePenyedia(row.realisasi_list).length > 0" class="text-[10px] text-[color:hsl(var(--maz-primary))] mt-1.5 font-medium flex items-start gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mt-0.5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" />
+              </svg>
+              <span class="line-clamp-2 leading-tight" :title="getUniquePenyedia(row.realisasi_list).join(', ')">
+                {{ getUniquePenyedia(row.realisasi_list).join(', ') }}
+              </span>
             </div>
           </template>
           
@@ -164,6 +173,9 @@
               >
                 {{ row.status_nontender_pct_ket || row.status_nontender_pct || 'Unknown' }}
               </span>
+              <div class="text-[10px] text-[color:hsl(var(--maz-muted))] text-center mt-1 w-full flex flex-col gap-0.5">
+                <span>{{ row.realisasi_list?.length || 0 }} Bukti Realisasi</span>
+              </div>
             </div>
           </template>
 
@@ -183,7 +195,7 @@
         <div>
           <h3 class="text-lg font-bold text-[color:hsl(var(--maz-primary))]">{{ selectedRow.nama_paket }}</h3>
           <p class="text-sm text-[color:hsl(var(--maz-muted))] mt-1">ID RUP: {{ selectedRow.kd_rup }} | Nontender PCT: {{ selectedRow.kd_nontender_pct }}</p>
-          <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="p-3 rounded-lg border border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))]">
               <p class="text-xs text-[color:hsl(var(--maz-muted))]">Pagu Tersedia</p>
               <p class="font-semibold">{{ formatRupiah(selectedRow.pagu) }}</p>
@@ -192,40 +204,76 @@
               <p class="text-xs text-[color:hsl(var(--maz-muted))]">Total Realisasi</p>
               <p class="font-semibold text-[color:hsl(var(--maz-success))]">{{ formatRupiah(selectedRow.total_realisasi) }}</p>
             </div>
+            <div class="p-3 rounded-lg border border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))]">
+              <p class="text-xs text-[color:hsl(var(--maz-muted))]">Penyedia</p>
+              <p class="font-semibold text-[color:hsl(var(--maz-primary))] text-sm line-clamp-2" :title="getUniquePenyedia(selectedRow.realisasi_list).join(', ')">
+                {{ getUniquePenyedia(selectedRow.realisasi_list).length > 0 ? getUniquePenyedia(selectedRow.realisasi_list).join(', ') : '-' }}
+              </p>
+            </div>
           </div>
         </div>
 
-        <!-- Info Tambahan Raw API -->
+        <!-- Info RUP & Pelaksanaan -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-[color:hsl(var(--maz-border))] pt-4">
           <div>
-            <h4 class="text-sm font-semibold mb-3 border-l-2 border-[color:hsl(var(--maz-primary))] pl-2">Informasi Paket</h4>
+            <h4 class="text-sm font-semibold mb-3 border-l-2 border-[color:hsl(var(--maz-primary))] pl-2">Detail Perencanaan (RUP)</h4>
             <ul class="space-y-2 text-sm">
               <li class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
-                <span class="text-[color:hsl(var(--maz-muted))]">Kategori:</span>
-                <span class="font-medium">{{ selectedRow.kategori_pengadaan || '-' }}</span>
+                <span class="text-[color:hsl(var(--maz-muted))]">Pagu RUP Awal:</span>
+                <span class="font-medium">{{ selectedRow.rup_pagu ? formatRupiah(selectedRow.rup_pagu) : '-' }}</span>
               </li>
               <li class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
-                <span class="text-[color:hsl(var(--maz-muted))]">Metode Pemilihan:</span>
-                <span class="font-medium">{{ selectedRow.mtd_pemilihan || '-' }}</span>
+                <span class="text-[color:hsl(var(--maz-muted))]">Metode (RUP):</span>
+                <span class="font-medium">{{ selectedRow.rup_metode_pengadaan || '-' }}</span>
               </li>
               <li class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
-                <span class="text-[color:hsl(var(--maz-muted))]">Waktu Pelaksanaan:</span>
-                <span class="font-medium text-xs">{{ formatDate(selectedRow.tgl_mulai_paket) }} s/d {{ formatDate(selectedRow.tgl_selesai_paket) }}</span>
+                <span class="text-[color:hsl(var(--maz-muted))]">Status PDN:</span>
+                <span class="font-medium">{{ selectedRow.rup_status_pdn || '-' }}</span>
+              </li>
+              <li class="flex justify-between pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Status UKM:</span>
+                <span class="font-medium">{{ selectedRow.rup_status_ukm || '-' }}</span>
               </li>
             </ul>
           </div>
           <div>
-            <h4 class="text-sm font-semibold mb-3 border-l-2 border-[color:hsl(var(--maz-primary))] pl-2">Pelaksana (PPK)</h4>
+            <h4 class="text-sm font-semibold mb-3 border-l-2 border-[color:hsl(var(--maz-primary))] pl-2">Pejabat Pembuat Komitmen (PPK)</h4>
             <ul class="space-y-2 text-sm">
               <li class="flex flex-col border-b border-[color:hsl(var(--maz-border))] pb-1">
-                <span class="text-[color:hsl(var(--maz-muted))]">Nama PPK:</span>
-                <span class="font-medium">{{ selectedRow.nama_ppk || '-' }}</span>
+                <span class="text-[color:hsl(var(--maz-muted))]">Nama Lengkap:</span>
+                <span class="font-medium">{{ selectedRow.ppk_nama_lengkap || selectedRow.nama_ppk || '-' }}</span>
               </li>
               <li class="flex flex-col border-b border-[color:hsl(var(--maz-border))] pb-1">
-                <span class="text-[color:hsl(var(--maz-muted))]">NIP PPK:</span>
-                <span class="font-medium">{{ selectedRow.nip_ppk || '-' }}</span>
+                <span class="text-[color:hsl(var(--maz-muted))]">NIP / Jabatan:</span>
+                <span class="font-medium">{{ selectedRow.ppk_nip_asli || selectedRow.nip_ppk }} / {{ selectedRow.ppk_jabatan || '-' }}</span>
+              </li>
+              <li class="flex justify-between pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Kontak:</span>
+                <span class="font-medium text-xs">{{ selectedRow.ppk_email || '-' }} <br/> {{ selectedRow.ppk_telepon || '-' }}</span>
               </li>
             </ul>
+          </div>
+        </div>
+
+        <!-- Realisasi List -->
+        <div class="border-t border-[color:hsl(var(--maz-border))] pt-4">
+          <h4 class="text-sm font-semibold mb-3 border-l-2 border-[color:hsl(var(--maz-primary))] pl-2">Daftar Bukti Realisasi</h4>
+          
+          <div v-if="selectedRow.realisasi_list && selectedRow.realisasi_list.length > 0" class="space-y-3">
+            <div v-for="(real, idx) in selectedRow.realisasi_list" :key="idx" class="p-3 rounded bg-[color:hsl(var(--maz-foreground)_/_3%)] border border-[color:hsl(var(--maz-border))] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <p class="font-medium text-sm">{{ real.jenis_realisasi }} <span class="text-xs text-[color:hsl(var(--maz-muted))] font-normal">({{ real.no_realisasi || '-' }})</span></p>
+                <p class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">{{ real.nama_penyedia || '-' }}</p>
+                <p class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-1 italic">{{ real.ket_realisasi || '' }}</p>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <p class="font-bold text-[color:hsl(var(--maz-primary))]">{{ formatRupiah(real.nilai_realisasi) }}</p>
+                <p class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-1">{{ formatDate(real.tgl_realisasi) }}</p>
+              </div>
+            </div>
+          </div>
+          <div v-else class="p-6 text-center text-[color:hsl(var(--maz-muted))] border border-dashed border-[color:hsl(var(--maz-border))] rounded-lg">
+            Belum ada rincian bukti realisasi.
           </div>
         </div>
 
@@ -293,6 +341,12 @@ const formatDate = (dateString) => {
   }).format(date);
 };
 
+const getUniquePenyedia = (realisasiList) => {
+  if (!realisasiList || !realisasiList.length) return [];
+  const unique = [...new Set(realisasiList.map(r => r.nama_penyedia).filter(Boolean))];
+  return unique;
+};
+
 const openDetail = (row) => {
   selectedRow.value = row;
   detailModal.value = true;
@@ -302,7 +356,8 @@ const loadData = async (force = false) => {
   loading.value = true;
   error.value = false;
   try {
-    const response = await $fetch('/api/data/tender/pencatatan-non-tender', {
+    // URL API BERUBAH: Mengambil data dari merged group
+    const response = await $fetch('/api/data/merged/pencatatan-nontender-enriched', {
       params: { 
         tahun: selectedYear.value,
         page: currentPage.value,

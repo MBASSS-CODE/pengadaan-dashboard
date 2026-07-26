@@ -35,3 +35,4 @@ Setiap kali diberikan struktur JSON dari endpoint baru, otomatis jalankan langka
   2. Rute API POST untuk eksekusi (`server/api/admin/merge-[name].post.ts`).
   3. Rute API GET untuk status & riwayat (`server/api/admin/merge-[name]-status.get.ts`).
   4. Komponen antarmuka di `components/admin/Merge[Name].vue` yang diintegrasikan sebagai tab baru di `pages/admin/data-merge.vue`.
+* **Pemisahan Tampilan (Separation of Concerns):** Halaman antarmuka yang merepresentasikan *endpoint* asli (misal `pages/tender/`, `pages/rup/`) HANYA boleh memuat dan menampilkan *raw data* murni. Segala bentuk tampilan dari data yang telah diproses (*merge/enriched data*) WAJIB dibuat sebagai file baru yang terpisah dan disimpan di dalam folder `pages/summary-table/`. Dilarang menimpa atau menempatkan desain *enriched data* pada halaman *raw data*.
