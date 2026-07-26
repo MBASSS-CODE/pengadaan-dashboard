@@ -23,7 +23,7 @@ Setiap kali diberikan struktur JSON dari endpoint baru, otomatis jalankan langka
 * **Langkah A (Blueprint):** Simpan contoh response JSON yang diberikan user ke dalam folder `blueprint/api_responses/[group]/[nama-endpoint].json`.
 * **Langkah B (Generate Frontend):** Buat halaman baru di `pages/[group]/[endpoint].vue`. Buat tampilan antarmuka yang modern, responsif, dan konsisten menggunakan komponen **Maz-UI** dan **TailwindCSS**.
 * **Langkah C (Registrasi Cron/Backend):** Daftarkan endpoint baru tersebut ke dalam `endpointRegistry` di `server/utils/cronManager.ts` agar sistem secara otomatis melakukan sinkronisasi dan caching.
-* **Langkah D (Registrasi Menu):** Tambahkan halaman yang baru dibuat ke dalam navigasi *Sidebar* dengan mengedit file konfigurasi menu di `components/layout/menu.ts`.
+* **Langkah D (Registrasi Menu & Aktivasi):** Tambahkan halaman yang baru dibuat ke dalam navigasi *Sidebar* dengan mengedit file konfigurasi menu di `components/layout/menu.ts`. Selain itu, **WAJIB** mendaftarkan endpoint tersebut ke dalam array grup yang sesuai di file `server/data/endpoints_config.json` agar menu tidak disembunyikan oleh sistem.
 * **Langkah E (Registrasi Auto-Merge):** Jika endpoint berkaitan dengan penggabungan data (merge), pastikan untuk menambahkannya ke `MERGE_SOURCE_ENDPOINTS` di `server/utils/mergeManager.ts` dan pastikan fungsi eksekusinya (misal `executeMerge` atau `executeRupPenyediaMerge`) dipanggil di dalam `triggerAutoMerge`.
 
 ## 5. Workflow Data Merge (Enriched Data)
