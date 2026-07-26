@@ -10,12 +10,26 @@
                 </h2>
                 <p class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">Gabungkan Pencatatan Non-Tender dengan Realisasi, RUP, Satker, dan PPK</p>
               </div>
-              <MazBtn @click="runPcnMerge" :loading="pcnMergeLoading" color="primary" size="sm" :disabled="!pcnMergeStatus.allRequiredFound">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Jalankan Merge Pencatatan
-              </MazBtn>
+              <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium text-[color:hsl(var(--maz-muted))]">Tahun:</span>
+                  <div class="flex bg-[color:hsl(var(--maz-foreground)_/_5%)] p-1 rounded-lg">
+                    <button v-for="y in availableYears" :key="y"
+                      @click="selectedYear = y; fetchPcnMergeStatus()"
+                      class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
+                      :class="selectedYear === y ? 'bg-[color:hsl(var(--maz-background))] text-[color:hsl(var(--maz-primary))] shadow-sm border border-[color:hsl(var(--maz-border))]' : 'text-[color:hsl(var(--maz-muted))] hover:text-[color:hsl(var(--maz-foreground))]'"
+                    >
+                      {{ y }}
+                    </button>
+                  </div>
+                </div>
+                <MazBtn @click="runPcnMerge" :loading="pcnMergeLoading" color="primary" size="sm" :disabled="!pcnMergeStatus.allRequiredFound">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Jalankan Merge Pencatatan
+                </MazBtn>
+              </div>
             </div>
       
             <div class="p-6">
@@ -131,6 +145,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 
+const currentYear = new Date().getFullYear();
+const availableYears = [currentYear.toString(), (currentYear - 1).toString()];
+const selectedYear = ref(currentYear.toString());
+
 const formatDate = (dateString) => {
   if (!dateString) return '-';
   const date = new Date(dateString);
@@ -170,7 +188,7 @@ const pcnMergeSteps = computed(() => {
 
 const fetchPcnMergeStatus = async () => {
   try {
-    const tahun = new Date().getFullYear().toString();
+    const tahun = selectedYear.value;
     const res = await $fetch('/api/admin/merge-pencatatan-nontender-status', { params: { tahun } });
     if (res.success) {
       pcnMergeStatus.value = res.data;
@@ -184,7 +202,7 @@ const runPcnMerge = async () => {
   pcnMergeLoading.value = true;
   pcnMergeMessage.value = '';
   try {
-    const tahun = new Date().getFullYear().toString();
+    const tahun = selectedYear.value;
     const res = await $fetch('/api/admin/merge-pencatatan-nontender', {
       method: 'POST',
       body: { tahun }
