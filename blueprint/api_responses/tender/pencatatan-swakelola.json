@@ -1,0 +1,46 @@
+{
+  "success": true,
+  "data": [
+    {
+      "status_swakelola_pct": "Aktif",
+      "nilai_pdn_pct": 0,
+      "nama_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+      "sumber_dana": "APBN",
+      "kd_satker_str": "427950",
+      "tgl_buat_paket": "2026-01-15T10:37:07.895Z",
+      "tipe_swakelola": 2,
+      "total_realisasi": 78810000,
+      "informasi_lainnya": null,
+      "kd_swakelola_pct": 10269452000,
+      "nama_ppk": "n*** n******",
+      "tgl_mulai_paket": "2026-01-22T09:22:09.653Z",
+      "jenis_klpd": "KEMENTERIAN",
+      "pagu": 78810000,
+      "tahun_anggaran": 2025,
+      "uraian_pekerjaan": "<p>Swakelola penyusunan kajian implementasi Sistem Akuntabilitas Kinerja Pemerintah (SAKP) pada prioritas Presiden Tahun 2025</p>                        \r\n                    ",
+      "tgl_selesai_paket": "2025-10-22T00:00:00Z",
+      "kd_pkt_dce": 10269567000,
+      "kd_klpd": "K22",
+      "alasan_pembatalan": null,
+      "nama_paket": "Jasa konsultan kajian implementasi SAKP (prioritas presiden) di Instansi Pemerintah",
+      "nilai_umk_pct": 0,
+      "nip_ppk": "***************002",
+      "kd_satker": "15760",
+      "tipe_swakelola_nama": "Tipe 2",
+      "kd_rup": "41732846",
+      "status_swakelola_pct_ket": "Paket Selesai",
+      "kd_lpse": 366,
+      "nama_satker": "MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA",
+      "last_update_ref": "a7ae783f-fac0-594f-93f5-084c4edf6afd.pkr-X53XAPhED20u.KOgz4e1QW51wnISLyOLBIVWDQJUgYyJw-vSRM5pY6p0"
+    }
+  ],
+  "error": {
+    "code": "000",
+    "message": "Success",
+    "details": "Success"
+  },
+  "meta": {
+    "cursor": "eyJpZCI6NjczNjE1ODk0NzYyNzkyMzU2N30=",
+    "limit": 100
+  }
+}

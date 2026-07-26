@@ -11,7 +11,8 @@ export const endpointRegistry: Record<string, { endpoint: string; label: string;
     { endpoint: 'peserta-tender', label: 'Peserta Tender', description: 'Daftar peserta dan pemenang tender' },
     { endpoint: 'non-tender-pengumuman', label: 'Pengumuman Non-Tender', description: 'Pengumuman paket non-tender' },
     { endpoint: 'pencatatan-non-tender', label: 'Pencatatan Non-Tender', description: 'Daftar pencatatan paket pengadaan non-tender' },
-    { endpoint: 'pencatatan-non-tender-realisasi', label: 'Realisasi Non-Tender', description: 'Realisasi pencatatan non-tender' }
+    { endpoint: 'pencatatan-non-tender-realisasi', label: 'Realisasi Non-Tender', description: 'Realisasi pencatatan non-tender' },
+    { endpoint: 'pencatatan-swakelola', label: 'Pencatatan Swakelola', description: 'Daftar pencatatan paket pengadaan swakelola' }
   ],
   rup: [
     { endpoint: 'history-kaji-ulang', label: 'History Kaji Ulang', description: 'Riwayat kaji ulang paket RUP' },
