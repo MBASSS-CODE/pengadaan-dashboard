@@ -3,8 +3,8 @@
     <!-- Header Area -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
       <div>
-        <h1 class="text-2xl font-bold text-[color:hsl(var(--maz-foreground))]">Pencatatan Swakelola</h1>
-        <p class="text-sm text-[color:hsl(var(--maz-muted))] mt-1">Daftar paket pengadaan pencatatan swakelola</p>
+        <h1 class="text-2xl font-bold text-[color:hsl(var(--maz-foreground))]">Realisasi Swakelola</h1>
+        <p class="text-sm text-[color:hsl(var(--maz-muted))] mt-1">Daftar realisasi pencatatan pengadaan swakelola</p>
       </div>
       
       <div class="flex items-center gap-3 w-full md:w-auto">
@@ -31,7 +31,7 @@
           <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Pencarian</label>
           <MazInput 
             v-model="searchQuery" 
-            placeholder="Cari paket, satker, ID swakelola..." 
+            placeholder="Cari ID swakelola, PPK, pelaksana, no realisasi..." 
             size="sm"
             @update:model-value="onSearchDebounced"
           >
@@ -79,10 +79,10 @@
           background-even
           :headers="[
             { label: 'No', key: 'index', align: 'center', width: '4rem', sortable: false },
-            { label: 'Informasi Paket', key: 'paket', sortable: false, classes: 'min-w-[280px]' },
-            { label: 'Satuan Kerja & PPK', key: 'satker', sortable: false, classes: 'min-w-[220px]' },
-            { label: 'Pagu & Realisasi (Rp)', key: 'nilai', align: 'right', sortable: false, classes: 'min-w-[150px]' },
-            { label: 'Status & Jadwal', key: 'status', align: 'center', sortable: false, classes: 'min-w-[150px]' }
+            { label: 'Informasi Swakelola', key: 'swakelola', sortable: false, classes: 'min-w-[250px]' },
+            { label: 'Pelaksana', key: 'pelaksana', sortable: false, classes: 'min-w-[200px]' },
+            { label: 'Detail Realisasi', key: 'realisasi', sortable: false, classes: 'min-w-[220px]' },
+            { label: 'Nilai (Rp)', key: 'nilai', align: 'right', sortable: false, classes: 'min-w-[150px]' }
           ]"
           :rows="pageData"
           @update:page="loadData(false)"
@@ -92,64 +92,46 @@
             <span class="font-medium">{{ (currentPage - 1) * itemsPerPage + (row._index || 0) + 1 }}</span>
           </template>
           
-          <template #cell-paket="{ row }">
-            <div class="font-bold text-[color:hsl(var(--maz-primary))] hover:underline cursor-pointer" :title="row.nama_paket">
-              {{ row.nama_paket || '-' }}
-            </div>
-            <div class="flex items-center gap-1.5 mt-2 flex-wrap">
-              <span v-if="row.kd_rup" class="px-2 py-0.5 rounded text-[10px] font-medium bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border border-[color:hsl(var(--maz-border))]">
-                RUP: {{ row.kd_rup }}
-              </span>
-              <span v-if="row.kd_swakelola_pct" class="px-2 py-0.5 rounded text-[10px] font-medium bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border border-[color:hsl(var(--maz-border))]">
+          <template #cell-swakelola="{ row }">
+            <div class="flex items-center gap-1.5 mb-2 flex-wrap">
+              <span v-if="row.kd_swakelola_pct" class="px-2 py-0.5 rounded text-xs font-bold bg-[color:hsl(var(--maz-primary)_/_15%)] text-[color:hsl(var(--maz-primary))] border border-[color:hsl(var(--maz-primary)_/_20%)]">
                 ID Swakelola: {{ row.kd_swakelola_pct }}
               </span>
-              <span v-if="row.kd_pkt_dce" class="px-2 py-0.5 rounded text-[10px] font-medium bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border border-[color:hsl(var(--maz-border))]">
-                DCE ID: {{ row.kd_pkt_dce }}
-              </span>
             </div>
-            <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">
-              {{ row.tipe_swakelola_nama || 'Tipe Swakelola -' }}
+            <div class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-1 truncate max-w-[250px]" :title="row.nama_ppk">
+              PPK: <strong class="text-[color:hsl(var(--maz-foreground))] font-medium">{{ row.nama_ppk || '-' }}</strong>
             </div>
-            <div class="flex items-center gap-3 text-[11px] text-[color:hsl(var(--maz-muted))] mt-1">
-              <span v-if="row.sumber_dana">Sumber Dana: <strong class="text-[color:hsl(var(--maz-foreground))]">{{ row.sumber_dana }}</strong></span>
-            </div>
-          </template>
-          
-          <template #cell-satker="{ row }">
-            <div class="font-medium text-xs truncate max-w-[220px]" :title="row.nama_satker">{{ row.nama_satker || '-' }}</div>
             <div class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-0.5">
               Kode Satker: {{ row.kd_satker || '-' }}
             </div>
-            <div v-if="row.nama_ppk" class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-1 truncate max-w-[220px]" :title="row.nama_ppk">
-              PPK: {{ row.nama_ppk }}
+          </template>
+          
+          <template #cell-pelaksana="{ row }">
+            <div class="font-medium text-xs text-[color:hsl(var(--maz-foreground))] truncate max-w-[220px]" :title="row.nama_pelaksana">
+              {{ row.nama_pelaksana || '-' }}
+            </div>
+            <div v-if="row.npwp_pelaksana" class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-1">
+              NPWP: {{ row.npwp_pelaksana }}
+            </div>
+          </template>
+          
+          <template #cell-realisasi="{ row }">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border border-[color:hsl(var(--maz-border))]">
+                {{ row.jenis_realisasi || 'Realisasi' }}
+              </span>
+              <span class="text-xs font-medium text-[color:hsl(var(--maz-foreground))]">{{ formatDate(row.tgl_realisasi) }}</span>
+            </div>
+            <div class="text-[11px] text-[color:hsl(var(--maz-muted))] mt-1 truncate max-w-[220px]" :title="row.no_realisasi">
+              No: {{ row.no_realisasi || '-' }}
+            </div>
+            <div v-if="row.ket_realisasi" class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-1 truncate max-w-[220px] italic" :title="row.ket_realisasi">
+              "{{ row.ket_realisasi }}"
             </div>
           </template>
           
           <template #cell-nilai="{ row }">
-            <div class="flex flex-col items-end">
-              <div class="text-xs text-[color:hsl(var(--maz-muted))]">Pagu:</div>
-              <div class="font-bold text-sm text-[color:hsl(var(--maz-foreground))]">{{ formatRupiah(row.pagu) }}</div>
-              <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">Total Realisasi:</div>
-              <div class="font-semibold text-[color:hsl(var(--maz-primary))]">{{ formatRupiah(row.total_realisasi) }}</div>
-            </div>
-          </template>
-          
-          <template #cell-status="{ row }">
-            <div class="flex flex-col items-center gap-1.5 w-full">
-              <span 
-                class="px-2.5 py-1 text-[0.7rem] font-semibold rounded-full w-full text-center border border-transparent leading-none"
-                :class="{
-                  'bg-[color:hsl(var(--maz-success)_/_15%)] text-[color:hsl(var(--maz-success)_/_100%)] dark:bg-[color:hsl(var(--maz-success)_/_20%)]': row.status_swakelola_pct_ket === 'Paket Selesai',
-                  'bg-[color:hsl(var(--maz-primary)_/_15%)] text-[color:hsl(var(--maz-primary)_/_100%)] dark:bg-[color:hsl(var(--maz-primary)_/_20%)]': row.status_swakelola_pct === 'Aktif' && row.status_swakelola_pct_ket !== 'Paket Selesai',
-                  'bg-[color:hsl(var(--maz-muted)_/_15%)] text-[color:hsl(var(--maz-foreground)_/_80%)] dark:bg-[color:hsl(var(--maz-muted)_/_20%)]': row.status_swakelola_pct !== 'Aktif' && row.status_swakelola_pct_ket !== 'Paket Selesai'
-                }"
-              >
-                {{ row.status_swakelola_pct_ket || row.status_swakelola_pct || 'Unknown' }}
-              </span>
-              <span class="text-[10px] text-[color:hsl(var(--maz-muted))] text-center mt-1 w-full truncate" :title="row.tgl_mulai_paket ? `${formatDate(row.tgl_mulai_paket)} - ${formatDate(row.tgl_selesai_paket)}` : '-'">
-                {{ formatDate(row.tgl_mulai_paket) }} s.d. {{ formatDate(row.tgl_selesai_paket) }}
-              </span>
-            </div>
+            <div class="font-bold text-sm text-[color:hsl(var(--maz-primary))]">{{ formatRupiah(row.nilai_realisasi) }}</div>
           </template>
         </MazTable>
       </div>
@@ -207,7 +189,7 @@ const loadData = async (force = false) => {
   loading.value = true;
   error.value = false;
   try {
-    const response = await $fetch('/api/data/tender/pencatatan-swakelola', {
+    const response = await $fetch('/api/data/tender/pencatatan-swakelola-realisasi', {
       params: { 
         tahun: selectedYear.value,
         page: currentPage.value,
