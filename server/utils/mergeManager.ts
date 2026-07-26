@@ -24,6 +24,8 @@ export const MERGE_SOURCE_ENDPOINTS = [
   { group: 'rup', endpoint: 'paket-anggaran-penyedia', label: 'Anggaran Penyedia', required: false },
   { group: 'tender', endpoint: 'pencatatan-non-tender', label: 'Pencatatan Non-Tender', required: false },
   { group: 'tender', endpoint: 'pencatatan-non-tender-realisasi', label: 'Realisasi Pencatatan', required: false },
+  { group: 'tender', endpoint: 'pencatatan-swakelola', label: 'Pencatatan Swakelola', required: false },
+  { group: 'tender', endpoint: 'pencatatan-swakelola-realisasi', label: 'Realisasi Swakelola', required: false }
 ];
 
 // ─── Helper: Read JSON safely ───────────────────────────────────────────────
@@ -394,6 +396,8 @@ export const triggerAutoMerge = (tahun: string, trigger: string) => {
       await executeRupPenyediaMerge(tahun, trigger);
       // 3. Merge Pencatatan Non-Tender
       await executePencatatanNonTenderMerge(tahun, trigger);
+      // 4. Merge Pencatatan Swakelola
+      await executePencatatanSwakelolaMerge(tahun, trigger);
     } catch (error) {
       console.error(`[Auto-Merge] Failed for year ${tahun}:`, error);
     } finally {
@@ -743,3 +747,150 @@ export const executePencatatanNonTenderMerge = async (tahun: string, trigger: st
   }
 };
 
+
+
+// ─── Pencatatan Swakelola Merge ──────────────────────────────────────────────
+export const executePencatatanSwakelolaMerge = async (tahun: string, trigger: string = 'manual') => {
+  const startTime = Date.now();
+  
+  try {
+    const dataDir = path.resolve(process.cwd(), 'server', 'data');
+    
+    // Load data sources
+    const pencatatanData: any[] = (await readJsonSafe(path.resolve(dataDir, `tender/pencatatan-swakelola_${tahun}.json`))) || [];
+    if (pencatatanData.length === 0) return null; // No data to merge
+
+    const realisasiData: any[] = (await readJsonSafe(path.resolve(dataDir, `tender/pencatatan-swakelola-realisasi_${tahun}.json`))) || [];
+    const paketSwakelolaData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-swakelola_${tahun}.json`))) || [];
+    const masterSatkerData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/master-satker_${tahun}.json`))) || [];
+    const ppkData: any[] = await loadPpkMaster();
+
+    // Build lookup maps
+    const realisasiMap = new Map<string, any[]>();
+    for (const item of realisasiData) {
+      if (item.kd_swakelola_pct) {
+        const key = String(item.kd_swakelola_pct);
+        if (!realisasiMap.has(key)) realisasiMap.set(key, []);
+        realisasiMap.get(key)!.push(item);
+      }
+    }
+
+    const rupMap = new Map<string, any>();
+    for (const item of paketSwakelolaData) {
+      if (item.kd_rup) rupMap.set(String(item.kd_rup), item);
+    }
+
+    const satkerMap = new Map<string, any>();
+    for (const item of masterSatkerData) {
+      if (item.kd_satker) satkerMap.set(String(item.kd_satker), item);
+    }
+
+    const ppkMap = new Map<string, any>();
+    for (const item of ppkData) {
+      if (item.nip_nama_masked) ppkMap.set(item.nip_nama_masked, item);
+    }
+
+    const anomalies: string[] = [];
+    
+    const mergedData = pencatatanData.map(item => {
+      const enriched = { ...item };
+      const kdSwakelolaPct = String(item.kd_swakelola_pct || '');
+      const kdRup = String(item.kd_rup || '');
+      const kdSatker = String(item.kd_satker || '');
+
+      // 1. Merge: Realisasi
+      const realisasiList = realisasiMap.get(kdSwakelolaPct);
+      if (realisasiList && realisasiList.length > 0) {
+        enriched.realisasi_list = realisasiList;
+        enriched._has_realisasi_detail = true;
+      } else {
+        enriched.realisasi_list = [];
+        enriched._has_realisasi_detail = false;
+      }
+
+      // 2. Merge: RUP Swakelola
+      const rup = rupMap.get(kdRup);
+      if (rup) {
+        enriched.rup_status_aktif = rup.status_aktif_rup;
+        enriched.rup_pagu = rup.pagu;
+        enriched.rup_nama_paket = rup.nama_paket;
+        enriched.rup_sasaran = rup.sasaran;
+      }
+
+      // 3. Merge: Master Satker
+      const satker = satkerMap.get(kdSatker);
+      if (satker) {
+        enriched.satker_status = satker.status_satker;
+        enriched.satker_jenis = satker.jenis_satker;
+        enriched.satker_alamat = satker.alamat;
+      }
+
+      // 4. Merge: PPK Master
+      const nip = item.nip_ppk || '';
+      const nama = item.nama_ppk || '';
+      let maskedKey = '';
+      if (nip && nama) {
+        maskedKey = `${nip} - ${nama}`;
+      } else {
+        maskedKey = nip || nama || '';
+      }
+
+      const ppk = ppkMap.get(maskedKey);
+      if (ppk) {
+        enriched.ppk_nama_lengkap = ppk.nama_lengkap;
+        enriched.ppk_nip_asli = ppk.nip_asli;
+        enriched.ppk_jabatan = ppk.jabatan;
+        enriched.ppk_email = ppk.email;
+        enriched.ppk_telepon = ppk.telepon;
+        enriched._ppk_completed = true;
+      } else {
+        enriched._ppk_completed = false;
+      }
+
+      return enriched;
+    });
+
+    // Save to disk
+    await fs.mkdir(mergedDir, { recursive: true });
+    const outputPath = path.resolve(mergedDir, `pencatatan-swakelola-enriched_${tahun}.json`);
+    await fs.writeFile(outputPath, JSON.stringify(mergedData, null, 2), 'utf-8');
+
+    const cacheKey = `pencatatan_swakelola_enriched_${tahun}`;
+    mergedCache[cacheKey] = mergedData;
+
+    const duration = Date.now() - startTime;
+    const result = {
+      id: crypto.randomUUID(),
+      type: 'pencatatan-swakelola',
+      timestamp: new Date().toISOString(),
+      tahun,
+      trigger,
+      status: 'success',
+      duration_ms: duration,
+      result: {
+        total_records: mergedData.length
+      },
+      anomalies
+    };
+
+    await appendMergeHistory(result);
+    console.log(`[Merge Pencatatan Swakelola] Selesai: ${mergedData.length} records merged dalam ${duration}ms (trigger: ${trigger})`);
+    return result;
+
+  } catch (error: any) {
+    console.error('[Merge Pencatatan Swakelola] Error:', error);
+    const result = {
+      id: crypto.randomUUID(),
+      type: 'pencatatan-swakelola',
+      timestamp: new Date().toISOString(),
+      tahun,
+      trigger,
+      status: 'failed',
+      duration_ms: Date.now() - startTime,
+      error: error.message,
+      anomalies: []
+    };
+    await appendMergeHistory(result);
+    return result;
+  }
+};
