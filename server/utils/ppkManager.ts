@@ -32,27 +32,39 @@ export const savePpkMaster = async (data: any[]): Promise<void> => {
 };
 
 /**
- * Get unique PPK identifiers from RUP paket-penyedia data
+ * Get unique PPK identifiers from various data sources (RUP and Pencatatan)
  */
 export const extractUniquePpk = async (tahun: string): Promise<string[]> => {
-  const filePath = path.resolve(process.cwd(), `server/data/rup/paket-penyedia_${tahun}.json`);
-  try {
-    const raw = await fs.readFile(filePath, 'utf-8');
-    const data: any[] = JSON.parse(raw);
-    const uniquePpk = [...new Set(
-      data
-        .map((d: any) => {
-          if (d.nip_ppk && d.nama_ppk) {
-            return `${d.nip_ppk} - ${d.nama_ppk}`;
-          }
-          return d.nip_ppk || d.nama_ppk || null;
-        })
-        .filter(Boolean)
-    )];
-    return uniquePpk;
-  } catch {
-    return [];
+  const sources = [
+    path.resolve(process.cwd(), `server/data/rup/paket-penyedia_${tahun}.json`),
+    path.resolve(process.cwd(), `server/data/rup/paket-swakelola_${tahun}.json`),
+    path.resolve(process.cwd(), `server/data/tender/pencatatan-non-tender_${tahun}.json`),
+    path.resolve(process.cwd(), `server/data/tender/pencatatan-swakelola_${tahun}.json`)
+  ];
+
+  const allPpk = new Set<string>();
+
+  for (const filePath of sources) {
+    try {
+      const raw = await fs.readFile(filePath, 'utf-8');
+      const data: any = JSON.parse(raw);
+      
+      // If data is an object with 'data' array (e.g. from some API responses), handle it
+      const dataArray = Array.isArray(data) ? data : (data?.data && Array.isArray(data.data) ? data.data : []);
+
+      dataArray.forEach((d: any) => {
+        if (d.nip_ppk && d.nama_ppk) {
+          allPpk.add(`${d.nip_ppk} - ${d.nama_ppk}`);
+        } else if (d.nip_ppk || d.nama_ppk) {
+          allPpk.add(d.nip_ppk || d.nama_ppk);
+        }
+      });
+    } catch {
+      // File might not exist yet, ignore
+    }
   }
+
+  return [...allPpk];
 };
 
 /**
@@ -60,4 +72,17 @@ export const extractUniquePpk = async (tahun: string): Promise<string[]> => {
  */
 export const invalidatePpkCache = () => {
   ppkCache = null;
+};
+
+/**
+ * Check if RUP penyedia file exists for a given year
+ */
+export const checkRupExists = async (tahun: string): Promise<boolean> => {
+  const filePath = path.resolve(process.cwd(), `server/data/rup/paket-penyedia_${tahun}.json`);
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
 };

@@ -1,14 +1,25 @@
-import { loadPpkMaster, extractUniquePpk } from '../../utils/ppkManager';
+import { loadPpkMaster, extractUniquePpk, checkRupExists } from '../../utils/ppkManager';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const tahun = (query.tahun as string) || new Date().getFullYear().toString();
+  const tahunInt = parseInt(tahun, 10);
+  const tahunSebelumnya = (tahunInt - 1).toString();
 
   try {
-    const [ppkList, uniquePpkFromApi] = await Promise.all([
+    const [ppkList, uniquePpkThisYear, uniquePpkLastYear, rupThisYearExists, rupLastYearExists] = await Promise.all([
       loadPpkMaster(),
-      extractUniquePpk(tahun)
+      extractUniquePpk(tahun),
+      extractUniquePpk(tahunSebelumnya),
+      checkRupExists(tahun),
+      checkRupExists(tahunSebelumnya)
     ]);
+
+    const missingRupYears = [];
+    if (!rupThisYearExists) missingRupYears.push(tahun);
+    if (!rupLastYearExists) missingRupYears.push(tahunSebelumnya);
+
+    const uniquePpkFromApi = [...new Set([...uniquePpkThisYear, ...uniquePpkLastYear])];
 
     // Build merged view: all unique PPK from API + their completion status
     const mergedList = uniquePpkFromApi.map(masked => {
@@ -42,8 +53,12 @@ export default defineEventHandler(async (event) => {
       meta: {
         totalFromApi: uniquePpkFromApi.length,
         totalCompleted: mergedList.filter(p => p.is_completed).length,
-        totalIncomplete: mergedList.filter(p => !p.is_completed).length
-      }
+        totalIncomplete: mergedList.filter(p => !p.is_completed).length,
+        missingRupYears
+      },
+      warning: missingRupYears.length > 0 
+        ? `Referensi data RUP untuk tahun ${missingRupYears.join(' dan ')} belum diekstrak. Silakan ekstrak data RUP terlebih dahulu.` 
+        : null
     };
   } catch (error: any) {
     throw createError({ statusCode: 500, statusMessage: error.message });

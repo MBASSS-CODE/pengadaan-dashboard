@@ -208,6 +208,9 @@ const fetchPpk = async () => {
     if (res.success) {
       ppkList.value = res.data;
       meta.value = res.meta;
+      if (res.warning) {
+        showNotification(res.warning, 'error'); // Show as error/warning so user knows they need to fetch data
+      }
     }
   } catch (error) {
     console.error('Failed to load PPK', error);
