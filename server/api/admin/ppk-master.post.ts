@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
 
     const existingIdx = ppkList.findIndex((p: any) => p.nip_nama_masked === body.nip_nama_masked);
 
-    const ppkData = {
+    const ppkData: Record<string, any> = {
       nip_nama_masked: body.nip_nama_masked,
       nama_lengkap: body.nama_lengkap.trim(),
       nip_asli: body.nip_asli?.trim() || '',
