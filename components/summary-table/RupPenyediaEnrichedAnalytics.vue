@@ -701,32 +701,20 @@ const buildTableData = (mapObj, totalPaguVal) => {
 const loadStatsAndAnalytics = async () => {
   loading.value = true;
   try {
-    // Fetch all data for the year to aggregate
-    const res = await $fetch('/api/summary-table/rup-penyedia-enriched', {
-      params: {
-        tahun: props.selectedYear,
-        page: 1,
-        limit: 100000 // Get all data for analytics
-      }
+    const res = await $fetch('/api/summary-table/analytics-summary', {
+      params: { tahun: props.selectedYear }
     });
 
-    if (res.success && res.data) {
-      // 1. Basic Stats
-      const data = res.data;
-      totalItems.value = res.meta?.totalItems || data.length;
-      totalPagu.value = res.meta?.totalPagu || data.reduce((sum, item) => sum + (Number(item.pagu) || 0), 0);
-      realisasiCount.value = res.meta?.realisasiCount || data.filter(i => i._has_realisasi).length;
-      ppkCount.value = res.meta?.ppkCount || 0; // Using meta value if available
+    if (res.success && res.summary) {
+      const summary = res.summary;
+      
+      totalItems.value = summary.totalItems || 0;
+      totalPagu.value = summary.totalPagu || 0;
+      realisasiCount.value = summary.realisasiCount || 0;
+      ppkCount.value = summary.ppkCount || 0;
 
       // 2. Metode Pengadaan
-      const metodeMap = {};
-      data.forEach(item => {
-        const m = item.metode_pengadaan || 'Tidak Ditetapkan';
-        if (!metodeMap[m]) metodeMap[m] = { count: 0, pagu: 0 };
-        metodeMap[m].count += 1;
-        metodeMap[m].pagu += (Number(item.pagu) || 0);
-      });
-      metodeTableData.value = buildTableData(metodeMap, totalPagu.value);
+      metodeTableData.value = summary.metode || [];
       metodeChartData.value = {
         labels: metodeTableData.value.map(i => i.label),
         datasets: [{
@@ -737,14 +725,7 @@ const loadStatsAndAnalytics = async () => {
       };
 
       // 3. Jenis Pengadaan
-      const jenisMap = {};
-      data.forEach(item => {
-        const j = item.jenis_pengadaan || 'Tidak Ditetapkan';
-        if (!jenisMap[j]) jenisMap[j] = { count: 0, pagu: 0 };
-        jenisMap[j].count += 1;
-        jenisMap[j].pagu += (Number(item.pagu) || 0);
-      });
-      jenisTableData.value = buildTableData(jenisMap, totalPagu.value);
+      jenisTableData.value = summary.jenis || [];
       jenisChartData.value = {
         labels: jenisTableData.value.map(i => i.label),
         datasets: [{
@@ -755,14 +736,7 @@ const loadStatsAndAnalytics = async () => {
       };
 
       // 4. Status Realisasi
-      const statusMap = {};
-      data.forEach(item => {
-        const s = item._has_realisasi ? (item.realisasi_status || 'Dalam Proses') : 'Belum Dimulai';
-        if (!statusMap[s]) statusMap[s] = { count: 0, pagu: 0 };
-        statusMap[s].count += 1;
-        statusMap[s].pagu += (Number(item.pagu) || 0);
-      });
-      statusTableData.value = buildTableData(statusMap, totalPagu.value);
+      statusTableData.value = summary.status || [];
       statusChartData.value = {
         labels: statusTableData.value.map(i => i.label),
         datasets: [{
@@ -772,15 +746,8 @@ const loadStatsAndAnalytics = async () => {
         }]
       };
 
-      // 5. PDN vs Non-PDN
-      const pdnMap = { 'PDN': { count: 0, pagu: 0 }, 'Non-PDN': { count: 0, pagu: 0 } };
-      data.forEach(item => {
-        const isPdn = item.status_pdn === 'PDN' || item.status_pdn === 'Ya' || item.status_pdn === true;
-        const key = isPdn ? 'PDN' : 'Non-PDN';
-        pdnMap[key].count += 1;
-        pdnMap[key].pagu += (Number(item.pagu) || 0);
-      });
-      pdnTableData.value = buildTableData(pdnMap, totalPagu.value);
+      // 5. PDN
+      pdnTableData.value = summary.pdn || [];
       pdnChartData.value = {
         labels: pdnTableData.value.map(i => i.label),
         datasets: [{
@@ -790,24 +757,13 @@ const loadStatsAndAnalytics = async () => {
         }]
       };
 
-      // 6. PPK (Top 10)
-      const ppkMap = {};
-      data.forEach(item => {
-        const p = item.ppk_nama_lengkap || item.nama_ppk || 'Tidak Ada PPK';
-        if (!ppkMap[p]) ppkMap[p] = { count: 0, pagu: 0 };
-        ppkMap[p].count += 1;
-        ppkMap[p].pagu += (Number(item.pagu) || 0);
-      });
-      ppkTableData.value = buildTableData(ppkMap, totalPagu.value);
-      
+      // 6. PPK
+      ppkTableData.value = summary.ppk || [];
       const top10Ppk = ppkTableData.value.slice(0, 10);
-      
       ppkChartData.value = {
         labels: top10Ppk.map(i => {
           let label = i.label;
-          if (label.length > 25) {
-            label = label.substring(0, 25) + '...';
-          }
+          if (label.length > 25) label = label.substring(0, 25) + '...';
           return label;
         }),
         datasets: [{
@@ -820,15 +776,7 @@ const loadStatsAndAnalytics = async () => {
       };
 
       // 7. UKM
-      const ukmMap = {};
-      data.forEach(item => {
-        // Find best match for UKM status
-        const u = item.status_ukm || item.usaha_kecil || item.umkk || (item.is_ukm ? 'Usaha Kecil/Menengah' : 'Tidak Ditetapkan');
-        if (!ukmMap[u]) ukmMap[u] = { count: 0, pagu: 0 };
-        ukmMap[u].count += 1;
-        ukmMap[u].pagu += (Number(item.pagu) || 0);
-      });
-      ukmTableData.value = buildTableData(ukmMap, totalPagu.value);
+      ukmTableData.value = summary.ukm || [];
       ukmChartData.value = {
         labels: ukmTableData.value.map(i => i.label),
         datasets: [{
@@ -839,28 +787,7 @@ const loadStatsAndAnalytics = async () => {
       };
 
       // 8. Sumber Dana
-      const sdMap = {};
-      data.forEach(item => {
-        let sdList = item.sumber_dana_list || item.sumber_dana || 'Tidak Diketahui';
-        // handle array or string
-        let sources = [];
-        if (Array.isArray(sdList)) {
-          sources = sdList;
-        } else if (typeof sdList === 'string') {
-          sources = sdList.split(',').map(s => s.trim());
-        } else {
-          sources = [String(sdList)];
-        }
-        
-        sources.forEach(sd => {
-          if (!sdMap[sd]) sdMap[sd] = { count: 0, pagu: 0 };
-          sdMap[sd].count += 1;
-          // Note: total pagu is divided if there are multiple sources, or we just count it.
-          // For simplicity, we add the pagu to all sources involved.
-          sdMap[sd].pagu += (Number(item.pagu) || 0) / sources.length; 
-        });
-      });
-      sdTableData.value = buildTableData(sdMap, totalPagu.value);
+      sdTableData.value = summary.sd || [];
       sdChartData.value = {
         labels: sdTableData.value.map(i => i.label),
         datasets: [{
@@ -870,32 +797,8 @@ const loadStatsAndAnalytics = async () => {
         }]
       };
 
-      // 9. Tren Jadwal Pemilihan (Bulan)
-      const bulanNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-      const tglMap = {};
-      data.forEach(item => {
-        let bulanLabel = 'Tidak Ditetapkan';
-        if (item.tgl_awal_pemilihan) {
-          const d = new Date(item.tgl_awal_pemilihan);
-          if (!isNaN(d.getTime())) {
-            bulanLabel = bulanNames[d.getMonth()];
-          }
-        }
-        if (!tglMap[bulanLabel]) tglMap[bulanLabel] = { count: 0, pagu: 0, _idx: bulanNames.indexOf(bulanLabel) };
-        tglMap[bulanLabel].count += 1;
-        tglMap[bulanLabel].pagu += (Number(item.pagu) || 0);
-      });
-      tglTableData.value = Object.keys(tglMap).map(key => ({
-        label: key,
-        count: tglMap[key].count,
-        pagu: tglMap[key].pagu,
-        persentase: calcPercent(tglMap[key].pagu, totalPagu.value),
-        _idx: tglMap[key]._idx
-      })).sort((a, b) => {
-        if (a._idx === -1) return 1;
-        if (b._idx === -1) return -1;
-        return a._idx - b._idx;
-      });
+      // 9. Tren Jadwal
+      tglTableData.value = summary.tgl || [];
       tglChartData.value = {
         labels: tglTableData.value.map(i => i.label),
         datasets: [{
@@ -909,16 +812,8 @@ const loadStatsAndAnalytics = async () => {
         }]
       };
 
-      // 10. Kinerja Satuan Kerja
-      const satkerMap = {};
-      data.forEach(item => {
-        const p = item.nama_satker || 'Tidak Ada Satker';
-        if (!satkerMap[p]) satkerMap[p] = { count: 0, pagu: 0 };
-        satkerMap[p].count += 1;
-        satkerMap[p].pagu += (Number(item.pagu) || 0);
-      });
-      satkerTableData.value = buildTableData(satkerMap, totalPagu.value);
-      
+      // 10. Kinerja Satker
+      satkerTableData.value = summary.satker || [];
       const top10Satker = satkerTableData.value.slice(0, 10);
       satkerChartData.value = {
         labels: top10Satker.map(i => {
@@ -936,14 +831,7 @@ const loadStatsAndAnalytics = async () => {
       };
 
       // 11. Analisis Kaji Ulang
-      const kajiMap = { 'Ada Kaji Ulang / Revisi': { count: 0, pagu: 0 }, 'Tanpa Revisi': { count: 0, pagu: 0 } };
-      data.forEach(item => {
-        const isKaji = item._has_kaji_ulang || (item.kaji_ulang_count && item.kaji_ulang_count > 0);
-        const key = isKaji ? 'Ada Kaji Ulang / Revisi' : 'Tanpa Revisi';
-        kajiMap[key].count += 1;
-        kajiMap[key].pagu += (Number(item.pagu) || 0);
-      });
-      kajiUlangTableData.value = buildTableData(kajiMap, totalPagu.value);
+      kajiUlangTableData.value = summary.kajiUlang || [];
       kajiUlangChartData.value = {
         labels: kajiUlangTableData.value.map(i => i.label),
         datasets: [{
@@ -954,14 +842,7 @@ const loadStatsAndAnalytics = async () => {
       };
 
       // 12. Status Pengumuman
-      const umumMap = { 'Terumumkan': { count: 0, pagu: 0 }, 'Draft / Belum Diumumkan': { count: 0, pagu: 0 } };
-      data.forEach(item => {
-        const isUmum = item.status_umumkan_rup === 'Sudah' || item.status_aktif_rup === 'Aktif';
-        const key = isUmum ? 'Terumumkan' : 'Draft / Belum Diumumkan';
-        umumMap[key].count += 1;
-        umumMap[key].pagu += (Number(item.pagu) || 0);
-      });
-      umumkanTableData.value = buildTableData(umumMap, totalPagu.value);
+      umumkanTableData.value = summary.pengumuman || [];
       umumkanChartData.value = {
         labels: umumkanTableData.value.map(i => i.label),
         datasets: [{
