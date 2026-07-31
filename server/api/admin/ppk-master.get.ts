@@ -33,6 +33,7 @@ export default defineEventHandler(async (event) => {
         telepon: existing?.telepon || '',
         email: existing?.email || '',
         is_completed: !!(existing?.nama_lengkap),
+        is_in_db: !!existing,
         created_at: existing?.created_at || null,
         updated_at: existing?.updated_at || null
       };
@@ -44,6 +45,7 @@ export default defineEventHandler(async (event) => {
     ).map((p: any) => ({
       ...p,
       is_completed: !!(p.nama_lengkap),
+      is_in_db: true,
       _orphaned: true // PPK ini tidak ditemukan di data non-tender terbaru
     }));
 

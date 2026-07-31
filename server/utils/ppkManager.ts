@@ -1,34 +1,71 @@
 import fs from 'fs/promises';
 import path from 'path';
-
-const ppkPath = path.resolve(process.cwd(), 'server/data/ppk_master.json');
+import { pool } from './db';
 
 // In-memory cache for PPK data
 let ppkCache: any[] | null = null;
 
 /**
- * Load PPK master data from file (or memory cache)
+ * Load PPK master data from Database
  */
 export const loadPpkMaster = async (): Promise<any[]> => {
-  if (ppkCache) return ppkCache;
   try {
-    const data = await fs.readFile(ppkPath, 'utf-8');
-    ppkCache = JSON.parse(data);
-    return ppkCache!;
+    const [rows] = await pool.query('SELECT * FROM ppk_master');
+    ppkCache = rows as any[];
+    return ppkCache;
   } catch (e) {
-    ppkCache = [];
+    console.error('Failed to load PPK Master from DB:', e);
     return [];
   }
 };
 
 /**
- * Save PPK master data to file + update RAM cache
+ * Upsert PPK master data to DB + invalidate RAM cache
  */
-export const savePpkMaster = async (data: any[]): Promise<void> => {
-  const dir = path.dirname(ppkPath);
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(ppkPath, JSON.stringify(data, null, 2), 'utf-8');
-  ppkCache = data;
+export const upsertPpkMaster = async (data: any): Promise<void> => {
+  const query = `
+    INSERT INTO ppk_master (nip_nama_masked, nama_lengkap, nip_asli, jabatan, unit_kerja, telepon, email, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      nama_lengkap = VALUES(nama_lengkap),
+      nip_asli = VALUES(nip_asli),
+      jabatan = VALUES(jabatan),
+      unit_kerja = VALUES(unit_kerja),
+      telepon = VALUES(telepon),
+      email = VALUES(email),
+      updated_at = VALUES(updated_at)
+  `;
+  const formatDateTime = (isoString: string) => {
+    if (!isoString) return null;
+    try {
+      const d = new Date(isoString);
+      return d.toISOString().slice(0, 19).replace('T', ' ');
+    } catch {
+      return null;
+    }
+  };
+
+  const values = [
+    data.nip_nama_masked,
+    data.nama_lengkap || null,
+    data.nip_asli || null,
+    data.jabatan || null,
+    data.unit_kerja || null,
+    data.telepon || null,
+    data.email || null,
+    formatDateTime(data.created_at) || formatDateTime(new Date().toISOString()),
+    formatDateTime(data.updated_at) || formatDateTime(new Date().toISOString())
+  ];
+  await pool.query(query, values);
+  invalidatePpkCache();
+};
+
+/**
+ * Delete PPK master data from DB + invalidate RAM cache
+ */
+export const deletePpkMaster = async (nip_nama_masked: string): Promise<void> => {
+  await pool.query('DELETE FROM ppk_master WHERE nip_nama_masked = ?', [nip_nama_masked]);
+  invalidatePpkCache();
 };
 
 /**

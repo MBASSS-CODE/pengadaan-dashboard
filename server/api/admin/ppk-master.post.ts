@@ -1,4 +1,4 @@
-import { loadPpkMaster, savePpkMaster } from '../../utils/ppkManager';
+import { loadPpkMaster, upsertPpkMaster } from '../../utils/ppkManager';
 import { triggerAutoMerge } from '../../utils/mergeManager';
 
 export default defineEventHandler(async (event) => {
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     const ppkList = await loadPpkMaster();
     const now = new Date().toISOString();
 
-    const existingIdx = ppkList.findIndex((p: any) => p.nip_nama_masked === body.nip_nama_masked);
+    const existingPpk = ppkList.find((p: any) => p.nip_nama_masked === body.nip_nama_masked);
 
     const ppkData: Record<string, any> = {
       nip_nama_masked: body.nip_nama_masked,
@@ -29,17 +29,15 @@ export default defineEventHandler(async (event) => {
       updated_at: now
     };
 
-    if (existingIdx !== -1) {
+    if (existingPpk) {
       // Update existing
-      ppkData.created_at = ppkList[existingIdx].created_at || now;
-      ppkList[existingIdx] = ppkData;
+      ppkData.created_at = existingPpk.created_at || now;
     } else {
       // New entry
       ppkData.created_at = now;
-      ppkList.push(ppkData);
     }
 
-    await savePpkMaster(ppkList);
+    await upsertPpkMaster(ppkData);
 
     // Trigger auto-merge after PPK update
     const tahun = new Date().getFullYear().toString();
@@ -47,7 +45,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      message: existingIdx !== -1 ? 'Data PPK berhasil diperbarui' : 'Data PPK berhasil ditambahkan',
+      message: existingPpk ? 'Data PPK berhasil diperbarui' : 'Data PPK berhasil ditambahkan',
       data: ppkData
     };
   } catch (error: any) {

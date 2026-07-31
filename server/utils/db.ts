@@ -38,6 +38,22 @@ export const initDB = async () => {
         role VARCHAR(50) NOT NULL
       )
     `);
+
+    // Create ppk_master table if it doesn't exist
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS ppk_master (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nip_nama_masked VARCHAR(255) UNIQUE NOT NULL,
+        nama_lengkap VARCHAR(255),
+        nip_asli VARCHAR(255),
+        jabatan VARCHAR(255),
+        unit_kerja VARCHAR(255),
+        telepon VARCHAR(50),
+        email VARCHAR(255),
+        created_at DATETIME,
+        updated_at DATETIME
+      )
+    `);
     
     connection.release();
   } catch (error) {
