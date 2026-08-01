@@ -42,6 +42,13 @@
       >
         Pencatatan Swakelola
       </button>
+      <button 
+        class="tab-btn whitespace-nowrap" 
+        :class="{ active: activeTab === 'rup-swakelola' }"
+        @click="activeTab = 'rup-swakelola'"
+      >
+        RUP Swakelola
+      </button>
     </div>
 
     <!-- Tab Content -->
@@ -51,6 +58,7 @@
         <MergeNonTender v-else-if="activeTab === 'non-tender'" />
         <MergePencatatanNonTender v-else-if="activeTab === 'pencatatan-nontender'" />
         <MergePencatatanSwakelola v-else-if="activeTab === 'pencatatan-swakelola'" />
+        <MergeRupSwakelola v-else-if="activeTab === 'rup-swakelola'" />
       </Transition>
     </div>
   </div>
@@ -62,6 +70,7 @@ import MergeRupPenyedia from '~/components/admin/MergeRupPenyedia.vue';
 import MergeNonTender from '~/components/admin/MergeNonTender.vue';
 import MergePencatatanNonTender from '~/components/admin/MergePencatatanNonTender.vue';
 import MergePencatatanSwakelola from '~/components/admin/MergePencatatanSwakelola.vue';
+import MergeRupSwakelola from '~/components/admin/MergeRupSwakelola.vue';
 
 const activeTab = ref('rup-penyedia');
 </script>

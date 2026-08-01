@@ -132,6 +132,55 @@ export const checkRupPenyediaPrerequisites = async (tahun: string) => {
   return { sources: results, allRequiredFound };
 };
 
+export const checkRupSwakelolaPrerequisites = async (tahun: string) => {
+  const sources = [
+    { group: 'rup', endpoint: 'paket-swakelola', label: 'RUP Swakelola', required: true },
+    { group: 'rup', endpoint: 'master-satker', label: 'Master Satker', required: false },
+    { group: 'rup', endpoint: 'history-kaji-ulang', label: 'History Kaji Ulang', required: false },
+    { group: 'rup', endpoint: 'paket-anggaran-swakelola', label: 'Anggaran Swakelola', required: false },
+    { group: 'tender', endpoint: 'pencatatan-swakelola', label: 'Pencatatan Swakelola', required: false },
+    { group: 'rup', endpoint: 'paket-penyedia', label: 'Paket Penyedia', required: false }
+  ];
+
+  const results = [];
+  let allRequiredFound = true;
+
+  for (const src of sources) {
+    const filePath = path.resolve(dataDir, `${src.group}/${src.endpoint}_${tahun}.json`);
+    let found = false;
+    let count = 0;
+    try {
+      const stats = await fs.stat(filePath);
+      if (stats.isFile()) {
+        found = true;
+        const data = await readJsonSafe(filePath);
+        if (data && Array.isArray(data)) count = data.length;
+      }
+    } catch (e) {
+      // file not found
+    }
+
+    if (src.required && !found) allRequiredFound = false;
+
+    results.push({ ...src, found, count });
+  }
+
+  // Check PPK Master
+  let ppkFound = false;
+  let ppkCount = 0;
+  try {
+    const ppkData = await loadPpkMaster();
+    if (ppkData && ppkData.length > 0) {
+      ppkFound = true;
+      ppkCount = ppkData.length;
+    }
+  } catch (e) {}
+
+  results.push({ group: 'master', endpoint: 'ppk-master', label: 'Master PPK', required: false, found: ppkFound, count: ppkCount });
+
+  return { sources: results, allRequiredFound };
+};
+
 // ─── Execute Merge ──────────────────────────────────────────────────────────
 export const executeMerge = async (tahun: string, trigger: string = 'manual'): Promise<any> => {
   const startTime = Date.now();
@@ -398,6 +447,8 @@ export const triggerAutoMerge = (tahun: string, trigger: string) => {
       await executePencatatanNonTenderMerge(tahun, trigger);
       // 4. Merge Pencatatan Swakelola
       await executePencatatanSwakelolaMerge(tahun, trigger);
+      // 5. Merge RUP Swakelola
+      await executeRupSwakelolaMerge(tahun, trigger);
     } catch (error) {
       console.error(`[Auto-Merge] Failed for year ${tahun}:`, error);
     } finally {
@@ -882,6 +933,191 @@ export const executePencatatanSwakelolaMerge = async (tahun: string, trigger: st
     const result = {
       id: crypto.randomUUID(),
       type: 'pencatatan-swakelola',
+      timestamp: new Date().toISOString(),
+      tahun,
+      trigger,
+      status: 'failed',
+      duration_ms: Date.now() - startTime,
+      error: error.message,
+      anomalies: []
+    };
+    await appendMergeHistory(result);
+    return result;
+  }
+};
+
+// ─── RUP Swakelola Master Merge ──────────────────────────────────────────────
+export const executeRupSwakelolaMerge = async (tahun: string, trigger: string = 'manual') => {
+  const startTime = Date.now();
+  
+  try {
+    const dataDir = path.resolve(process.cwd(), 'server', 'data');
+    
+    // Load all data sources
+    const paketSwakelolaData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-swakelola_${tahun}.json`))) || [];
+    const masterSatkerData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/master-satker_${tahun}.json`))) || [];
+    const kajiUlangData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/history-kaji-ulang_${tahun}.json`))) || [];
+    const anggaranData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-anggaran-swakelola_${tahun}.json`))) || [];
+    const pencatatanData: any[] = (await readJsonSafe(path.resolve(dataDir, `tender/pencatatan-swakelola_${tahun}.json`))) || [];
+    const paketPenyediaData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-penyedia_${tahun}.json`))) || [];
+    const ppkData: any[] = await loadPpkMaster();
+
+    // Build lookup maps
+    const satkerMap = new Map<string, any>();
+    for (const item of masterSatkerData) {
+      if (item.kd_satker) satkerMap.set(String(item.kd_satker), item);
+    }
+
+    const kajiUlangByRup = new Map<string, any[]>();
+    for (const item of kajiUlangData) {
+      const keys = [String(item.kd_rup_baru), String(item.kd_rup_lama)].filter(Boolean);
+      for (const key of keys) {
+        if (!kajiUlangByRup.has(key)) kajiUlangByRup.set(key, []);
+        kajiUlangByRup.get(key)!.push(item);
+      }
+    }
+
+    const anggaranByRup = new Map<string, any[]>();
+    for (const item of anggaranData) {
+      if (item.kd_rup) {
+        const key = String(item.kd_rup);
+        if (!anggaranByRup.has(key)) anggaranByRup.set(key, []);
+        anggaranByRup.get(key)!.push(item);
+      }
+    }
+
+    const pencatatanMap = new Map<string, any>();
+    for (const item of pencatatanData) {
+      if (item.kd_rup) pencatatanMap.set(String(item.kd_rup), item);
+    }
+
+    const penyediaBySwakelola = new Map<string, any[]>();
+    for (const item of paketPenyediaData) {
+      if (item.kd_rup_swakelola) {
+        const key = String(item.kd_rup_swakelola);
+        if (!penyediaBySwakelola.has(key)) penyediaBySwakelola.set(key, []);
+        penyediaBySwakelola.get(key)!.push(item);
+      }
+    }
+
+    const ppkMap = new Map<string, any>();
+    for (const item of ppkData) {
+      if (item.nip_nama_masked) ppkMap.set(item.nip_nama_masked, item);
+    }
+
+    // Merge each RUP Swakelola record
+    const anomalies: string[] = [];
+    
+    const mergedData = paketSwakelolaData.map(item => {
+      const enriched = { ...item };
+      const kdRup = String(item.kd_rup || '');
+      const kdSatker = String(item.kd_satker || '');
+
+      // 1. Merge: Master Satker
+      const satker = satkerMap.get(kdSatker);
+      if (satker) {
+        enriched.satker_status = satker.status_satker;
+        enriched.satker_jenis = satker.jenis_satker;
+        enriched.satker_alamat = satker.alamat;
+      }
+
+      // 2. Merge: PPK Master
+      const nip = item.nip_ppk || '';
+      const nama = item.nama_ppk || '';
+      let maskedKey = '';
+      if (nip && nama) {
+        maskedKey = `${nip} - ${nama}`;
+      } else {
+        maskedKey = nip || nama || '';
+      }
+
+      const ppk = ppkMap.get(maskedKey);
+      if (ppk) {
+        enriched.ppk_nama_lengkap = ppk.nama_lengkap;
+        enriched.ppk_nip_asli = ppk.nip_asli;
+        enriched.ppk_jabatan = ppk.jabatan;
+        enriched._ppk_completed = true;
+      } else {
+        enriched._ppk_completed = false;
+      }
+
+      // 3. Merge: Anggaran Swakelola
+      const anggarans = anggaranByRup.get(kdRup);
+      if (anggarans && anggarans.length > 0) {
+        enriched.anggaran_list = anggarans;
+        enriched.sumber_dana_list = [...new Set(anggarans.map(a => a.sumber_dana))].join(', ');
+        enriched._has_anggaran = true;
+      } else {
+        enriched._has_anggaran = false;
+      }
+
+      // 4. Merge: History Kaji Ulang
+      const kajiList = kajiUlangByRup.get(kdRup);
+      if (kajiList && kajiList.length > 0) {
+        const sorted = kajiList.sort((a, b) => new Date(b.tgl_kaji_ulang).getTime() - new Date(a.tgl_kaji_ulang).getTime());
+        enriched.kaji_ulang_count = kajiList.length;
+        enriched.kaji_ulang_terakhir = sorted[0].tgl_kaji_ulang;
+        enriched.kaji_ulang_jenis_revisi = sorted[0].jenis_revisi;
+        enriched.kaji_ulang_alasan = sorted[0].alasan_kajiulang;
+        enriched._has_kaji_ulang = true;
+      } else {
+        enriched._has_kaji_ulang = false;
+      }
+
+      // 5. Merge: Anak Paket Penyedia
+      const penyediaList = penyediaBySwakelola.get(kdRup);
+      if (penyediaList && penyediaList.length > 0) {
+        enriched.paket_penyedia_list = penyediaList;
+        enriched.paket_penyedia_count = penyediaList.length;
+        enriched._has_paket_penyedia = true;
+      } else {
+        enriched._has_paket_penyedia = false;
+        enriched.paket_penyedia_count = 0;
+      }
+
+      // 6. Merge: Pencatatan Pelaksanaan (Swakelola)
+      const pencatatan = pencatatanMap.get(kdRup);
+      if (pencatatan) {
+        enriched.pelaksanaan_status = pencatatan.status_swakelola_pct_ket;
+        enriched.pelaksanaan_tgl_mulai = pencatatan.tgl_mulai_paket;
+        enriched.pelaksanaan_tgl_selesai = pencatatan.tgl_selesai_paket;
+        enriched.pelaksanaan_kd_pct = pencatatan.kd_swakelola_pct;
+        enriched._has_pelaksanaan = true;
+      } else {
+        enriched._has_pelaksanaan = false;
+      }
+
+      return enriched;
+    });
+
+    // Save to disk
+    await fs.mkdir(mergedDir, { recursive: true });
+    const outputPath = path.resolve(mergedDir, `rup-swakelola-enriched_${tahun}.json`);
+    await fs.writeFile(outputPath, JSON.stringify(mergedData, null, 2), 'utf-8');
+
+    const duration = Date.now() - startTime;
+    const result = {
+      id: crypto.randomUUID(),
+      type: 'rup-swakelola',
+      timestamp: new Date().toISOString(),
+      tahun,
+      trigger,
+      status: 'success',
+      duration_ms: duration,
+      result: {
+        total_records: mergedData.length
+      },
+      anomalies
+    };
+
+    await appendMergeHistory(result);
+    return result;
+
+  } catch (error: any) {
+    console.error('[Merge RUP Swakelola] Error:', error);
+    const result = {
+      id: crypto.randomUUID(),
+      type: 'rup-swakelola',
       timestamp: new Date().toISOString(),
       tahun,
       trigger,

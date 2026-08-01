@@ -1,4 +1,4 @@
-import { executeRupPenyediaMerge } from '../../utils/mergeManager';
+import { executeRupSwakelolaMerge } from '../../utils/mergeManager';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -6,12 +6,12 @@ export default defineEventHandler(async (event) => {
     const tahun = body?.tahun || new Date().getFullYear().toString();
 
     // Trigger merge manually
-    const result: any = await executeRupPenyediaMerge(tahun, 'manual');
+    const result: any = await executeRupSwakelolaMerge(tahun, 'manual');
 
     if (result.status === 'success') {
       return {
         success: true,
-        message: `Berhasil menggabungkan ${result.result.total_records} data RUP Penyedia`,
+        message: `Berhasil menggabungkan ${result.result.total_records} data RUP Swakelola`,
         data: result
       };
     } else {
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
       };
     }
   } catch (error: any) {
-    console.error('Error in POST /api/admin/merge-rup-penyedia', error);
+    console.error('Error in POST /api/admin/merge-rup-swakelola', error);
     setResponseStatus(event, 500);
     return {
       success: false,
