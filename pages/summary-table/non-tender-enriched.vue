@@ -47,8 +47,8 @@
 
 <script setup>
 import { ref } from 'vue';
-import NonTenderEnrichedAnalytics from '~/components/summary-table/NonTenderEnrichedAnalytics.vue';
-import NonTenderEnrichedTable from '~/components/summary-table/NonTenderEnrichedTable.vue';
+import NonTenderEnrichedAnalytics from '~/components/summary-table/non-tender-enriched/NonTenderEnrichedAnalytics.vue';
+import NonTenderEnrichedTable from '~/components/summary-table/non-tender-enriched/NonTenderEnrichedTable.vue';
 
 const activeTab = ref('analytics');
 

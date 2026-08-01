@@ -47,8 +47,8 @@
 
 <script setup>
 import { ref } from 'vue';
-import RupPenyediaEnrichedAnalytics from '~/components/summary-table/RupPenyediaEnrichedAnalytics.vue';
-import RupPenyediaEnrichedTable from '~/components/summary-table/RupPenyediaEnrichedTable.vue';
+import RupPenyediaEnrichedAnalytics from '~/components/summary-table/rup-penyedia-enriched/RupPenyediaEnrichedAnalytics.vue';
+import RupPenyediaEnrichedTable from '~/components/summary-table/rup-penyedia-enriched/RupPenyediaEnrichedTable.vue';
 
 const activeTab = ref('analytics');
 
