@@ -42,8 +42,37 @@ export default defineEventHandler(async (event) => {
       filteredData = filteredData.filter((item: any) => ppks.includes(item.ppk_nama_lengkap) || ppks.includes(item.nama_ppk));
     }
 
+    const ts = filterArray(query.tipeSwakelola);
+    if (ts.length > 0) {
+      filteredData = filteredData.filter((item: any) => ts.includes(String(item.tipe_swakelola)));
+    }
+
+    const sd = filterArray(query.sumberDana);
+    if (sd.length > 0) {
+      filteredData = filteredData.filter((item: any) => {
+        if (!item.sumber_dana_list) return false;
+        return sd.some((s: string) => item.sumber_dana_list.includes(s));
+      });
+    }
+
+    const sp = filterArray(query.statusPelaksanaan);
+    if (sp.length > 0) {
+      filteredData = filteredData.filter((item: any) => {
+        if (sp.includes('Belum Tercatat') && !item._has_pelaksanaan) return true;
+        if (sp.includes('Tercatat') && item._has_pelaksanaan) return true;
+        if (item.pelaksanaan_status && sp.includes(item.pelaksanaan_status)) return true;
+        return false;
+      });
+    }
+
+    const um = query.statusUmumkan as string;
+    if (um && um !== 'ALL') {
+      filteredData = filteredData.filter((item: any) => item.status_umumkan_rup === um);
+    }
+
     // Extract unique filter options
     const uniqueNamaPpk = [...new Set(data.map((item: any) => item.ppk_nama_lengkap || item.nama_ppk).filter(Boolean))].sort();
+    const uniqueStatusUmumkan = [...new Set(data.map((item: any) => item.status_umumkan_rup).filter(Boolean))].sort();
     
     // Kalkulasi agregasi
     let totalPagu = 0;
@@ -76,7 +105,8 @@ export default defineEventHandler(async (event) => {
         ppkCount
       },
       filterOptions: {
-        namaPpk: uniqueNamaPpk
+        namaPpk: uniqueNamaPpk,
+        statusUmumkan: uniqueStatusUmumkan
       }
     };
   } catch (error: any) {

@@ -22,13 +22,6 @@
             </MazInput>
           </div>
           <div class="mt-5 flex gap-2">
-            <MazBtn @click="showFilters = !showFilters" :color="showFilters ? 'primary' : 'secondary'" size="sm" outline>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
-              Filter {{ hasActiveFilters ? 'Active' : '' }}
-            </MazBtn>
-
             <MazBtn @click="exportModal = true" color="success" size="sm">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -38,9 +31,9 @@
           </div>
         </div>
 
-        <!-- Expanded Filters Grid -->
-        <div v-if="showFilters" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-3 border-t border-[color:hsl(var(--maz-border))]">
-          <div>
+        <!-- Filters Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 items-end">
+          <div class="w-full">
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Jenis Pengadaan</label>
             <MazSelect
               v-model="filterJenisPengadaan"
@@ -52,7 +45,7 @@
             />
           </div>
           
-          <div>
+          <div class="w-full">
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Metode Pemilihan</label>
             <MazSelect
               v-model="filterMetodePengadaan"
@@ -64,7 +57,7 @@
             />
           </div>
 
-          <div>
+          <div class="w-full">
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Realisasi (Inaproc)</label>
             <MazSelect
               v-model="filterStatusRealisasi"
@@ -76,7 +69,7 @@
             />
           </div>
 
-          <div>
+          <div class="w-full">
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Sumber Dana</label>
             <MazSelect
               v-model="filterSumberDana"
@@ -88,7 +81,7 @@
             />
           </div>
 
-          <div>
+          <div class="w-full">
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Pejabat Pembuat Komitmen (PPK)</label>
             <MazSelect
               v-model="filterPpk"
@@ -101,7 +94,7 @@
             />
           </div>
 
-          <div>
+          <div class="w-full">
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Pengumuman RUP</label>
             <MazSelect
               v-model="filterUmumkan"
@@ -112,12 +105,27 @@
             />
           </div>
 
-          <div class="flex items-end">
-            <MazBtn @click="resetFilters" color="transparent" size="sm" class="text-xs">
-              Reset Semua Filter
+          <div class="w-full flex items-center justify-between pb-1 text-xs text-[color:hsl(var(--maz-muted))]">
+            <span>Total: <strong class="text-[color:hsl(var(--maz-foreground))]">{{ totalAllItems }}</strong> data</span>
+            <MazBtn v-if="hasActiveFilters" @click="resetFilters" color="danger" size="sm" outline class="h-[32px]">
+              Reset
             </MazBtn>
           </div>
         </div>
+      </div>
+
+      <!-- Empty State Banner (No Data merged) -->
+      <div v-if="!loading && !error && (totalAllItems === 0 && !hasActiveFilters && searchQuery === '')" class="p-8 text-center bg-amber-500/10 border-b border-[color:hsl(var(--maz-border))]">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 mb-3">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <h2 class="text-lg font-bold text-[color:hsl(var(--maz-foreground))] mb-1">Data Belum Di-merge</h2>
+        <p class="text-xs text-[color:hsl(var(--maz-muted))] mb-4 max-w-md mx-auto">Tidak ada data hasil merge untuk tahun {{ selectedYear }}. Silakan jalankan proses "Integrasi Data" melalui akses Admin terlebih dahulu.</p>
+        <NuxtLink to="/admin/data-merge">
+          <MazBtn color="primary" size="sm">Buka Kelola Merge Data</MazBtn>
+        </NuxtLink>
       </div>
 
       <!-- Error State -->
