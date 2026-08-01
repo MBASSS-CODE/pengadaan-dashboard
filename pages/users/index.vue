@@ -86,12 +86,7 @@ const loadUsers = async () => {
     users.value = res.data || [];
   } catch (error) {
     console.error('Error fetching users:', error);
-    if (error.response?.status === 401 || error.statusCode === 401) {
-      const isLoggedIn = useCookie('is_logged_in');
-      isLoggedIn.value = null; // Clear the cookie
-      if (router) router.push('/login');
-      else window.location.href = '/login';
-    }
+    // Global fetch plugin will handle 401 redirect
   } finally {
     loading.value = false;
   }

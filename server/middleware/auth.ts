@@ -3,12 +3,12 @@ import jwt from 'jsonwebtoken';
 export default defineEventHandler((event) => {
   const url = getRequestURL(event);
   
-  // Lindungi rute API khusus yang memerlukan otentikasi (misal: CRUD users)
-  if (url.pathname.startsWith('/api/users')) {
+  // Lindungi semua rute API kecuali API login
+  if (url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/auth/login')) {
     const token = getCookie(event, 'auth_token');
     
     if (!token) {
-      throw createError({ statusCode: 401, statusMessage: 'Unauthorized: Akses ditolak' });
+      throw createError({ statusCode: 401, statusMessage: 'Unauthorized: Akses ditolak (Silakan login)' });
     }
 
     try {
