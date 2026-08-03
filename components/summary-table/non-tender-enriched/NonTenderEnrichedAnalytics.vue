@@ -2,25 +2,25 @@
   <div class="mb-6">
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-sm">
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
         <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Paket Non-Tender</div>
         <div class="text-2xl font-bold text-[color:hsl(var(--maz-primary))]">
           {{ loading ? '...' : totalItems.toLocaleString('id-ID') }}
         </div>
       </div>
-      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-sm">
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
         <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Terintegrasi RUP</div>
         <div class="text-2xl font-bold text-green-600 dark:text-green-400">
           {{ loading ? '...' : rupMatchedCount.toLocaleString('id-ID') }}
         </div>
       </div>
-      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-sm">
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
         <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total HPS (Rp)</div>
         <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
           {{ loading ? '...' : formatRupiah(totalHps) }}
         </div>
       </div>
-      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-sm">
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
         <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">PPK Tervalidasi</div>
         <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
           {{ loading ? '...' : ppkCompletedCount.toLocaleString('id-ID') }}
@@ -32,14 +32,14 @@
       
       <!-- 1. Deviasi HPS vs Pagu -->
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-sm lg:col-span-2 flex flex-col">
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-2 flex flex-col">
           <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Deviasi HPS vs Pagu RUP</h3>
           <div class="flex-grow flex items-center justify-center min-h-[300px]">
             <Doughnut v-if="deviasiChartData" :data="deviasiChartData" :options="doughnutOptions" />
             <div v-else class="text-[color:hsl(var(--maz-muted))] text-sm">Tidak ada data</div>
           </div>
         </div>
-        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-sm lg:col-span-3 overflow-x-auto">
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-3 overflow-x-auto">
           <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-4">Ringkasan Kepatuhan Anggaran</h3>
           <table class="w-full text-left text-sm text-[color:hsl(var(--maz-foreground))] min-w-[500px]">
             <thead class="text-xs text-[color:hsl(var(--maz-muted))] uppercase border-b border-[color:hsl(var(--maz-border))]">
@@ -74,14 +74,14 @@
 
       <!-- 2. Status Non-Tender -->
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-sm lg:col-span-2 flex flex-col">
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-2 flex flex-col">
           <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Status Pelaksanaan (Inaproc)</h3>
           <div class="flex-grow flex items-center justify-center min-h-[300px]">
             <Pie v-if="statusChartData" :data="statusChartData" :options="pieOptions" />
             <div v-else class="text-[color:hsl(var(--maz-muted))] text-sm">Tidak ada data</div>
           </div>
         </div>
-        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-sm lg:col-span-3 overflow-x-auto">
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-3 overflow-x-auto">
           <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-4">Ringkasan Status Pelaksanaan</h3>
           <table class="w-full text-left text-sm text-[color:hsl(var(--maz-foreground))] min-w-[500px]">
             <thead class="text-xs text-[color:hsl(var(--maz-muted))] uppercase border-b border-[color:hsl(var(--maz-border))]">
@@ -125,14 +125,14 @@
 
       <!-- 3. Metode Pengadaan -->
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-sm lg:col-span-2 flex flex-col">
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-2 flex flex-col">
           <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Metode Pemilihan</h3>
           <div class="flex-grow flex items-center justify-center min-h-[300px]">
             <Doughnut v-if="metodeChartData" :data="metodeChartData" :options="doughnutOptions" />
             <div v-else class="text-[color:hsl(var(--maz-muted))] text-sm">Tidak ada data</div>
           </div>
         </div>
-        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-sm lg:col-span-3 overflow-x-auto">
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-3 overflow-x-auto">
           <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-4">Ringkasan Metode Pemilihan</h3>
           <table class="w-full text-left text-sm text-[color:hsl(var(--maz-foreground))] min-w-[500px]">
             <thead class="text-xs text-[color:hsl(var(--maz-muted))] uppercase border-b border-[color:hsl(var(--maz-border))]">
@@ -157,14 +157,14 @@
 
       <!-- 4. Jenis Pengadaan -->
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-sm lg:col-span-2 flex flex-col">
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-2 flex flex-col">
           <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Jenis Pengadaan</h3>
           <div class="flex-grow flex items-center justify-center min-h-[300px]">
             <Doughnut v-if="jenisChartData" :data="jenisChartData" :options="doughnutOptions" />
             <div v-else class="text-[color:hsl(var(--maz-muted))] text-sm">Tidak ada data</div>
           </div>
         </div>
-        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-sm lg:col-span-3 overflow-x-auto">
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-3 overflow-x-auto">
           <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-4">Ringkasan Jenis Pengadaan</h3>
           <table class="w-full text-left text-sm text-[color:hsl(var(--maz-foreground))] min-w-[500px]">
             <thead class="text-xs text-[color:hsl(var(--maz-muted))] uppercase border-b border-[color:hsl(var(--maz-border))]">
@@ -189,14 +189,14 @@
 
       <!-- 5. Kaji Ulang -->
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-sm lg:col-span-2 flex flex-col">
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-2 flex flex-col">
           <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Status Kaji Ulang</h3>
           <div class="flex-grow flex items-center justify-center min-h-[300px]">
             <Pie v-if="kajiUlangChartData" :data="kajiUlangChartData" :options="pieOptions" />
             <div v-else class="text-[color:hsl(var(--maz-muted))] text-sm">Tidak ada data</div>
           </div>
         </div>
-        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-sm lg:col-span-3 overflow-x-auto flex flex-col">
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-3 overflow-x-auto flex flex-col">
           <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-4">Ringkasan Kaji Ulang</h3>
           <div class="overflow-x-auto flex-grow">
             <table class="w-full text-left text-sm text-[color:hsl(var(--maz-foreground))] min-w-[500px]">
@@ -231,7 +231,7 @@
       </div>
 
       <!-- 6. Top Satker (Table Only) -->
-      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-sm overflow-x-auto">
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] overflow-x-auto">
         <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-4">Top Satuan Kerja (Berdasarkan HPS)</h3>
         <table class="w-full text-left text-sm text-[color:hsl(var(--maz-foreground))] min-w-[600px]">
           <thead class="text-xs text-[color:hsl(var(--maz-muted))] uppercase border-b border-[color:hsl(var(--maz-border))]">
@@ -259,7 +259,7 @@
       </div>
 
       <!-- 7. Top PPK (Table Only) -->
-      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-sm overflow-x-auto">
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] overflow-x-auto">
         <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-4">Top Pejabat Pembuat Komitmen (Berdasarkan HPS)</h3>
         <table class="w-full text-left text-sm text-[color:hsl(var(--maz-foreground))] min-w-[600px]">
           <thead class="text-xs text-[color:hsl(var(--maz-muted))] uppercase border-b border-[color:hsl(var(--maz-border))]">
