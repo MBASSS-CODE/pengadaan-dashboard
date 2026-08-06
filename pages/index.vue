@@ -1,443 +1,258 @@
 <template>
-  <div class="dashboard-container">
-    <div class="page-header flex justify-between items-center mb-8">
-      <div>
-        <h1 class="page-title">Dashboard Pengadaan</h1>
-        <p class="page-subtitle">Ringkasan Realisasi dan Perencanaan Pengadaan (Tahun {{ selectedYear }})</p>
+  <div class="landing-page min-h-screen bg-[color:hsl(var(--maz-background))] text-[color:hsl(var(--maz-foreground))] overflow-x-hidden font-sans">
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 w-full z-50 bg-[color:hsl(var(--maz-background)_/_80%)] backdrop-blur-md border-b border-[color:hsl(var(--maz-border))] transition-all duration-300 py-4 px-6 md:px-12 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <span class="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+          Pengadaan Dashboard
+        </span>
       </div>
-      <div class="header-actions">
-        <select v-model="selectedYear" class="form-select" @change="loadData">
-          <option :value="currentYear">{{ currentYear }}</option>
-          <option :value="currentYear - 1">{{ currentYear - 1 }}</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="loading" class="loading-state">
-      <ClientOnly>
-        <MazSpinner color="primary" size="3rem" />
-      </ClientOnly>
-      <p>Memuat data profil pengadaan...</p>
-    </div>
-
-    <!-- Error State -->
-    <div v-else-if="error" class="error-state">
-      <p class="text-danger">Gagal memuat data. Silakan coba lagi.</p>
-    </div>
-
-    <!-- Data Loaded -->
-    <div v-else>
-      <!-- Summary Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
-        <div class="card bg-info-light">
-          <h3>Total Belanja Pengadaan</h3>
-          <div class="value">{{ formatCurrency(dashboardData.belanja_barang_jasa) }}</div>
-          <div class="label">Total Pengadaan (Barang & Jasa)</div>
-        </div>
-        <div class="card bg-primary-light">
-          <h3>Total Nilai Perencanaan</h3>
-          <div class="value">{{ formatCurrency(dashboardData.total_nilai_perencanaan) }}</div>
-          <div class="label">Total RUP: {{ dashboardData.total_rup || 0 }} Paket</div>
-        </div>
-        <div class="card bg-secondary-light">
-          <h3>Total Nilai Realisasi</h3>
-          <div class="value">{{ formatCurrency(dashboardData.total_nilai_realisasi) }}</div>
-          <div class="label">Total Realisasi: {{ dashboardData.total_realisasi || 0 }} Paket</div>
-        </div>
-        <div class="card bg-success-light">
-          <h3>Total Realisasi PDN</h3>
-          <div class="value">{{ formatCurrency(dashboardData.total_nilai_realisasi_pdn) }}</div>
-          <div class="label">Rencana: {{ formatCurrency(dashboardData.total_pdn) }} ({{ dashboardData.pdn || 0 }} Paket)</div>
-        </div>
-        <div class="card bg-warning-light">
-          <h3>Total Realisasi UMKK</h3>
-          <div class="value">{{ formatCurrency(dashboardData.total_nilai_realisasi_umkk) }}</div>
-          <div class="label">Rencana: {{ formatCurrency(dashboardData.total_umkk) }} ({{ dashboardData.umkk || 0 }} Paket)</div>
-        </div>
-      </div>
-
-      <!-- Tabs -->
-      <div class="flex gap-4 mb-6 pb-2 border-b border-[hsl(var(--maz-border))]">
+      <div class="flex items-center gap-4">
         <button 
-          class="tab-btn" 
-          :class="{ active: activeTab === 'realisasi' }"
-          @click="activeTab = 'realisasi'"
+          @click="toggleTheme" 
+          class="theme-toggle-btn"
+          title="Toggle Dark Mode"
         >
-          Realisasi Pengadaan
+          <svg v-if="theme === 'dark'" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yellow-400 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[color:hsl(var(--maz-foreground))] transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
         </button>
-        <button 
-          class="tab-btn" 
-          :class="{ active: activeTab === 'perencanaan' }"
-          @click="activeTab = 'perencanaan'"
-        >
-          Perencanaan (RUP)
-        </button>
+        <MazBtn v-if="!isLoggedIn" @click="navigateTo('/login')" color="primary" class="font-semibold shadow-lg shadow-blue-500/20 hover:-translate-y-0.5 transition-transform">
+          Login Admin
+        </MazBtn>
+        <MazBtn v-else @click="navigateTo('/dashboard')" color="primary" class="font-semibold shadow-lg shadow-blue-500/20 hover:-translate-y-0.5 transition-transform">
+          Buka Dashboard
+        </MazBtn>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-32 pb-20 px-6 md:px-12 lg:pt-48 lg:pb-32 overflow-hidden flex flex-col items-center text-center z-10">
+      <!-- Ambient Background Glows -->
+      <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -z-10"></div>
+      <div class="absolute bottom-1/4 right-1/4 w-[30rem] h-[30rem] bg-indigo-500/10 rounded-full blur-3xl -z-10"></div>
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-emerald-500/5 rounded-full blur-3xl -z-10"></div>
+
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium text-sm mb-8 animate-fade-in-up">
+        <span class="relative flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+        </span>
+        Sistem Terintegrasi Live
+      </div>
+      
+      <h1 class="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-tight mb-6 animate-fade-in-up animation-delay-100 max-w-4xl">
+        Pusat Kendali <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">Pengadaan Terintegrasi</span>
+      </h1>
+      
+      <p class="text-lg md:text-xl text-[color:hsl(var(--maz-muted))] mb-12 max-w-2xl animate-fade-in-up animation-delay-200">
+        Pantau realisasi belanja, evaluasi kinerja PPK, dan manfaatkan analisis mendalam untuk pengambilan keputusan strategis—semua dalam satu dashboard canggih.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-4 animate-fade-in-up animation-delay-300">
+        <MazBtn v-if="!isLoggedIn" @click="navigateTo('/login')" color="primary" size="lg" class="shadow-xl shadow-blue-500/25 px-8 font-bold">
+          Mulai Sekarang
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </MazBtn>
+        <MazBtn v-else @click="navigateTo('/dashboard')" color="primary" size="lg" class="shadow-xl shadow-blue-500/25 px-8 font-bold">
+          Menuju Dashboard Utama
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </MazBtn>
       </div>
 
-      <!-- Tab Content -->
-      <Transition name="fade" mode="out-in">
-        <DashboardRealisasi v-if="activeTab === 'realisasi'" :dashboardData="dashboardData" />
-        <DashboardPerencanaan v-else-if="activeTab === 'perencanaan'" :dashboardData="dashboardData" />
-      </Transition>
-    </div>
+      <!-- Dashboard Image -->
+      <div class="mt-16 w-full max-w-5xl relative animate-fade-in-up animation-delay-400">
+        <div class="absolute inset-0 bg-gradient-to-t from-[color:hsl(var(--maz-background))] via-transparent to-transparent z-10 h-full w-full pointer-events-none"></div>
+        <div class="rounded-2xl border border-[color:hsl(var(--maz-border))] shadow-2xl overflow-hidden transform perspective-1000 rotate-x-12 scale-50 transition-transform duration-700 hover:rotate-x-0 hover:scale-105">
+          <img src="/images/media__1785769232479.png" alt="Dashboard Pengadaan" class="w-full h-auto object-cover" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-24 px-6 md:px-12 relative z-20">
+      <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl md:text-4xl font-bold mb-4">Fitur Unggulan Sistem</h2>
+          <p class="text-[color:hsl(var(--maz-muted))] max-w-2xl mx-auto">Dirancang untuk memberikan transparansi dan efisiensi maksimal dalam memonitor seluruh proses pengadaan barang dan jasa.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- Feature 1 -->
+          <div class="feature-card group">
+            <div class="icon-box bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3">Analisis Realisasi & Perencanaan</h3>
+            <p class="text-[color:hsl(var(--maz-muted))]">Visualisasi komprehensif untuk memantau total belanja pengadaan, persentase capaian UMKK, dan Produk Dalam Negeri (PDN) secara instan.</p>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="feature-card group">
+            <div class="icon-box bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3">Manajemen Data & Cache Cerdas</h3>
+            <p class="text-[color:hsl(var(--maz-muted))]">Sistem admin yang memungkinkan sinkronisasi data dari API Inaproc secara langsung, dilengkapi monitoring penggunaan RAM dan Disk untuk memastikan performa optimal.</p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="feature-card group">
+            <div class="icon-box bg-purple-500/10 text-purple-500 group-hover:bg-purple-500 group-hover:text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3">Integrasi (Merge) Data Master</h3>
+            <p class="text-[color:hsl(var(--maz-muted))]">Otomatisasi penggabungan data RUP Penyedia, Swakelola, dan Pencatatan Non-Tender ke dalam satu dataset yang siap dianalisis dengan alur integrasi yang transparan.</p>
+          </div>
+
+          <!-- Feature 4 -->
+          <div class="feature-card group">
+            <div class="icon-box bg-amber-500/10 text-amber-500 group-hover:bg-amber-500 group-hover:text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3">Evaluasi Kinerja PPK & Satker</h3>
+            <p class="text-[color:hsl(var(--maz-muted))]">Pantau langsung beban kerja setiap Pejabat Pembuat Komitmen (PPK) dan Satuan Kerja dengan peringkat pagu terbesar untuk alokasi SDM yang lebih efisien.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer CTA -->
+    <section class="py-20 relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-blue-600 to-indigo-700 opacity-90 -z-10"></div>
+      <div class="absolute top-0 right-0 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl -z-10"></div>
+      
+      <div class="max-w-4xl mx-auto text-center px-6">
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Siap Mengelola Data Pengadaan Lebih Baik?</h2>
+        <p class="text-blue-300 mb-10 text-lg">Akses seluruh fitur dashboard sekarang dan dapatkan insight yang Anda butuhkan.</p>
+        <MazBtn v-if="!isLoggedIn" @click="navigateTo('/login')" color="white" size="lg" class="px-10 font-bold text-blue-700">
+          Masuk ke Aplikasi
+        </MazBtn>
+        <MazBtn v-else @click="navigateTo('/dashboard')" color="white" size="lg" class="px-10 font-bold text-blue-700">
+          Kembali ke Dashboard
+        </MazBtn>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import DashboardRealisasi from '~/components/dashboard/DashboardRealisasi.vue';
-import DashboardPerencanaan from '~/components/dashboard/DashboardPerencanaan.vue';
+import { useCookie } from '#imports'
 
+definePageMeta({
+  layout: 'blank'
+});
 
-const loading = ref(true);
-const error = ref(false);
-const dashboardData = ref({});
-const activeTab = ref('realisasi');
+const theme = ref('light');
 
-const currentYear = new Date().getFullYear();
-const selectedYear = ref(currentYear);
-
-const loadData = async () => {
-  loading.value = true;
-  error.value = false;
-  try {
-    const res = await $fetch('/api/dashboard', {
-      params: {
-        tahun: selectedYear.value,
-        jenis: '1',
-        instansi: 'K22',
-        view: 'Nilai'
-      }
-    });
-    
-    if (res.data && res.data.data) {
-      dashboardData.value = res.data.data;
+const toggleTheme = () => {
+  if (process.client) {
+    theme.value = theme.value === 'light' ? 'dark' : 'light';
+    if (theme.value === 'dark') {
+      document.documentElement.classList.add('dark', 'maz-is-dark');
+      document.documentElement.classList.remove('maz-is-light');
     } else {
-      dashboardData.value = res.data;
+      document.documentElement.classList.remove('dark', 'maz-is-dark');
+      document.documentElement.classList.add('maz-is-light');
     }
-  } catch (err) {
-    console.error('Failed to load dashboard data:', err);
-    error.value = true;
-  } finally {
-    loading.value = false;
   }
 };
 
-const formatCurrency = (value) => {
-  if (value === undefined || value === null) return 'Rp 0';
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(value);
-};
-
+import { onMounted } from '#imports';
 onMounted(() => {
-  loadData();
+  if (process.client) {
+    theme.value = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+  }
 });
+const isLoggedIn = useCookie('is_logged_in');
 </script>
 
-<style>
-.dashboard-container {
-  padding: 1.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
+<style scoped>
+.feature-card {
+  @apply bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] rounded-2xl p-8 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 relative overflow-hidden;
 }
 
-.page-header {
-  margin-bottom: 2rem;
+.feature-card::before {
+  content: '';
+  @apply absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500 transform scale-x-0 origin-left transition-transform duration-300;
 }
 
-.form-select {
-  padding: 0.5rem 1rem;
-  border-radius: var(--maz-border-radius, 0.5rem);
+.feature-card:hover::before {
+  @apply scale-x-100;
+}
+
+.icon-box {
+  @apply w-16 h-16 rounded-xl flex items-center justify-center mb-6 transition-colors duration-300;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+  opacity: 0;
+}
+
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-400 { animation-delay: 400ms; }
+
+/* 3D perspective utility */
+.perspective-1000 {
+  perspective: 1000px;
+}
+.rotate-x-12 {
+  transform: rotateX(12deg) scale(1.05);
+}
+.hover\:rotate-x-0:hover {
+  transform: rotateX(0deg) scale(1);
+}
+.theme-toggle-btn {
+  background: hsl(var(--maz-foreground) / 5%);
   border: 1px solid hsl(var(--maz-border));
-  background-color: hsl(var(--maz-background));
-  color: hsl(var(--maz-foreground));
-  font-family: inherit;
-  font-size: 1rem;
-  transition: border-color 0.2s ease;
-  min-width: 120px;
-}
-
-.form-select:focus {
-  outline: none;
-  border-color: hsl(var(--maz-primary));
-}
-
-.page-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: hsl(var(--maz-foreground));
-  margin: 0 0 0.25rem 0;
-}
-
-.page-subtitle {
-  font-size: 0.95rem;
-  color: hsl(var(--maz-muted));
-  margin: 0;
-}
-
-.loading-state, .error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  gap: 1rem;
-  color: hsl(var(--maz-muted));
-}
-
-.card {
-  padding: 1.5rem;
-  border-radius: var(--maz-border-radius, 0.75rem);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  border: 1px solid hsl(var(--maz-border));
-}
-
-.card h3 {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: hsl(var(--maz-foreground));
-  opacity: 0.8;
-}
-
-.card .value {
-  font-size: clamp(1.1rem, 2vw, 1.5rem);
-  font-weight: 700;
-  color: hsl(var(--maz-foreground));
-  margin-bottom: 0.5rem;
-  word-break: break-word;
-}
-
-.card .label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: hsl(var(--maz-muted));
-}
-
-.bg-primary-light { border-top: 4px solid hsl(var(--maz-primary)); }
-.bg-secondary-light { border-top: 4px solid hsl(var(--maz-secondary)); }
-.bg-success-light { border-top: 4px solid hsl(var(--maz-success)); }
-.bg-warning-light { border-top: 4px solid hsl(var(--maz-warning)); }
-
-.tab-btn {
-  background: none;
-  border: none;
-  font-size: 1rem;
-  font-weight: 600;
-  color: hsl(var(--maz-muted));
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--maz-border-radius, 0.5rem);
+  padding: 0.6rem;
+  border-radius: 50%;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tab-btn:hover {
-  background-color: hsl(var(--maz-foreground) / 5%);
-}
-
-.tab-btn.active {
-  background-color: hsl(var(--maz-primary) / 10%);
-  color: hsl(var(--maz-primary));
-}
-
-.tab-content {
-  animation: fadeIn 0.3s ease;
-}
-
-/* Table Styles */
-.table-responsive {
-  overflow-x: auto;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.data-table th, .data-table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid hsl(var(--maz-border));
-}
-
-.data-table th {
-  font-weight: 600;
-  color: hsl(var(--maz-muted));
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  letter-spacing: 0.5px;
-}
-
-.data-table tbody tr {
-  transition: background-color 0.2s ease;
-}
-
-.data-table tbody tr:hover {
-  background-color: hsl(var(--maz-foreground) / 5%);
-}
-
-.data-table tfoot td {
-  background-color: hsl(var(--maz-background));
-  border-top: 2px solid hsl(var(--maz-border));
-}
-
-.text-right {
-  text-align: right !important;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-.chart-card {
-  background-color: hsl(var(--maz-background));
-  border-radius: var(--maz-border-radius, 0.75rem);
-  padding: 1.5rem;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  border: 1px solid hsl(var(--maz-border));
-}
-
-.chart-title {
-  margin: 0 0 1.5rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: hsl(var(--maz-foreground));
-}
-
-.chart-wrapper {
-  height: 350px;
-  position: relative;
-  width: 100%;
-}
-
-.doughnut-wrapper {
-  height: 300px;
-  display: flex;
-  justify-content: center;
-}
-
-.gauge-wrapper {
-  position: relative;
-}
-
-.gauge-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  pointer-events: none;
-}
-
-.gauge-percent {
-  font-size: 2.25rem;
-  font-weight: 800;
-  color: hsl(var(--maz-foreground));
-  line-height: 1.2;
-}
-
-.gauge-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: hsl(var(--maz-muted));
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Custom Progress Bar */
-.custom-progress-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.progress-label {
-  font-weight: 600;
-  color: hsl(var(--maz-muted));
-  width: 100px;
-  text-align: right;
-  line-height: 1.2;
-  white-space: pre-line;
-}
-
-.progress-container {
-  flex: 1;
-}
-
-.progress-track {
-  display: flex;
-  height: 40px;
-  background-color: hsl(220 13% 91%);
-  border-radius: 4px;
-  overflow: hidden;
-  position: relative;
-}
-
-.progress-fill {
-  background-color: hsl(164 76% 46%);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 0.9rem;
-  transition: width 0.5s ease;
-  min-width: 0;
-}
-
-.progress-remainder {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-
-.text-dark {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   color: hsl(var(--maz-foreground));
-  opacity: 0.8;
 }
 
-.progress-ticks {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.75rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: hsl(var(--maz-muted));
-  padding: 0 2px;
-}
-
-.progress-footer {
-  font-size: 0.9rem;
-  color: hsl(var(--maz-muted));
-  font-weight: 500;
-  margin-top: 1rem;
-}
-
-@media (max-width: 768px) {
-  .custom-progress-wrapper {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  .progress-container {
-    width: 100%;
-  }
+.theme-toggle-btn:hover {
+  background-color: hsl(var(--maz-foreground) / 10%);
+  transform: rotate(15deg) scale(1.05);
 }
 </style>

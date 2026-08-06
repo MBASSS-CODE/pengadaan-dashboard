@@ -84,7 +84,7 @@ const handleLogin = async () => {
       userRole.value = response.user.role;
       const userName = useCookie('user_name');
       userName.value = response.user.username;
-      router.push('/');
+      router.push('/dashboard');
     }
   } catch (error) {
     errorMessage.value = error.data?.statusMessage || 'Username atau password salah';
