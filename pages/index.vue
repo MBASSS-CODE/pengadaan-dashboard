@@ -25,10 +25,16 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
           </svg>
         </button>
-        <MazBtn v-if="!isLoggedIn" @click="navigateTo('/login')" color="primary" class="font-semibold shadow-lg shadow-blue-500/20 hover:-translate-y-0.5 transition-transform">
-          Login Admin
+        <MazBtn v-if="!isLoggedIn" @click="navigateTo('/login')" color="primary" class="font-semibold shadow-lg shadow-blue-500/20 hover:-translate-y-0.5 transition-transform flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+          </svg>
+          Masuk
         </MazBtn>
-        <MazBtn v-else @click="navigateTo('/dashboard')" color="primary" class="font-semibold shadow-lg shadow-blue-500/20 hover:-translate-y-0.5 transition-transform">
+        <MazBtn v-else @click="navigateTo('/dashboard')" color="primary" class="font-semibold shadow-lg shadow-blue-500/20 hover:-translate-y-0.5 transition-transform flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+          </svg>
           Buka Dashboard
         </MazBtn>
       </div>
@@ -89,7 +95,7 @@
           <p class="text-[color:hsl(var(--maz-muted))] max-w-2xl mx-auto">Dirancang untuk memberikan transparansi dan efisiensi maksimal dalam memonitor seluruh proses pengadaan barang dan jasa.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <!-- Feature 1 -->
           <div class="feature-card group">
             <div class="icon-box bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white">
@@ -120,8 +126,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
               </svg>
             </div>
-            <h3 class="text-xl font-bold mb-3">Integrasi (Merge) Data Master</h3>
-            <p class="text-[color:hsl(var(--maz-muted))]">Otomatisasi penggabungan data RUP Penyedia, Swakelola, dan Pencatatan Non-Tender ke dalam satu dataset yang siap dianalisis dengan alur integrasi yang transparan.</p>
+            <h3 class="text-xl font-bold mb-3">Integrasi Data Master</h3>
+            <p class="text-[color:hsl(var(--maz-muted))]">Otomatisasi penggabungan data RUP Penyedia, Swakelola, dan Pencatatan Non-Tender ke dalam satu dataset yang siap dianalisis secara transparan.</p>
           </div>
 
           <!-- Feature 4 -->
@@ -131,8 +137,31 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
-            <h3 class="text-xl font-bold mb-3">Evaluasi Kinerja PPK & Satker</h3>
-            <p class="text-[color:hsl(var(--maz-muted))]">Pantau langsung beban kerja setiap Pejabat Pembuat Komitmen (PPK) dan Satuan Kerja dengan peringkat pagu terbesar untuk alokasi SDM yang lebih efisien.</p>
+            <h3 class="text-xl font-bold mb-3">Evaluasi Kinerja PPK</h3>
+            <p class="text-[color:hsl(var(--maz-muted))]">Pantau langsung beban kerja setiap Pejabat Pembuat Komitmen (PPK) dan Satuan Kerja dengan peringkat pagu terbesar secara efisien.</p>
+          </div>
+
+          <!-- Feature 5 -->
+          <div class="feature-card group">
+            <div class="icon-box bg-cyan-500/10 text-cyan-500 group-hover:bg-cyan-500 group-hover:text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3">Transparansi Data</h3>
+            <p class="text-[color:hsl(var(--maz-muted))]">Akses informasi pengadaan secara terbuka dan akuntabel sesuai prinsip keterbukaan pemerintah yang terintegrasi penuh.</p>
+          </div>
+
+          <!-- Feature 6 -->
+          <div class="feature-card group">
+            <div class="icon-box bg-rose-500/10 text-rose-500 group-hover:bg-rose-500 group-hover:text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-3">Pencarian & Filter Cepat</h3>
+            <p class="text-[color:hsl(var(--maz-muted))]">Temukan paket pengadaan dengan mudah menggunakan fitur pencarian terpadu dan kustomisasi parameter filter tingkat lanjut.</p>
           </div>
         </div>
       </div>
@@ -145,15 +174,71 @@
       
       <div class="max-w-4xl mx-auto text-center px-6">
         <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Siap Mengelola Data Pengadaan Lebih Baik?</h2>
-        <p class="text-blue-300 mb-10 text-lg">Akses seluruh fitur dashboard sekarang dan dapatkan insight yang Anda butuhkan.</p>
-        <MazBtn v-if="!isLoggedIn" @click="navigateTo('/login')" color="white" size="lg" class="px-10 font-bold text-blue-700">
-          Masuk ke Aplikasi
-        </MazBtn>
-        <MazBtn v-else @click="navigateTo('/dashboard')" color="white" size="lg" class="px-10 font-bold text-blue-700">
-          Kembali ke Dashboard
-        </MazBtn>
+        <p class="text-blue-400 mb-10 text-lg">Akses seluruh fitur dashboard sekarang dan dapatkan insight yang Anda butuhkan.</p>
       </div>
     </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-300 rounded-t-[2.5rem] md:rounded-t-[1rem] pt-16 pb-12 px-6 md:px-12 relative z-20 border-t border-slate-800/80 shadow-2xl -mt-8">
+      <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-slate-800/80">
+        
+        <!-- Brand Info -->
+        <div class="lg:col-span-2 space-y-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <span class="text-xl font-extrabold tracking-tight text-white">
+              Pengadaan Dashboard
+            </span>
+          </div>
+          <p class="text-slate-400 text-sm leading-relaxed max-w-sm">
+            Platform transparansi dan monitoring pengadaan barang/jasa pemerintah yang terintegrasi dan mudah diakses.
+          </p>
+        </div>
+
+        <!-- Menu -->
+        <div class="space-y-3">
+          <h4 class="text-white font-semibold text-sm tracking-wider">Menu</h4>
+          <ul class="space-y-2 text-sm text-slate-400 list-none p-0 m-0">
+            <li><a href="#" class="text-slate-400 hover:text-white transition-colors no-underline">Beranda</a></li>
+            <li><a href="#" class="text-slate-400 hover:text-white transition-colors no-underline">Fitur</a></li>
+            <li><a href="#" class="text-slate-400 hover:text-white transition-colors no-underline">Statistik</a></li>
+            <li><a href="#" class="text-slate-400 hover:text-white transition-colors no-underline">FAQ</a></li>
+            <li><a href="#" class="text-slate-400 hover:text-white transition-colors no-underline">Konsultasi</a></li>
+            <li><a href="#" class="text-slate-400 hover:text-white transition-colors no-underline">Kontak</a></li>
+          </ul>
+        </div>
+
+        <!-- Akun -->
+        <div class="space-y-3">
+          <h4 class="text-white font-semibold text-sm tracking-wider">Akun</h4>
+          <ul class="space-y-2 text-sm text-slate-400 list-none p-0 m-0">
+            <li>
+              <NuxtLink v-if="!isLoggedIn" to="/login" class="text-slate-400 hover:text-white transition-colors no-underline">Masuk</NuxtLink>
+              <NuxtLink v-else to="/dashboard" class="text-slate-400 hover:text-white transition-colors no-underline">Dashboard</NuxtLink>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Tautan Terkait -->
+        <div class="space-y-3">
+          <h4 class="text-white font-semibold text-sm tracking-wider">Tautan Terkait</h4>
+          <ul class="space-y-2 text-sm text-slate-400 list-none p-0 m-0">
+            <li><a href="https://inaproc.lkpp.go.id" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white transition-colors no-underline">INAPROC LKPP</a></li>
+            <li><a href="https://data.inaproc.id/" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white transition-colors no-underline">INAPROC DATA</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Copyright -->
+      <div class="max-w-7xl mx-auto pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+        <p>&copy; 2026 Pengadaan Dashboard. Hak Cipta Dilindungi.</p>
+      </div>
+    </footer>
   </div>
 </template>
 
