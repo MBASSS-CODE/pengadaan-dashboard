@@ -42,7 +42,7 @@ export const menuGroups: MenuGroup[] = [
     ]
   },
   {
-    label: 'TENDER',
+    label: 'Metode Pengadaan',
      items: [
       {
         name: 'Non-Tender',
