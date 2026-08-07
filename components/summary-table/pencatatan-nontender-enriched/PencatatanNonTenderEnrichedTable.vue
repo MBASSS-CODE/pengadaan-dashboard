@@ -169,107 +169,232 @@
         </template>
 
         <template #cell-actions="{ row }">
-          <MazBtn @click="openDetail(row)" size="sm" outline color="primary" class="w-full text-xs">
-            Detail
+          <MazBtn size="mini" color="info" outline @click="openDetail(row)" title="Lihat Detail Non-Tender">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
           </MazBtn>
         </template>
       </MazTable>
     </div>
 
-    <!-- Detail Modal -->
-    <MazDialog v-model="detailModal" title="Detail Paket Pencatatan" max-width="800px">
-      <div v-if="selectedRow" class="space-y-6">
-        <!-- Info Paket -->
-        <div>
-          <h3 class="text-lg font-bold text-[color:hsl(var(--maz-primary))]">{{ selectedRow.nama_paket }}</h3>
-          <p class="text-sm text-[color:hsl(var(--maz-muted))] mt-1">ID RUP: {{ selectedRow.kd_rup }} | Nontender PCT: {{ selectedRow.kd_nontender_pct }}</p>
-          <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="p-3 rounded-lg border border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))]">
-              <p class="text-xs text-[color:hsl(var(--maz-muted))]">Pagu Tersedia</p>
-              <p class="font-semibold">{{ formatRupiah(selectedRow.pagu) }}</p>
+    <!-- Detail Modal Pencatatan Non-Tender Enriched -->
+    <MazDialog v-model="detailModal" :title="`Detail Pencatatan Non-Tender: ${selectedRow?.kd_nontender_pct || ''}`" max-width="1000px">
+      <div v-if="selectedRow" class="space-y-6 max-h-[75vh] overflow-y-auto pr-1 text-sm">
+        
+        <!-- Summary Financial Bar (4 Cards Top) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="p-3.5 rounded-lg border border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-foreground)_/_2%)] flex flex-col justify-between">
+            <span class="text-xs text-[color:hsl(var(--maz-muted))] font-medium">Total Pagu (RUP)</span>
+            <span class="text-base font-bold text-[color:hsl(var(--maz-primary))] mt-1">
+              {{ selectedRow.rup_pagu ? formatRupiah(selectedRow.rup_pagu) : formatRupiah(selectedRow.pagu) }}
+            </span>
+          </div>
+          <div class="p-3.5 rounded-lg border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-900/10 flex flex-col justify-between">
+            <span class="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Total Realisasi / HPS</span>
+            <span class="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+              {{ formatRupiah(selectedRow.total_realisasi || selectedRow.hps || selectedRow.pagu) }}
+            </span>
+          </div>
+          <div class="p-3.5 rounded-lg border border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-foreground)_/_2%)] flex flex-col justify-between">
+            <span class="text-xs text-[color:hsl(var(--maz-muted))] font-medium">Selisih / Sisa Pagu</span>
+            <span class="text-base font-bold text-[color:hsl(var(--maz-foreground))] mt-1">
+              {{ formatRupiah(((selectedRow.rup_pagu || selectedRow.pagu || 0) - (selectedRow.total_realisasi || selectedRow.hps || 0))) }}
+            </span>
+          </div>
+          <div class="p-3.5 rounded-lg border border-blue-200 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-900/10 flex flex-col justify-between">
+            <span class="text-xs text-blue-700 dark:text-blue-400 font-medium">Total Realisasi</span>
+            <span class="text-base font-bold text-blue-600 dark:text-blue-400 mt-1">
+              {{ selectedRow.realisasi_list?.length || 0 }} Bukti Realisasi
+            </span>
+          </div>
+        </div>
+
+        <!-- Grid 1: Informasi Utama & Satker/PPK -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Card Informasi Paket -->
+          <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] p-4 rounded-lg border border-[color:hsl(var(--maz-border))] space-y-3">
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-primary))] flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Informasi Paket Pencatatan
+            </h3>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Nama Paket:</span>
+                <span class="font-semibold text-right ml-4 text-[color:hsl(var(--maz-primary))]">{{ selectedRow.nama_paket || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">ID Pencatatan Non-Tender:</span>
+                <span class="font-mono font-medium text-right ml-4">{{ selectedRow.kd_nontender_pct || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Kode RUP:</span>
+                <span class="font-mono font-medium text-right ml-4">{{ selectedRow.kd_rup || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Metode Pemilihan:</span>
+                <span class="font-semibold text-right ml-4">{{ selectedRow.mtd_pemilihan || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Jenis / Kategori Pengadaan:</span>
+                <span class="font-medium text-right ml-4">{{ selectedRow.kategori_pengadaan || selectedRow.jenis_pengadaan || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Status Pelaksanaan:</span>
+                <span class="font-bold text-right ml-4 text-emerald-600 dark:text-emerald-400">
+                  {{ selectedRow.status_nontender_pct_ket || selectedRow.status_nontender_pct || selectedRow.status_nontender || '-' }}
+                </span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Tanggal Mulai:</span>
+                <span class="font-medium text-right ml-4">{{ formatDate(selectedRow.tgl_mulai_nontender) }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Tanggal Selesai:</span>
+                <span class="font-medium text-right ml-4">{{ formatDate(selectedRow.tgl_selesai_nontender) }}</span>
+              </div>
             </div>
-            <div class="p-3 rounded-lg border border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))]">
-              <p class="text-xs text-[color:hsl(var(--maz-muted))]">Total Realisasi</p>
-              <p class="font-semibold text-[color:hsl(var(--maz-success))]">{{ formatRupiah(selectedRow.total_realisasi) }}</p>
+          </div>
+
+          <!-- Card Satuan Kerja & PPK -->
+          <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] p-4 rounded-lg border border-[color:hsl(var(--maz-border))] space-y-3">
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-primary))] flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V11m0 0h4" />
+              </svg>
+              Satuan Kerja & PPK
+            </h3>
+            
+            <!-- Satker -->
+            <div class="space-y-2 text-xs pb-2 border-b border-[color:hsl(var(--maz-border))]">
+              <div class="font-bold uppercase text-[10px] tracking-wider text-[color:hsl(var(--maz-muted))]">Satuan Kerja</div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Nama Satker:</span>
+                <span class="font-semibold text-right ml-4">{{ selectedRow.nama_satker || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Kode Satker:</span>
+                <span class="font-mono text-right ml-4">{{ selectedRow.kd_satker || '-' }}</span>
+              </div>
+              <div v-if="selectedRow.satker_jenis || selectedRow.satker_status" class="flex justify-between">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Jenis / Status Satker:</span>
+                <span class="font-medium text-right ml-4">{{ selectedRow.satker_jenis || '-' }} / {{ selectedRow.satker_status || '-' }}</span>
+              </div>
             </div>
-            <div class="p-3 rounded-lg border border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))]">
-              <p class="text-xs text-[color:hsl(var(--maz-muted))]">Penyedia</p>
-              <p class="font-semibold text-[color:hsl(var(--maz-primary))] text-sm line-clamp-2" :title="getUniquePenyedia(selectedRow.realisasi_list).join(', ')">
-                {{ getUniquePenyedia(selectedRow.realisasi_list).length > 0 ? getUniquePenyedia(selectedRow.realisasi_list).join(', ') : '-' }}
-              </p>
+
+            <!-- PPK -->
+            <div class="space-y-2 text-xs pt-1">
+              <div class="font-bold uppercase text-[10px] tracking-wider text-[color:hsl(var(--maz-muted))] flex items-center justify-between">
+                <span>Pejabat Pembuat Komitmen (PPK)</span>
+                <span v-if="selectedRow._ppk_completed" class="text-green-600 dark:text-green-400 font-normal">✓ Match Master</span>
+                <span v-else class="text-amber-600 dark:text-amber-400 font-normal">⚠️ Masked</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Nama PPK:</span>
+                <span class="font-bold text-right ml-4">{{ selectedRow.ppk_nama_lengkap || selectedRow.nama_ppk || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">NIP PPK:</span>
+                <span class="font-mono text-right ml-4">{{ selectedRow.ppk_nip_asli || selectedRow.nip_ppk || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Jabatan PPK:</span>
+                <span class="font-medium text-right ml-4">{{ selectedRow.ppk_jabatan || '-' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Kontak:</span>
+                <span class="font-medium text-right ml-4">{{ [selectedRow.ppk_email, selectedRow.ppk_telepon].filter(Boolean).join(' / ') || '-' }}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Info RUP & Pelaksanaan -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-[color:hsl(var(--maz-border))] pt-4">
-          <div>
-            <h4 class="text-sm font-semibold mb-3 border-l-2 border-[color:hsl(var(--maz-primary))] pl-2">Detail Perencanaan (RUP)</h4>
-            <ul class="space-y-2 text-sm">
-              <li class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
-                <span class="text-[color:hsl(var(--maz-muted))]">Pagu RUP Awal:</span>
-                <span class="font-medium">{{ selectedRow.rup_pagu ? formatRupiah(selectedRow.rup_pagu) : '-' }}</span>
-              </li>
-              <li class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
-                <span class="text-[color:hsl(var(--maz-muted))]">Metode (RUP):</span>
-                <span class="font-medium">{{ selectedRow.rup_metode_pengadaan || '-' }}</span>
-              </li>
-              <li class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
-                <span class="text-[color:hsl(var(--maz-muted))]">Status PDN:</span>
-                <span class="font-medium">{{ selectedRow.rup_status_pdn || '-' }}</span>
-              </li>
-              <li class="flex justify-between pb-1">
-                <span class="text-[color:hsl(var(--maz-muted))]">Status UKM:</span>
-                <span class="font-medium">{{ selectedRow.rup_status_ukm || '-' }}</span>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 class="text-sm font-semibold mb-3 border-l-2 border-[color:hsl(var(--maz-primary))] pl-2">Pejabat Pembuat Komitmen (PPK)</h4>
-            <ul class="space-y-2 text-sm">
-              <li class="flex flex-col border-b border-[color:hsl(var(--maz-border))] pb-1">
-                <span class="text-[color:hsl(var(--maz-muted))]">Nama Lengkap:</span>
-                <span class="font-medium">{{ selectedRow.ppk_nama_lengkap || selectedRow.nama_ppk || '-' }}</span>
-              </li>
-              <li class="flex flex-col border-b border-[color:hsl(var(--maz-border))] pb-1">
-                <span class="text-[color:hsl(var(--maz-muted))]">NIP / Jabatan:</span>
-                <span class="font-medium">{{ selectedRow.ppk_nip_asli || selectedRow.nip_ppk }} / {{ selectedRow.ppk_jabatan || '-' }}</span>
-              </li>
-              <li class="flex justify-between pb-1">
-                <span class="text-[color:hsl(var(--maz-muted))]">Kontak:</span>
-                <span class="font-medium text-xs">{{ selectedRow.ppk_email || '-' }} <br/> {{ selectedRow.ppk_telepon || '-' }}</span>
-              </li>
-            </ul>
+        <!-- Detail Perencanaan (RUP) -->
+        <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] p-4 rounded-lg border border-[color:hsl(var(--maz-border))] space-y-3">
+          <h3 class="text-sm font-bold text-[color:hsl(var(--maz-primary))] flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Detail Perencanaan (RUP)
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-xs">
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+              <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Pagu RUP Awal:</span>
+              <span class="font-bold text-emerald-600 dark:text-emerald-400 text-right ml-4">{{ selectedRow.rup_pagu ? formatRupiah(selectedRow.rup_pagu) : '-' }}</span>
+            </div>
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+              <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Metode (RUP):</span>
+              <span class="font-semibold text-right ml-4">{{ selectedRow.rup_metode_pengadaan || selectedRow.mtd_pemilihan || '-' }}</span>
+            </div>
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+              <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Status PDN:</span>
+              <span class="font-medium text-right ml-4 text-blue-600 dark:text-blue-400">{{ selectedRow.rup_status_pdn || '-' }}</span>
+            </div>
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+              <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Status UKM:</span>
+              <span class="font-medium text-right ml-4 text-emerald-600 dark:text-emerald-400">{{ selectedRow.rup_status_ukm || '-' }}</span>
+            </div>
+            <div v-if="selectedRow.rup_nama_paket" class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1 col-span-1 md:col-span-2">
+              <span class="text-[color:hsl(var(--maz-muted))] shrink-0">Nama Paket RUP:</span>
+              <span class="font-medium text-right ml-4">{{ selectedRow.rup_nama_paket }}</span>
+            </div>
           </div>
         </div>
 
-        <!-- Realisasi List -->
-        <div class="border-t border-[color:hsl(var(--maz-border))] pt-4">
-          <h4 class="text-sm font-semibold mb-3 border-l-2 border-[color:hsl(var(--maz-primary))] pl-2">Daftar Bukti Realisasi</h4>
-          
-          <div v-if="selectedRow.realisasi_list && selectedRow.realisasi_list.length > 0" class="space-y-3">
-            <div v-for="(real, idx) in selectedRow.realisasi_list" :key="idx" class="p-3 rounded bg-[color:hsl(var(--maz-foreground)_/_3%)] border border-[color:hsl(var(--maz-border))] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <p class="font-medium text-sm">{{ real.jenis_realisasi }} <span class="text-xs text-[color:hsl(var(--maz-muted))] font-normal">({{ real.no_realisasi || '-' }})</span></p>
-                <p class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">{{ real.nama_penyedia || '-' }}</p>
-                <p class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-1 italic">{{ real.ket_realisasi || '' }}</p>
-              </div>
-              <div class="text-right flex-shrink-0">
-                <p class="font-bold text-[color:hsl(var(--maz-primary))]">{{ formatRupiah(real.nilai_realisasi) }}</p>
-                <p class="text-[10px] text-[color:hsl(var(--maz-muted))] mt-1">{{ formatDate(real.tgl_realisasi) }}</p>
-              </div>
+        <!-- Daftar Bukti Realisasi -->
+        <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] p-4 rounded-lg border border-[color:hsl(var(--maz-border))] space-y-3">
+          <h3 class="text-sm font-bold text-[color:hsl(var(--maz-primary))] flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <span>Daftar Bukti Realisasi Non-Tender</span>
             </div>
+            <span class="px-2 py-0.5 text-[10px] rounded font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+              {{ selectedRow.realisasi_list?.length || 0 }} Bukti Realisasi
+            </span>
+          </h3>
+
+          <div v-if="selectedRow.realisasi_list && selectedRow.realisasi_list.length > 0" class="overflow-x-auto">
+            <table class="w-full text-xs text-left border border-[color:hsl(var(--maz-border))]">
+              <thead class="bg-[color:hsl(var(--maz-background))] text-[color:hsl(var(--maz-muted))] uppercase text-[10px]">
+                <tr>
+                  <th class="p-2 border-b border-r text-center w-8">No</th>
+                  <th class="p-2 border-b border-r">Jenis & No. Bukti</th>
+                  <th class="p-2 border-b border-r">Tanggal</th>
+                  <th class="p-2 border-b border-r">Nama Penyedia</th>
+                  <th class="p-2 border-b border-r">Keterangan</th>
+                  <th class="p-2 border-b text-right">Nilai Realisasi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))]">
+                <tr v-for="(real, rIdx) in selectedRow.realisasi_list" :key="rIdx">
+                  <td class="p-2 border-r text-center font-medium">{{ rIdx + 1 }}</td>
+                  <td class="p-2 border-r">
+                    <div class="font-semibold text-[color:hsl(var(--maz-primary))]">{{ real.jenis_realisasi || 'Bukti' }}</div>
+                    <div class="text-[10px] text-[color:hsl(var(--maz-muted))] font-mono">{{ real.no_realisasi || '-' }}</div>
+                  </td>
+                  <td class="p-2 border-r whitespace-nowrap">{{ formatDate(real.tgl_realisasi) }}</td>
+                  <td class="p-2 border-r">
+                    <div class="font-medium">{{ real.nama_penyedia || '-' }}</div>
+                  </td>
+                  <td class="p-2 border-r text-[10px] text-[color:hsl(var(--maz-muted))] max-w-[200px] italic">{{ real.ket_realisasi || '-' }}</td>
+                  <td class="p-2 text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{{ formatRupiah(real.nilai_realisasi) }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <div v-else class="p-6 text-center text-[color:hsl(var(--maz-muted))] border border-dashed border-[color:hsl(var(--maz-border))] rounded-lg">
-            Belum ada rincian bukti realisasi.
-          </div>
+          <p v-else class="text-xs text-[color:hsl(var(--maz-muted))] italic p-2">Belum ada rincian bukti realisasi yang dicatat untuk paket ini.</p>
         </div>
 
       </div>
       
       <template #footer>
         <div class="w-full flex justify-end">
-          <MazBtn @click="detailModal = false" outline>Tutup</MazBtn>
+          <MazBtn @click="detailModal = false" color="primary" size="sm">Tutup</MazBtn>
         </div>
       </template>
     </MazDialog>
@@ -351,8 +476,13 @@ const itemsPerPage = ref(10);
 let searchTimer = null;
 
 const formatRupiah = (number) => {
-  if (number === null || number === undefined) return '0';
-  return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0 }).format(number);
+  if (number === null || number === undefined) return 'Rp 0';
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(number);
 };
 
 const formatDate = (dateString) => {
