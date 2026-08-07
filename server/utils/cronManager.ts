@@ -15,6 +15,9 @@ export const endpointRegistry: Record<string, { endpoint: string; label: string;
     { endpoint: 'pencatatan-swakelola', label: 'Pencatatan Swakelola', description: 'Daftar pencatatan paket pengadaan swakelola' },
     { endpoint: 'pencatatan-swakelola-realisasi', label: 'Realisasi Swakelola', description: 'Realisasi pencatatan pengadaan swakelola' }
   ],
+  ekatalog: [
+    { endpoint: 'paket-e-purchasing', label: 'Paket E-Purchasing', description: 'Paket e-Purchasing e-Katalog' },
+  ],
   rup: [
     { endpoint: 'history-kaji-ulang', label: 'History Kaji Ulang', description: 'Riwayat kaji ulang paket RUP' },
     { endpoint: 'master-satker', label: 'Master Satker', description: 'Daftar satuan kerja' },

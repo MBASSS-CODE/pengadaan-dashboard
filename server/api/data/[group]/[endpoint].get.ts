@@ -32,6 +32,10 @@ export default defineEventHandler(async (event) => {
   const filterMtdPemilihan = query.filterMtdPemilihan as string;
   const filterSatker = query.filterSatker as string;
   const filterPemenang = query.filterPemenang as string;
+  
+  const filterStatus = query.filterStatus as string;
+  const filterShipmentStatus = query.filterShipmentStatus as string;
+  const filterFundingSource = query.filterFundingSource as string;
 
   // Pisahkan extra parameters yang bukan pagination/filter (untuk diteruskan ke API eksternal)
   const forceRefresh = query.forceRefresh === 'true';
@@ -51,6 +55,9 @@ export default defineEventHandler(async (event) => {
   delete extraParams.filterMtdPemilihan;
   delete extraParams.filterSatker;
   delete extraParams.filterPemenang;
+  delete extraParams.filterStatus;
+  delete extraParams.filterShipmentStatus;
+  delete extraParams.filterFundingSource;
 
   try {
     const allData: any[] = await getEndpointData(group, endpoint, tahun, extraParams, forceRefresh);
@@ -117,6 +124,21 @@ export default defineEventHandler(async (event) => {
       filtered = filtered.filter((item: any) => Boolean(item.pemenang) === isWinner);
     }
 
+    // Filter: status (general / e-purchasing)
+    if (filterStatus && filterStatus !== 'ALL') {
+      filtered = filtered.filter((item: any) => item.status === filterStatus);
+    }
+
+    // Filter: shipment_status (e-purchasing)
+    if (filterShipmentStatus && filterShipmentStatus !== 'ALL') {
+      filtered = filtered.filter((item: any) => item.shipment_status === filterShipmentStatus);
+    }
+
+    // Filter: funding_source (e-purchasing)
+    if (filterFundingSource && filterFundingSource !== 'ALL') {
+      filtered = filtered.filter((item: any) => item.funding_source === filterFundingSource);
+    }
+
     // Search: dynamic multi-field text search (works for any endpoint)
     if (search) {
       filtered = filtered.filter((item: any) => {
@@ -136,6 +158,9 @@ export default defineEventHandler(async (event) => {
     const uniqueStatusTender = [...new Set(allData.map((item: any) => item.status_tender).filter(Boolean))].sort();
     const uniqueMtdPemilihan = [...new Set(allData.map((item: any) => item.mtd_pemilihan).filter(Boolean))].sort();
     const uniqueSatker = [...new Set(allData.map((item: any) => item.nama_satker).filter(Boolean))].sort();
+    const uniqueStatus = [...new Set(allData.map((item: any) => item.status).filter(Boolean))].sort();
+    const uniqueShipmentStatus = [...new Set(allData.map((item: any) => item.shipment_status).filter(Boolean))].sort();
+    const uniqueFundingSource = [...new Set(allData.map((item: any) => item.funding_source).filter(Boolean))].sort();
 
     // ─── Pagination ──────────────────────────────────────────────────────
     const totalFiltered = filtered.length;
@@ -158,7 +183,10 @@ export default defineEventHandler(async (event) => {
         statusNontender: uniqueStatusNontender,
         statusTender: uniqueStatusTender,
         mtdPemilihan: uniqueMtdPemilihan,
-        satker: uniqueSatker
+        satker: uniqueSatker,
+        status: uniqueStatus,
+        shipmentStatus: uniqueShipmentStatus,
+        fundingSource: uniqueFundingSource
       }
     };
   } catch (error: any) {
