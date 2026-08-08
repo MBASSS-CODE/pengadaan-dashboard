@@ -1,4 +1,5 @@
-import { getMergeHistory, checkMergePrerequisites } from '~/server/utils/mergeManager';
+import { getMergeHistory } from '~/server/utils/mergeManager';
+import { loadPpkMaster } from '~/server/utils/ppkManager';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -32,7 +33,10 @@ export default defineEventHandler(async (event) => {
     const realisasi = await checkFile(`${dataDir}/tender/pencatatan-swakelola-realisasi_${tahun}.json`);
     const paketSwakelola = await checkFile(`${dataDir}/rup/paket-swakelola_${tahun}.json`);
     const satker = await checkFile(`${dataDir}/rup/master-satker_${tahun}.json`);
-    const ppk = await checkFile(`${dataDir}/ppk_master.json`);
+    
+    // Gunakan loadPpkMaster dari DB, bukan file statis
+    const ppkData = await loadPpkMaster();
+    const ppk = { found: true, count: ppkData.length };
     
     const prerequisites = [
       { endpoint: 'pencatatan-swakelola', label: 'Pencatatan Swakelola', group: 'tender', required: true, found: pencatatan.found, count: pencatatan.count },
