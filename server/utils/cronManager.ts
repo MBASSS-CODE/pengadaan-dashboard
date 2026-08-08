@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import * as cron from 'node-cron';
 import { syncEndpointData } from './dataManager';
+import { processPenyediaQueue } from './penyediaManager';
 
 // ─── Master Registry: Daftar SEMUA endpoint yang tersedia ─────────────────────
 // Ini adalah "katalog" lengkap. Admin bisa mengaktifkan/menonaktifkan masing-masing.
@@ -80,6 +81,7 @@ export const getActiveEndpoints = (): Record<string, string[]> => {
 // Default config
 let currentScheduleStr = '0 6,12 * * *';
 let currentTask: cron.ScheduledTask | null = null;
+let penyediaTask: cron.ScheduledTask | null = null;
 
 export const getCronConfig = async () => {
   try {
@@ -90,7 +92,9 @@ export const getCronConfig = async () => {
   }
 };
 
-export const saveCronConfig = async (config: { schedule: string }) => {
+export const saveCronConfig = async (newConfig: { schedule?: string, enablePenyedia?: boolean, enableMainCron?: boolean }) => {
+  const currentConfig = await getCronConfig();
+  const config = { ...currentConfig, ...newConfig };
   const dir = path.dirname(configPath);
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(configPath, JSON.stringify(config, null, 2), 'utf-8');
@@ -107,12 +111,12 @@ export const getEndpointLogs = async () => {
   }
 };
 
-export const logEndpointActivity = async (group: string, endpoint: string, status: string, count: number) => {
+export const logEndpointActivity = async (group: string, endpoint: string, status: string, count: number, year: string = 'N/A') => {
   const logs = await getEndpointLogs();
   const timestamp = new Date().toISOString();
   
-  const existingIdx = logs.findIndex((l: any) => l.group === group && l.endpoint === endpoint);
-  const newLog = { group, endpoint, status, count, lastUpdated: timestamp };
+  const existingIdx = logs.findIndex((l: any) => l.group === group && l.endpoint === endpoint && l.year === year);
+  const newLog = { group, endpoint, year, status, count, lastUpdated: timestamp };
   
   if (existingIdx !== -1) {
     logs[existingIdx] = newLog;
@@ -137,10 +141,10 @@ export const triggerSyncAll = async () => {
         for (const endpoint of endpoints) {
           try {
             const data = await syncEndpointData(group, endpoint, year);
-            await logEndpointActivity(group, endpoint, `Success (${year})`, data.length);
+            await logEndpointActivity(group, endpoint, `Success`, data.length, year);
           } catch (error) {
-            console.error(`[Manual Sync] Gagal melakukan sinkronisasi ${group}/${endpoint} tahun ${year}:`, error);
-            await logEndpointActivity(group, endpoint, `Error (${year})`, 0);
+            console.error(`[${new Date().toLocaleString('id-ID')}] [Manual Sync] Gagal melakukan sinkronisasi ${group}/${endpoint} tahun ${year}:`, error);
+            await logEndpointActivity(group, endpoint, `Error`, 0, year);
           }
         }
       }
@@ -154,27 +158,51 @@ export const reloadCronJob = async () => {
     currentTask.stop();
   }
   
-  currentScheduleStr = config.schedule;
+  currentScheduleStr = config.schedule || '0 6,12 * * *';
+  const isPenyediaEnabled = config.enablePenyedia !== false;
+  const isMainCronEnabled = config.enableMainCron !== false;
   
-  currentTask = cron.schedule(currentScheduleStr, async () => {
-    console.log('[Cron Job] Memulai sinkronisasi data otomatis dengan jadwal:', currentScheduleStr);
-    const currentYear = new Date().getFullYear();
-    const yearsToSync = [currentYear.toString(), (currentYear - 1).toString()];
+  if (isMainCronEnabled) {
+    currentTask = cron.schedule(currentScheduleStr, async () => {
+      console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Memulai sinkronisasi data otomatis dengan jadwal:`, currentScheduleStr);
+      const currentYear = new Date().getFullYear();
+      const yearsToSync = [currentYear.toString(), (currentYear - 1).toString()];
 
-    for (const year of yearsToSync) {
-      for (const [group, endpoints] of Object.entries(activeEndpoints)) {
-        if (!endpoints) continue;
-        for (const endpoint of endpoints) {
-          try {
-            const data = await syncEndpointData(group, endpoint, year);
-            await logEndpointActivity(group, endpoint, `Success (${year})`, data.length);
-          } catch (error) {
-            console.error(`[Cron Job] Gagal melakukan sinkronisasi ${group}/${endpoint} tahun ${year}:`, error);
-            await logEndpointActivity(group, endpoint, `Error (${year})`, 0);
+      for (const year of yearsToSync) {
+        for (const [group, endpoints] of Object.entries(activeEndpoints)) {
+          if (!endpoints) continue;
+          for (const endpoint of endpoints) {
+            try {
+              const data = await syncEndpointData(group, endpoint, year);
+              await logEndpointActivity(group, endpoint, `Success`, data.length, year);
+            } catch (error) {
+              console.error(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Gagal melakukan sinkronisasi ${group}/${endpoint} tahun ${year}:`, error);
+              await logEndpointActivity(group, endpoint, `Error`, 0, year);
+            }
           }
         }
       }
+    });
+    console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Diperbarui dengan jadwal:`, currentScheduleStr, '(Status: Aktif)');
+  } else {
+    console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Sinkronisasi otomatis (Main) dimatikan.`);
+  }
+
+  if (penyediaTask) {
+    penyediaTask.stop();
+  }
+  
+  // Run processPenyediaQueue every 15 minutes
+  penyediaTask = cron.schedule('*/15 * * * *', async () => {
+    if (!isPenyediaEnabled) {
+      console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Antrean penyedia dilewati (Cron dimatikan).`);
+      return;
+    }
+    try {
+      await processPenyediaQueue();
+    } catch (error) {
+      console.error(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Gagal menjalankan queue penyedia:`, error);
     }
   });
-  console.log('[Cron Job] Diperbarui dengan jadwal:', currentScheduleStr);
+  console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Penyedia queue diset jadwal: */15 * * * * (Status: ${isPenyediaEnabled ? 'Aktif' : 'Mati'})`);
 };

@@ -4,11 +4,19 @@ export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
     
-    if (!body || !body.schedule) {
-      throw new Error('Jadwal (schedule) wajib diisi');
+    if (!body) {
+      throw new Error('Data wajib diisi');
     }
 
-    const config = await saveCronConfig({ schedule: body.schedule });
+    const newConfig: any = {};
+    if (body.schedule !== undefined) newConfig.schedule = body.schedule;
+    if (body.enableMainCron !== undefined) newConfig.enableMainCron = body.enableMainCron;
+
+    if (Object.keys(newConfig).length === 0) {
+      throw new Error('Tidak ada data konfigurasi yang diubah');
+    }
+
+    const config = await saveCronConfig(newConfig);
     
     return {
       success: true,

@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { isMergeSourceEndpoint, triggerAutoMerge } from './mergeManager';
+import { extractAndSavePenyedia } from './penyediaManager';
 
 // In-memory cache
 const memoryCache: Record<string, any> = {};
@@ -65,26 +66,26 @@ const fetchWithRetry = async (url: string, options: any = {}, context: string = 
       const errorType = isTimeout ? 'TIMEOUT' : isHtmlResponse ? 'HTML_RESPONSE' : 'ERROR';
 
       console.warn(
-        `[${context}] Percobaan ${attempt}/${MAX_RETRIES} gagal [${errorType}]: ${error.message || error}`
+        `[${new Date().toLocaleString('id-ID')}] [${context}] Percobaan ${attempt}/${MAX_RETRIES} gagal [${errorType}]: ${error.message || error}`
       );
 
       // Jangan retry jika error bukan timeout/network (misal: 401 Unauthorized, 404 Not Found)
       if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
-        console.error(`[${context}] Client error ${error.statusCode}, tidak akan di-retry.`);
+        console.error(`[${new Date().toLocaleString('id-ID')}] [${context}] Client error ${error.statusCode}, tidak akan di-retry.`);
         throw error;
       }
 
       // Retry dengan exponential backoff (kecuali percobaan terakhir)
       if (attempt < MAX_RETRIES) {
         const delay = BASE_RETRY_DELAY_MS * Math.pow(2, attempt - 1);
-        console.log(`[${context}] Menunggu ${delay / 1000}s sebelum retry...`);
+        console.log(`[${new Date().toLocaleString('id-ID')}] [${context}] Menunggu ${delay / 1000}s sebelum retry...`);
         await sleep(delay);
       }
     }
   }
 
   // Semua percobaan gagal
-  console.error(`[${context}] Gagal setelah ${MAX_RETRIES}x percobaan.`);
+  console.error(`[${new Date().toLocaleString('id-ID')}] [${context}] Gagal setelah ${MAX_RETRIES}x percobaan.`);
   throw lastError;
 };
 
@@ -102,7 +103,7 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
 
   let fetchSuccess = false;
 
-  console.log(`Starting sync for ${group}/${endpoint}...`);
+  console.log(`[${new Date().toLocaleString('id-ID')}] Starting sync for ${group}/${endpoint}...`);
 
   while (hasMore) {
     try {
@@ -117,7 +118,7 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
       const queryString = new URLSearchParams(requestParams).toString();
       const targetUrl = `${BASE_URL}/${group}/${endpoint}?${queryString}`;
       
-      console.log(`[Backend API Hit] Menghubungi: ${targetUrl}`);
+      console.log(`[${new Date().toLocaleString('id-ID')}] [Backend API Hit] Menghubungi: ${targetUrl}`);
 
       const response: any = await fetchWithRetry(`/${group}/${endpoint}`, {
         baseURL: BASE_URL,
@@ -132,7 +133,7 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
         }
       }, `sync:${group}/${endpoint}`);
       
-      console.log(`[Backend API Response] Data diterima dari ${endpoint}:`, JSON.stringify(response, null, 2).substring(0, 1000) + '... (terpotong agar terminal tidak penuh)');
+      console.log(`[${new Date().toLocaleString('id-ID')}] [Backend API Response] Data diterima dari ${endpoint}:`, JSON.stringify(response, null, 2).substring(0, 1000) + '... (terpotong agar terminal tidak penuh)');
 
       fetchSuccess = true;
 
@@ -154,7 +155,7 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
         }
       }
     } catch (error) {
-      console.error(`Error fetching data for ${group}/${endpoint}:`, error);
+      console.error(`[${new Date().toLocaleString('id-ID')}] Error fetching data for ${group}/${endpoint}:`, error);
       hasMore = false; // Stop loop on error
     }
   }
@@ -170,7 +171,7 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
     
     // Write to JSON file
     await fs.writeFile(filePath, JSON.stringify(allData, null, 2), 'utf-8');
-    console.log(`Successfully synced ${allData.length} records to ${filePath}`);
+    console.log(`[${new Date().toLocaleString('id-ID')}] Successfully synced ${allData.length} records to ${filePath}`);
 
     // Save to memory cache
     const cacheKey = `${group}_${endpoint}_${tahun}`;
@@ -179,6 +180,14 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
     // ── Auto-merge: trigger if this endpoint is a merge source ──
     if (isMergeSourceEndpoint(group, endpoint)) {
       triggerAutoMerge(tahun, `auto_sync:${group}/${endpoint}`);
+    }
+
+    // ── Auto-extract Penyedia Queue for ekatalog ──
+    if (group === 'ekatalog' && endpoint === 'paket-e-purchasing') {
+      // Fire and forget
+      extractAndSavePenyedia(tahun).catch(err => {
+        console.error(`[${new Date().toLocaleString('id-ID')}] [DataManager] Gagal memicu ekstraksi penyedia:`, err);
+      });
     }
   }
 
@@ -196,7 +205,7 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
   if (!forceRefresh) {
     // 1. Cek RAM (In-Memory Cache)
     if (memoryCache[cacheKey]) {
-      console.log(`[Cache Hit - RAM] ${cacheKey}`);
+      console.log(`[${new Date().toLocaleString('id-ID')}] [Cache Hit - RAM] ${cacheKey}`);
       return memoryCache[cacheKey];
     }
 
@@ -207,17 +216,17 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
       
       // Populate RAM cache for future requests
       memoryCache[cacheKey] = parsedData; 
-      console.log(`[Cache Hit - File] ${cacheKey}`);
+      console.log(`[${new Date().toLocaleString('id-ID')}] [Cache Hit - File] ${cacheKey}`);
       
       return parsedData;
     } catch (error: any) {
       if (error.code !== 'ENOENT') {
-        console.error(`Error reading cache file ${filePath}:`, error);
+        console.error(`[${new Date().toLocaleString('id-ID')}] Error reading cache file ${filePath}:`, error);
       }
-      console.log(`[Cache Miss] ${cacheKey} - File not found or invalid`);
+      console.log(`[${new Date().toLocaleString('id-ID')}] [Cache Miss] ${cacheKey} - File not found or invalid`);
     }
   } else {
-    console.log(`[Force Refresh] Memaksa pengambilan ulang data ${cacheKey} dari API...`);
+    console.log(`[${new Date().toLocaleString('id-ID')}] [Force Refresh] Memaksa pengambilan ulang data ${cacheKey} dari API...`);
   }
 
   // 3. Jika kosong di RAM dan File (atau jika di-refresh paksa), jalankan syncEndpointData
@@ -234,7 +243,7 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
   const cacheKey = `dashboard_precomputed_${tahun}_${instansi}_${jenis}_${view}`;
   
   if (memoryCache[cacheKey]) {
-    console.log(`[Cache Hit - RAM] Dashboard Precomputed ${tahun} ${instansi}`);
+    console.log(`[${new Date().toLocaleString('id-ID')}] [Cache Hit - RAM] Dashboard Precomputed ${tahun} ${instansi}`);
     return memoryCache[cacheKey];
   }
 
@@ -246,16 +255,16 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
     const parsedData = JSON.parse(fileData);
     
     memoryCache[cacheKey] = parsedData;
-    console.log(`[Cache Hit - File] Dashboard Precomputed`);
+    console.log(`[${new Date().toLocaleString('id-ID')}] [Cache Hit - File] Dashboard Precomputed`);
     return parsedData;
   } catch (error: any) {
     if (error.code !== 'ENOENT') {
-      console.error(`Error reading cache file ${filePath}:`, error);
+      console.error(`[${new Date().toLocaleString('id-ID')}] Error reading cache file ${filePath}:`, error);
     }
   }
 
   // Fetch from API
-  console.log(`Fetching dashboard precomputed data for ${tahun} - ${instansi}...`);
+  console.log(`[${new Date().toLocaleString('id-ID')}] Fetching dashboard precomputed data for ${tahun} - ${instansi}...`);
   try {
     const response: any = await fetchWithRetry('https://data.inaproc.id/dashboard-api/profil-pengadaan/precomputed', {
       params: { tahun, instansi, jenis, view }
@@ -267,7 +276,7 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
     memoryCache[cacheKey] = response;
     return response;
   } catch (error: any) {
-    console.error('Error fetching dashboard precomputed:', error);
+    console.error(`[${new Date().toLocaleString('id-ID')}] Error fetching dashboard precomputed:`, error);
     throw createError({ statusCode: 500, statusMessage: 'Failed to fetch dashboard data' });
   }
 };

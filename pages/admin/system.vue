@@ -150,12 +150,20 @@
       <!-- Pengaturan Cron Job -->
       <div class="lg:col-span-1">
         <div class="bg-[color:hsl(var(--maz-background))] p-6 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm">
-          <h2 class="text-lg font-bold text-[color:hsl(var(--maz-foreground))] mb-4 flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-[color:hsl(var(--maz-primary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Jadwal Sinkronisasi
-          </h2>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-[color:hsl(var(--maz-foreground))] flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-[color:hsl(var(--maz-primary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Jadwal Sinkronisasi
+            </h2>
+            <div class="flex items-center gap-2">
+              <MazSwitch v-model="isMainCronEnabled" @update:model-value="toggleMainCron" size="sm" color="success" />
+              <span class="text-xs font-medium" :class="isMainCronEnabled ? 'text-green-600' : 'text-red-500'">
+                {{ isMainCronEnabled ? 'Aktif' : 'Mati' }}
+              </span>
+            </div>
+          </div>
           
           <div class="mb-4">
             <label class="block text-sm font-medium text-[color:hsl(var(--maz-muted))] mb-2">Format Cron (Menit Jam * * *)</label>
@@ -312,6 +320,7 @@ const loading = ref(true);
 const syncLoading = ref(false);
 const savingCron = ref(false);
 const saveMessage = ref('');
+const isMainCronEnabled = ref(true);
 
 const cronSchedule = ref('0 6,12 * * *');
 const logs = ref([]);
@@ -481,6 +490,7 @@ const fetchCronInfo = async () => {
     const res = await $fetch('/api/admin/cron');
     if (res.success) {
       if (res.data.config?.schedule) cronSchedule.value = res.data.config.schedule;
+      isMainCronEnabled.value = res.data.config?.enableMainCron !== false;
       if (res.data.logs) {
         // Urutkan dari yang terbaru
         logs.value = res.data.logs.sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
@@ -488,6 +498,30 @@ const fetchCronInfo = async () => {
     }
   } catch (error) {
     console.error('Failed to load cron config', error);
+  }
+};
+
+const toggleMainCron = async () => {
+  savingCron.value = true;
+  saveMessage.value = '';
+  try {
+    const res = await $fetch('/api/admin/cron', {
+      method: 'POST',
+      body: { enableMainCron: isMainCronEnabled.value }
+    });
+    if (res.success) {
+      saveMessage.value = 'Status cron berhasil diubah';
+      setTimeout(() => { saveMessage.value = '' }, 3000);
+    } else {
+      alert('Gagal: ' + res.message);
+      // Revert if failed
+      isMainCronEnabled.value = !isMainCronEnabled.value;
+    }
+  } catch (error) {
+    alert('Terjadi kesalahan saat menyimpan jadwal');
+    isMainCronEnabled.value = !isMainCronEnabled.value;
+  } finally {
+    savingCron.value = false;
   }
 };
 

@@ -54,6 +54,40 @@ export const initDB = async () => {
         updated_at DATETIME
       )
     `);
+
+    // Create penyedia_master table if it doesn't exist
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS penyedia_master (
+        kode_penyedia VARCHAR(255) PRIMARY KEY,
+        nama_penyedia VARCHAR(255),
+        npwp VARCHAR(50),
+        alamat TEXT,
+        telepon VARCHAR(50),
+        email VARCHAR(255),
+        jenis_perusahaan VARCHAR(100),
+        bentuk_usaha VARCHAR(100),
+        status_umkk INT,
+        status_aktif VARCHAR(50),
+        nib VARCHAR(50),
+        status_api ENUM('PENDING', 'SUCCESS', 'FAILED') DEFAULT 'PENDING',
+        retry_count INT DEFAULT 0,
+        created_at DATETIME,
+        updated_at DATETIME
+      )
+    `);
+
+    // Add columns dynamically if they don't exist (for existing tables)
+    const newColumns = [
+      'telepon VARCHAR(50)', 'email VARCHAR(255)', 'jenis_perusahaan VARCHAR(100)',
+      'bentuk_usaha VARCHAR(100)', 'status_umkk INT', 'status_aktif VARCHAR(50)', 'nib VARCHAR(50)'
+    ];
+    for (const col of newColumns) {
+      try {
+        await connection.query(`ALTER TABLE penyedia_master ADD COLUMN ${col}`);
+      } catch (e) {
+        // Ignore column already exists errors
+      }
+    }
     
     connection.release();
   } catch (error) {
