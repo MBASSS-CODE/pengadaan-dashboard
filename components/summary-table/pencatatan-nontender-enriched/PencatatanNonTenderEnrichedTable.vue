@@ -379,7 +379,15 @@
                   </td>
                   <td class="p-2 border-r whitespace-nowrap">{{ formatDate(real.tgl_realisasi) }}</td>
                   <td class="p-2 border-r">
-                    <div class="font-medium">{{ real.nama_penyedia || '-' }}</div>
+                    <div class="font-medium text-[color:hsl(var(--maz-primary))]">{{ real.penyedia_detail?.nama_penyedia || real.nama_penyedia || '-' }}</div>
+                    <div v-if="real.penyedia_detail" class="mt-1 flex flex-wrap gap-1">
+                      <span class="text-[9px] font-mono bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded" title="NPWP">
+                        {{ real.penyedia_detail.npwp || '-' }}
+                      </span>
+                      <span v-if="real.penyedia_detail.status_umkk !== undefined" class="text-[9px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-1 py-0.5 rounded">
+                        {{ real.penyedia_detail.status_umkk === 1 ? 'UMKK' : 'Non-UMKK' }}
+                      </span>
+                    </div>
                   </td>
                   <td class="p-2 border-r text-[10px] text-[color:hsl(var(--maz-muted))] max-w-[200px] italic">{{ real.ket_realisasi || '-' }}</td>
                   <td class="p-2 text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{{ formatRupiah(real.nilai_realisasi) }}</td>
@@ -497,7 +505,7 @@ const formatDate = (dateString) => {
 
 const getUniquePenyedia = (realisasiList) => {
   if (!realisasiList || !realisasiList.length) return [];
-  const unique = [...new Set(realisasiList.map(r => r.nama_penyedia).filter(Boolean))];
+  const unique = [...new Set(realisasiList.map(r => r.penyedia_detail?.nama_penyedia || r.nama_penyedia).filter(Boolean))];
   return unique;
 };
 

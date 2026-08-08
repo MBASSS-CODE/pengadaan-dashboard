@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { loadPpkMaster } from './ppkManager';
+import { loadPenyediaMaster } from './penyediaManager';
 
 // ─── In-Memory Cache ────────────────────────────────────────────────────────
 let mergedCache: Record<string, any[]> = {};
@@ -25,7 +26,8 @@ export const MERGE_SOURCE_ENDPOINTS = [
   { group: 'tender', endpoint: 'pencatatan-non-tender', label: 'Pencatatan Non-Tender', required: false },
   { group: 'tender', endpoint: 'pencatatan-non-tender-realisasi', label: 'Realisasi Pencatatan', required: false },
   { group: 'tender', endpoint: 'pencatatan-swakelola', label: 'Pencatatan Swakelola', required: false },
-  { group: 'tender', endpoint: 'pencatatan-swakelola-realisasi', label: 'Realisasi Swakelola', required: false }
+  { group: 'tender', endpoint: 'pencatatan-swakelola-realisasi', label: 'Realisasi Swakelola', required: false },
+  { group: 'ekatalog', endpoint: 'paket-e-purchasing', label: 'E-Purchasing', required: false }
 ];
 
 // ─── Helper: Read JSON safely ───────────────────────────────────────────────
@@ -90,7 +92,8 @@ export const checkRupPenyediaPrerequisites = async (tahun: string) => {
     { group: 'rup', endpoint: 'history-kaji-ulang', label: 'History Kaji Ulang', required: false },
     { group: 'rup', endpoint: 'paket-anggaran-penyedia', label: 'Anggaran Penyedia', required: false },
     { group: 'tender', endpoint: 'non-tender-pengumuman', label: 'Non-Tender', required: false },
-    { group: 'rup', endpoint: 'paket-swakelola', label: 'Paket Swakelola', required: false }
+    { group: 'rup', endpoint: 'paket-swakelola', label: 'Paket Swakelola', required: false },
+    { group: 'ekatalog', endpoint: 'paket-e-purchasing', label: 'E-Purchasing', required: false }
   ];
 
   const results = [];
@@ -476,7 +479,9 @@ export const executeRupPenyediaMerge = async (tahun: string, trigger: string = '
     const anggaranData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-anggaran-penyedia_${tahun}.json`))) || [];
     const nonTenderData: any[] = (await readJsonSafe(path.resolve(dataDir, `tender/non-tender-pengumuman_${tahun}.json`))) || [];
     const paketSwakelolaData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-swakelola_${tahun}.json`))) || [];
+    const epurchasingData: any[] = (await readJsonSafe(path.resolve(dataDir, `ekatalog/paket-e-purchasing_${tahun}.json`))) || [];
     const ppkData: any[] = await loadPpkMaster();
+    const penyediaData: any[] = await loadPenyediaMaster();
 
     // Build lookup maps
     const satkerMap = new Map<string, any>();
@@ -517,6 +522,16 @@ export const executeRupPenyediaMerge = async (tahun: string, trigger: string = '
     for (const item of ppkData) {
       if (item.nip_nama_masked) ppkMap.set(item.nip_nama_masked, item);
       // Fallback matching logic by NIP or Name if needed
+    }
+
+    const epurchasingMap = new Map<string, any>();
+    for (const item of epurchasingData) {
+      if (item.rup_code) epurchasingMap.set(String(item.rup_code), item);
+    }
+
+    const penyediaMap = new Map<string, any>();
+    for (const item of penyediaData) {
+      if (item.kode_penyedia) penyediaMap.set(String(item.kode_penyedia), item);
     }
 
     // Merge each RUP Penyedia record
@@ -604,6 +619,39 @@ export const executeRupPenyediaMerge = async (tahun: string, trigger: string = '
         enriched._has_realisasi = false;
       }
 
+      // 7. Merge: E-Purchasing (e-Katalog) & Data Penyedia
+      const epurchasing = epurchasingMap.get(kdRup);
+      if (epurchasing) {
+        enriched._has_epurchasing = true;
+        enriched.epurchasing_detail = {
+          order_id: epurchasing.order_id,
+          order_date: epurchasing.order_date,
+          status: epurchasing.status,
+          total: epurchasing.total,
+          kode_penyedia: epurchasing.kode_penyedia,
+          product_id: epurchasing.product_id
+        };
+
+        if (epurchasing.kode_penyedia) {
+          const penyedia = penyediaMap.get(String(epurchasing.kode_penyedia));
+          if (penyedia) {
+            enriched.penyedia_detail = {
+              kode_penyedia: penyedia.kode_penyedia,
+              nama_penyedia: penyedia.nama_penyedia,
+              npwp: penyedia.npwp,
+              jenis_perusahaan: penyedia.jenis_perusahaan,
+              bentuk_usaha: penyedia.bentuk_usaha,
+              alamat: penyedia.alamat,
+              status_umkk: penyedia.status_umkk
+            };
+          }
+        }
+      } else {
+        enriched._has_epurchasing = false;
+        enriched.epurchasing_detail = null;
+        enriched.penyedia_detail = null;
+      }
+
       return enriched;
     });
 
@@ -664,6 +712,7 @@ export const executePencatatanNonTenderMerge = async (tahun: string, trigger: st
     const paketPenyediaData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-penyedia_${tahun}.json`))) || [];
     const masterSatkerData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/master-satker_${tahun}.json`))) || [];
     const ppkData: any[] = await loadPpkMaster();
+    const penyediaData: any[] = await loadPenyediaMaster();
 
     // Build lookup maps
     const realisasiMap = new Map<string, any[]>();
@@ -690,6 +739,11 @@ export const executePencatatanNonTenderMerge = async (tahun: string, trigger: st
       if (item.nip_nama_masked) ppkMap.set(item.nip_nama_masked, item);
     }
 
+    const penyediaByNpwp = new Map<string, any>();
+    for (const item of penyediaData) {
+      if (item.npwp) penyediaByNpwp.set(String(item.npwp).replace(/[^a-zA-Z0-9]/g, ''), item);
+    }
+
     const anomalies: string[] = [];
     
     const mergedData = pencatatanData.map(item => {
@@ -701,7 +755,28 @@ export const executePencatatanNonTenderMerge = async (tahun: string, trigger: st
       // 1. Merge: Realisasi
       const realisasiList = realisasiMap.get(kdNontenderPct);
       if (realisasiList && realisasiList.length > 0) {
-        enriched.realisasi_list = realisasiList;
+        // Find penyedia details from realisasi's npwp
+        const realisasiWithPenyedia = realisasiList.map(r => {
+          if (r.npwp_penyedia) {
+            const cleanNpwp = String(r.npwp_penyedia).replace(/[^a-zA-Z0-9]/g, '');
+            const p = penyediaByNpwp.get(cleanNpwp);
+            if (p) {
+              return {
+                ...r,
+                penyedia_detail: {
+                  kode_penyedia: p.kode_penyedia,
+                  nama_penyedia: p.nama_penyedia,
+                  jenis_perusahaan: p.jenis_perusahaan,
+                  alamat: p.alamat,
+                  status_umkk: p.status_umkk
+                }
+              };
+            }
+          }
+          return r;
+        });
+        
+        enriched.realisasi_list = realisasiWithPenyedia;
         enriched._has_realisasi_detail = true;
       } else {
         enriched.realisasi_list = [];

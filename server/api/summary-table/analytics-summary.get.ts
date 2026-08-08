@@ -34,6 +34,8 @@ export default defineEventHandler(async (event) => {
       satker: SummaryMap;
       kajiUlang: SummaryMap;
       pengumuman: SummaryMap;
+      epurchasing: SummaryMap;
+      penyediaUmkk: SummaryMap;
     } = {
       metode: {},
       jenis: {},
@@ -45,7 +47,9 @@ export default defineEventHandler(async (event) => {
       tgl: {},
       satker: {},
       kajiUlang: { 'Ada Kaji Ulang / Revisi': { count: 0, pagu: 0 }, 'Tanpa Revisi': { count: 0, pagu: 0 } },
-      pengumuman: { 'Terumumkan': { count: 0, pagu: 0 }, 'Draft / Belum Diumumkan': { count: 0, pagu: 0 } }
+      pengumuman: { 'Terumumkan': { count: 0, pagu: 0 }, 'Draft / Belum Diumumkan': { count: 0, pagu: 0 } },
+      epurchasing: { 'Via E-Purchasing': { count: 0, pagu: 0 }, 'Non E-Purchasing': { count: 0, pagu: 0 } },
+      penyediaUmkk: {}
     };
 
     let totalPagu = 0;
@@ -145,6 +149,22 @@ export default defineEventHandler(async (event) => {
       const umumKey = isUmum ? 'Terumumkan' : 'Draft / Belum Diumumkan';
       maps.pengumuman[umumKey]!.count++;
       maps.pengumuman[umumKey]!.pagu += pagu;
+
+      // 12. E-Purchasing (Inaproc)
+      const epurchasingKey = item._has_epurchasing ? 'Via E-Purchasing' : 'Non E-Purchasing';
+      maps.epurchasing[epurchasingKey]!.count++;
+      maps.epurchasing[epurchasingKey]!.pagu += pagu;
+
+      // 13. Penyedia UMKK
+      if (item.penyedia_detail) {
+        let umkkKey = 'Tidak Diketahui';
+        if (item.penyedia_detail.status_umkk === 1) umkkKey = 'Usaha Mikro/Kecil';
+        else if (item.penyedia_detail.status_umkk === 0) umkkKey = 'Non-UMKK';
+        
+        if (!maps.penyediaUmkk[umkkKey]) maps.penyediaUmkk[umkkKey] = { count: 0, pagu: 0 };
+        maps.penyediaUmkk[umkkKey]!.count++;
+        maps.penyediaUmkk[umkkKey]!.pagu += pagu;
+      }
     }
 
     // Format output functions
@@ -188,7 +208,9 @@ export default defineEventHandler(async (event) => {
         tgl: tglArray,
         satker: buildArray(maps.satker),
         kajiUlang: buildArray(maps.kajiUlang),
-        pengumuman: buildArray(maps.pengumuman)
+        pengumuman: buildArray(maps.pengumuman),
+        epurchasing: buildArray(maps.epurchasing),
+        penyediaUmkk: buildArray(maps.penyediaUmkk)
       }
     };
 

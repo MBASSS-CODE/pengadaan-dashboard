@@ -300,6 +300,50 @@
         </table>
       </div>
 
+      <!-- 9. Pelibatan Penyedia UMKK -->
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] mt-6 flex flex-col lg:flex-row gap-6">
+        <div class="lg:w-1/3 flex flex-col">
+          <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Distribusi Penyedia (UMKK)</h3>
+          <div class="flex-grow flex items-center justify-center min-h-[250px]">
+            <Doughnut v-if="penyediaUmkkChartData" :data="penyediaUmkkChartData" :options="doughnutOptions" />
+            <div v-else class="text-[color:hsl(var(--maz-muted))] text-sm">Tidak ada data</div>
+          </div>
+        </div>
+        <div class="lg:w-2/3 overflow-x-auto flex flex-col">
+          <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-4">Ringkasan Pelibatan UMKK Penyedia (Realisasi)</h3>
+          <div class="overflow-x-auto flex-grow">
+            <table class="w-full text-left text-sm text-[color:hsl(var(--maz-foreground))] min-w-[500px]">
+              <thead class="text-xs text-[color:hsl(var(--maz-muted))] uppercase border-b border-[color:hsl(var(--maz-border))]">
+                <tr>
+                  <th class="py-3 px-2">Status UMKK (Dari Referensi Master)</th>
+                  <th class="py-3 px-2 text-right">Jumlah Bukti Pembayaran</th>
+                  <th class="py-3 px-2 text-right">% Realisasi</th>
+                  <th class="py-3 px-2 text-right">Total Realisasi (Rp)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[color:hsl(var(--maz-border))]">
+                <tr v-for="(item, idx) in penyediaUmkkTableData" :key="idx" class="hover:bg-[color:hsl(var(--maz-foreground)_/_3%)]">
+                  <td class="py-3 px-2">
+                    <span class="px-2 py-1 rounded text-xs font-semibold"
+                      :class="{
+                        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': item.label === 'Usaha Mikro/Kecil',
+                        'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': item.label === 'Non-UMKK',
+                        'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400': item.label === 'Tidak Diketahui'
+                      }"
+                    >
+                      {{ item.label }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-2 text-right">{{ item.count.toLocaleString('id-ID') }}</td>
+                  <td class="py-3 px-2 text-right font-medium text-[color:hsl(var(--maz-primary))]">{{ item.persentase }}</td>
+                  <td class="py-3 px-2 text-right">{{ formatRupiah(item.realisasi) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
     
     <div v-else class="mt-8 flex flex-col items-center justify-center min-h-[300px] text-[color:hsl(var(--maz-muted))]">
@@ -335,6 +379,7 @@ const metodeChartData = ref(null);
 const kategoriChartData = ref(null);
 const sumberDanaChartData = ref(null);
 const buktiBayarChartData = ref(null);
+const penyediaUmkkChartData = ref(null);
 
 // Table Datas
 const deviasiTableData = ref([]);
@@ -345,6 +390,7 @@ const sumberDanaTableData = ref([]);
 const buktiBayarTableData = ref([]);
 const satkerTableData = ref([]);
 const ppkTableData = ref([]);
+const penyediaUmkkTableData = ref([]);
 
 const doughnutOptions = {
   responsive: true,
@@ -498,6 +544,17 @@ const loadStatsAndAnalytics = async () => {
       // 7 & 8. Satker and PPK
       satkerTableData.value = summary.satker || [];
       ppkTableData.value = summary.ppk || [];
+
+      // 9. Penyedia UMKK
+      penyediaUmkkTableData.value = summary.penyediaUmkk || [];
+      penyediaUmkkChartData.value = {
+        labels: penyediaUmkkTableData.value.map(i => i.label),
+        datasets: [{
+          data: penyediaUmkkTableData.value.map(i => i.count),
+          backgroundColor: ['#3b82f6', '#cbd5e1', '#f59e0b'],
+          borderWidth: 0
+        }]
+      };
     }
   } catch (err) {
     console.error('Error fetching analytics:', err);

@@ -503,6 +503,93 @@
         </div>
       </div>
 
+      <!-- 12. Analisis E-Purchasing (Inaproc) -->
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-2 flex flex-col">
+          <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Proporsi Transaksi E-Purchasing</h3>
+          <div class="flex-grow flex items-center justify-center min-h-[300px]">
+            <Pie v-if="epurchasingChartData" :data="epurchasingChartData" :options="pieOptions" />
+            <div v-else class="text-[color:hsl(var(--maz-muted))] text-sm">Tidak ada data</div>
+          </div>
+        </div>
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-3 overflow-x-auto flex flex-col">
+          <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-4">Ringkasan Integrasi E-Katalog</h3>
+          <div class="overflow-x-auto flex-grow">
+            <table class="w-full text-left text-sm text-[color:hsl(var(--maz-foreground))] min-w-[500px]">
+              <thead class="text-xs text-[color:hsl(var(--maz-muted))] uppercase border-b border-[color:hsl(var(--maz-border))]">
+                <tr>
+                  <th class="py-3 px-2">Keterangan</th>
+                  <th class="py-3 px-2 text-right">Jumlah Paket</th>
+                  <th class="py-3 px-2 text-right">% Pagu</th>
+                  <th class="py-3 px-2 text-right">Total Pagu (Rp)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[color:hsl(var(--maz-border))]">
+                <tr v-for="(item, idx) in epurchasingTableData" :key="idx" class="hover:bg-[color:hsl(var(--maz-foreground)_/_3%)]">
+                  <td class="py-3 px-2">
+                    <span class="px-2 py-1 rounded text-xs font-semibold"
+                      :class="{
+                        'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400': item.label === 'Via E-Purchasing',
+                        'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400': item.label === 'Non E-Purchasing'
+                      }"
+                    >
+                      {{ item.label }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-2 text-right">{{ item.count.toLocaleString('id-ID') }}</td>
+                  <td class="py-3 px-2 text-right font-medium text-[color:hsl(var(--maz-primary))]">{{ item.persentase }}</td>
+                  <td class="py-3 px-2 text-right">{{ formatRupiah(item.pagu) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 13. Pelibatan Penyedia UMKK -->
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-2 flex flex-col">
+          <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Status Penyedia (UMKK)</h3>
+          <div class="flex-grow flex items-center justify-center min-h-[300px]">
+            <Doughnut v-if="penyediaUmkkChartData" :data="penyediaUmkkChartData" :options="doughnutOptions" />
+            <div v-else class="text-[color:hsl(var(--maz-muted))] text-sm">Tidak ada data</div>
+          </div>
+        </div>
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] lg:col-span-3 overflow-x-auto flex flex-col">
+          <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-4">Ringkasan Pelibatan UMKK Penyedia</h3>
+          <div class="overflow-x-auto flex-grow">
+            <table class="w-full text-left text-sm text-[color:hsl(var(--maz-foreground))] min-w-[500px]">
+              <thead class="text-xs text-[color:hsl(var(--maz-muted))] uppercase border-b border-[color:hsl(var(--maz-border))]">
+                <tr>
+                  <th class="py-3 px-2">Status UMKK (Dari Referensi Master)</th>
+                  <th class="py-3 px-2 text-right">Jumlah Paket</th>
+                  <th class="py-3 px-2 text-right">% Pagu</th>
+                  <th class="py-3 px-2 text-right">Total Pagu (Rp)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[color:hsl(var(--maz-border))]">
+                <tr v-for="(item, idx) in penyediaUmkkTableData" :key="idx" class="hover:bg-[color:hsl(var(--maz-foreground)_/_3%)]">
+                  <td class="py-3 px-2">
+                    <span class="px-2 py-1 rounded text-xs font-semibold"
+                      :class="{
+                        'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': item.label === 'Usaha Mikro/Kecil',
+                        'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': item.label === 'Non-UMKK',
+                        'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400': item.label === 'Tidak Diketahui'
+                      }"
+                    >
+                      {{ item.label }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-2 text-right">{{ item.count.toLocaleString('id-ID') }}</td>
+                  <td class="py-3 px-2 text-right font-medium text-[color:hsl(var(--maz-primary))]">{{ item.persentase }}</td>
+                  <td class="py-3 px-2 text-right">{{ formatRupiah(item.pagu) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
     
     <div v-else class="mt-8 flex flex-col items-center justify-center min-h-[300px] text-[color:hsl(var(--maz-muted))]">
@@ -544,6 +631,8 @@ const tglChartData = ref(null);
 const satkerChartData = ref(null);
 const kajiUlangChartData = ref(null);
 const umumkanChartData = ref(null);
+const epurchasingChartData = ref(null);
+const penyediaUmkkChartData = ref(null);
 
 // Table Datas
 const metodeTableData = ref([]);
@@ -557,6 +646,8 @@ const tglTableData = ref([]);
 const satkerTableData = ref([]);
 const kajiUlangTableData = ref([]);
 const umumkanTableData = ref([]);
+const epurchasingTableData = ref([]);
+const penyediaUmkkTableData = ref([]);
 
 const doughnutOptions = {
   responsive: true,
@@ -848,6 +939,28 @@ const loadStatsAndAnalytics = async () => {
         datasets: [{
           data: umumkanTableData.value.map(i => i.count),
           backgroundColor: ['#3b82f6', '#cbd5e1'],
+          borderWidth: 0
+        }]
+      };
+
+      // 13. E-Purchasing
+      epurchasingTableData.value = summary.epurchasing || [];
+      epurchasingChartData.value = {
+        labels: epurchasingTableData.value.map(i => i.label),
+        datasets: [{
+          data: epurchasingTableData.value.map(i => i.count),
+          backgroundColor: ['#10b981', '#cbd5e1'],
+          borderWidth: 0
+        }]
+      };
+
+      // 14. Penyedia UMKK
+      penyediaUmkkTableData.value = summary.penyediaUmkk || [];
+      penyediaUmkkChartData.value = {
+        labels: penyediaUmkkTableData.value.map(i => i.label),
+        datasets: [{
+          data: penyediaUmkkTableData.value.map(i => i.count),
+          backgroundColor: ['#3b82f6', '#cbd5e1', '#f59e0b'],
           borderWidth: 0
         }]
       };

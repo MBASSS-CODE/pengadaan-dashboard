@@ -208,31 +208,79 @@
               <td class="py-3 px-4">
                 <div class="flex flex-col gap-1.5">
                   <div v-if="row._has_realisasi" class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-2.5">
-                    <div class="flex items-center justify-between gap-2 mb-1">
-                      <span class="font-bold text-xs text-green-700 dark:text-green-400 truncate max-w-[180px]" :title="row.realisasi_nama_paket">
-                        {{ row.realisasi_nama_paket }}
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="font-bold text-xs text-green-800 dark:text-green-300 line-clamp-1" :title="row.realisasi_nama_paket || 'Realisasi Inaproc'">
+                        {{ row.realisasi_nama_paket || 'Realisasi Inaproc' }}
                       </span>
-                      <span class="text-[10px] font-mono bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200 px-1.5 py-0.5 rounded">
-                        Kode: {{ row.realisasi_kd_paket }}
+                      <span v-if="row.realisasi_kd_paket" class="text-[9px] font-mono bg-green-200/60 text-green-800 dark:bg-green-800 dark:text-green-200 px-1.5 py-0.5 rounded border border-green-300 dark:border-green-700">
+                        ID: {{ row.realisasi_kd_paket }}
                       </span>
                     </div>
-                    <div class="flex items-center justify-between text-[10px]">
-                      <span class="px-1.5 py-0.5 rounded font-semibold"
-                        :class="{
-                          'bg-green-100 text-green-800': row.realisasi_status === 'Selesai',
-                          'bg-amber-100 text-amber-800': row.realisasi_status === 'Berlangsung'
-                        }"
-                      >
-                        {{ row.realisasi_status }}
+                    
+                    <div class="flex flex-col gap-1.5 mb-1 mt-2 border-t border-green-200/50 dark:border-green-800/50 pt-2">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[9px] text-green-600/80 dark:text-green-400/80 font-medium">Status Realisasi:</span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold"
+                          :class="{
+                            'bg-green-100 text-green-800 border border-green-200': row.realisasi_status === 'Selesai',
+                            'bg-amber-100 text-amber-800 border border-amber-200': row.realisasi_status === 'Berlangsung'
+                          }"
+                        >
+                          {{ row.realisasi_status || '-' }}
+                        </span>
+                      </div>
+                      <div class="flex items-center justify-between">
+                        <span class="text-[9px] text-green-600/80 dark:text-green-400/80 font-medium">Metode:</span>
+                        <span class="font-bold text-green-700 dark:text-green-400 text-[10px]">{{ row.realisasi_metode || '-' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else-if="row._has_epurchasing" class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-2.5">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="font-bold text-xs text-blue-800 dark:text-blue-300">
+                        E-Purchasing
                       </span>
-                      <span class="text-[10px] text-[color:hsl(var(--maz-muted))]">via {{ row.realisasi_metode }}</span>
+                      <span class="text-[9px] font-mono bg-blue-200/60 text-blue-800 dark:bg-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded border border-blue-300 dark:border-blue-700">
+                        ID: {{ row.epurchasing_detail?.order_id }}
+                      </span>
+                    </div>
+                    
+                    <div class="flex flex-col gap-1.5 mb-2 mt-2 border-t border-blue-200/50 dark:border-blue-800/50 pt-2">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[9px] text-blue-600/80 dark:text-blue-400/80 font-medium">Status Pesanan:</span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-semibold"
+                          :class="{
+                            'bg-blue-100 text-blue-800 border border-blue-200': row.epurchasing_detail?.status === 'COMPLETED' || row.epurchasing_detail?.status === 'DONE',
+                            'bg-amber-100 text-amber-800 border border-amber-200': row.epurchasing_detail?.status !== 'COMPLETED' && row.epurchasing_detail?.status !== 'DONE'
+                          }"
+                        >
+                          {{ row.epurchasing_detail?.status }}
+                        </span>
+                      </div>
+                      <div class="flex items-center justify-between">
+                        <span class="text-[9px] text-blue-600/80 dark:text-blue-400/80 font-medium">Total Nilai:</span>
+                        <span class="font-bold text-blue-700 dark:text-blue-400 text-xs">{{ formatRupiah(row.epurchasing_detail?.total || 0) }}</span>
+                      </div>
+                    </div>
+                    
+                    <div v-if="row.penyedia_detail" class="border-t border-blue-200 dark:border-blue-800/50 pt-2 mt-1">
+                      <div class="text-[9px] text-blue-600/80 dark:text-blue-400/80 mb-0.5 font-medium">Penyedia:</div>
+                      <div class="font-bold text-[10px] text-blue-900 dark:text-blue-200 flex items-start justify-between gap-2">
+                        <span class="line-clamp-2 leading-tight" :title="row.penyedia_detail.nama_penyedia">{{ row.penyedia_detail.nama_penyedia || 'Penyedia Tidak Diketahui' }}</span>
+                        <span v-if="row.penyedia_detail.status_umkk !== undefined" class="text-[9px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded-sm shrink-0">
+                          {{ row.penyedia_detail.status_umkk === 1 ? 'UMKK' : 'Non-UMKK' }}
+                        </span>
+                      </div>
+                      <div class="text-[10px] text-blue-600/90 dark:text-blue-400/90 mt-1 font-mono tracking-tight">
+                        NPWP: {{ row.penyedia_detail.npwp || '-' }}
+                      </div>
                     </div>
                   </div>
                   <div v-else class="text-[10px] text-amber-600 dark:text-amber-500 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
-                    Belum ada paket / Belum Tender
+                    Belum ada realisasi e-katalog/tender
                   </div>
                 </div>
               </td>
@@ -645,6 +693,26 @@
             <div v-if="selectedRow.nomor_kontrak" class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1 col-span-2"><span class="text-[color:hsl(var(--maz-muted))]">Nomor Kontrak:</span> <span class="font-mono text-right ml-4">{{ selectedRow.nomor_kontrak }}</span></div>
           </div>
           <p v-else class="text-xs text-[color:hsl(var(--maz-muted))] italic">Paket ini belum memiliki data realisasi pelaksanaan pada sistem Inaproc / Non-Tender.</p>
+        </div>
+
+        <!-- Profil Penyedia & E-Purchasing -->
+        <div v-if="selectedRow._has_epurchasing" class="bg-[color:hsl(var(--maz-foreground)_/_2%)] p-4 rounded-lg border border-blue-200 dark:border-blue-900/50 space-y-3">
+          <h3 class="text-sm font-bold text-blue-700 dark:text-blue-400 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            E-Purchasing & Master Penyedia
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-xs">
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Kode Pesanan (Order ID):</span> <span class="font-mono text-right ml-4 font-bold">{{ selectedRow.epurchasing_detail?.order_id || '-' }}</span></div>
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Status Pesanan:</span> <span class="font-semibold text-right ml-4">{{ selectedRow.epurchasing_detail?.status || '-' }}</span></div>
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Total Pembelian (E-Katalog):</span> <span class="font-bold text-right ml-4 text-emerald-600 dark:text-emerald-400">{{ formatRupiah(selectedRow.epurchasing_detail?.total) }}</span></div>
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Nama Penyedia:</span> <span class="font-bold text-[color:hsl(var(--maz-primary))] text-right ml-4">{{ selectedRow.penyedia_detail?.nama_penyedia || '-' }}</span></div>
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">NPWP Penyedia:</span> <span class="font-mono text-right ml-4">{{ selectedRow.penyedia_detail?.npwp || '-' }}</span></div>
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Status UMKK:</span> <span class="font-semibold text-right ml-4">{{ selectedRow.penyedia_detail?.status_umkk === 1 ? 'Usaha Mikro/Kecil' : (selectedRow.penyedia_detail?.status_umkk === 0 ? 'Non-UMKK' : '-') }}</span></div>
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Jenis Perusahaan:</span> <span class="text-right ml-4">{{ selectedRow.penyedia_detail?.jenis_perusahaan || '-' }} ({{ selectedRow.penyedia_detail?.bentuk_usaha || '-' }})</span></div>
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Alamat Penyedia:</span> <span class="text-right ml-4">{{ selectedRow.penyedia_detail?.alamat || '-' }}</span></div>
+          </div>
         </div>
 
         <!-- Induk Swakelola (Jika Merupakan Anak Paket Dalam Swakelola) -->

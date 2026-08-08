@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { pool, initDB } from './db';
+import { triggerAutoMerge } from './mergeManager';
 
 const formatDateTime = (date: Date) => date.toISOString().slice(0, 19).replace('T', ' ');
 
@@ -110,6 +111,8 @@ export const processPenyediaQueue = async (): Promise<void> => {
 
     console.log(`[PenyediaManager] Memproses ${rows.length} penyedia...`);
 
+    let successCount = 0;
+
     for (const row of rows) {
       const kode = row.kode_penyedia;
       try {
@@ -144,6 +147,7 @@ export const processPenyediaQueue = async (): Promise<void> => {
             formatDateTime(new Date()),
             kode
           ]);
+          successCount++;
         } else {
           throw new Error('Data penyedia tidak ditemukan di API');
         }
@@ -163,7 +167,14 @@ export const processPenyediaQueue = async (): Promise<void> => {
       }
     }
 
-    console.log(`[PenyediaManager] Selesai memproses antrean penyedia.`);
+    console.log(`[PenyediaManager] Selesai memproses antrean penyedia. Berhasil: ${successCount}.`);
+
+    if (successCount > 0) {
+      const currentYear = new Date().getFullYear();
+      // Trigger merge secara background agar UI ter-update
+      triggerAutoMerge(currentYear.toString(), 'auto_sync:penyedia-queue');
+      triggerAutoMerge((currentYear - 1).toString(), 'auto_sync:penyedia-queue');
+    }
   } catch (error) {
     console.error(`[PenyediaManager] Error saat menjalankan background job:`, error);
   } finally {

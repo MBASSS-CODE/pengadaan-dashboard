@@ -29,6 +29,7 @@ export default defineEventHandler(async (event) => {
       satker: {} as SummaryMap,
       ppk: {} as SummaryMap,
       deviasi: {} as SummaryMap, // Overbudget, Underbudget, Sesuai
+      penyediaUmkk: {} as SummaryMap,
     };
 
     for (const item of data) {
@@ -96,6 +97,24 @@ export default defineEventHandler(async (event) => {
       maps.deviasi[devKey]!.count++;
       maps.deviasi[devKey]!.pagu += pagu;
       maps.deviasi[devKey]!.realisasi += realisasi;
+
+      // 9. Penyedia UMKK (dari realisasi_list)
+      if (item.realisasi_list && Array.isArray(item.realisasi_list)) {
+        item.realisasi_list.forEach((real: any) => {
+          if (real.penyedia_detail) {
+            let umkkKey = 'Tidak Diketahui';
+            if (real.penyedia_detail.status_umkk === 1) umkkKey = 'Usaha Mikro/Kecil';
+            else if (real.penyedia_detail.status_umkk === 0) umkkKey = 'Non-UMKK';
+            
+            if (!maps.penyediaUmkk[umkkKey]) maps.penyediaUmkk[umkkKey] = { count: 0, pagu: 0, realisasi: 0 };
+            maps.penyediaUmkk[umkkKey]!.count++;
+            
+            const nilaiReal = Number(real.nilai_realisasi) || 0;
+            maps.penyediaUmkk[umkkKey]!.realisasi += nilaiReal;
+            maps.penyediaUmkk[umkkKey]!.pagu += pagu / item.realisasi_list.length; // Distribusi pagu merata
+          }
+        });
+      }
     }
 
     // Helper to sort objects into array
@@ -126,7 +145,8 @@ export default defineEventHandler(async (event) => {
         buktiBayar: buildArray(maps.buktiBayar, totalRealisasi, true),
         satker: buildArray(maps.satker, totalRealisasi, true).slice(0, 50),
         ppk: buildArray(maps.ppk, totalRealisasi, true).slice(0, 50),
-        deviasi: buildArray(maps.deviasi, totalRealisasi, true)
+        deviasi: buildArray(maps.deviasi, totalRealisasi, true),
+        penyediaUmkk: buildArray(maps.penyediaUmkk, totalRealisasi, true)
       }
     };
   } catch (error: any) {
