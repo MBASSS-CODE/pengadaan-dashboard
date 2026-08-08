@@ -22,7 +22,7 @@
       </div>
     </div>
     
-    <div class="mt-6 flex flex-col gap-6" v-if="!loading">
+    <div class="mt-6 flex flex-col gap-6" v-if="!loading && totalItems > 0">
       
       <!-- 1. Deviasi Realisasi vs Pagu -->
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -346,7 +346,23 @@
 
     </div>
     
-    <div v-else class="mt-8 flex flex-col items-center justify-center min-h-[300px] text-[color:hsl(var(--maz-muted))]">
+    <!-- Tampilan Data Kosong -->
+    <div v-if="!loading && totalItems === 0" class="mt-8 flex flex-col items-center justify-center min-h-[350px] text-center bg-[color:hsl(var(--maz-background))] rounded-2xl border border-dashed border-[color:hsl(var(--maz-border))] p-8">
+      <div class="w-20 h-20 mb-5 rounded-full bg-[color:hsl(var(--maz-primary)_/_10%)] flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-[color:hsl(var(--maz-primary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+      </div>
+      <h3 class="text-xl font-bold text-[color:hsl(var(--maz-foreground))] mb-2">Belum Ada Data Terintegrasi</h3>
+      <p class="text-[color:hsl(var(--maz-muted))] max-w-md mx-auto mb-6 text-sm">
+        Tidak ada data pencatatan paket non-tender untuk tahun anggaran ini yang telah melalui proses integrasi (merge). Silakan jalankan proses integrasi data melalui menu Admin Sistem.
+      </p>
+      <NuxtLink to="/admin/system" class="inline-flex items-center justify-center px-4 py-2 bg-[color:hsl(var(--maz-primary))] text-[color:hsl(var(--maz-background))] hover:bg-[color:hsl(var(--maz-primary)_/_90%)] transition-colors rounded-lg font-medium text-sm">
+        Ke Menu Integrasi Data
+      </NuxtLink>
+    </div>
+
+    <div v-else-if="loading" class="mt-8 flex flex-col items-center justify-center min-h-[300px] text-[color:hsl(var(--maz-muted))]">
       <span class="animate-spin h-10 w-10 border-4 border-[color:hsl(var(--maz-primary))] border-t-transparent rounded-full mb-4"></span>
       <p>Memuat data dan mengkalkulasi analytics...</p>
     </div>
