@@ -452,6 +452,8 @@ export const triggerAutoMerge = (tahun: string, trigger: string) => {
       await executePencatatanSwakelolaMerge(tahun, trigger);
       // 5. Merge RUP Swakelola
       await executeRupSwakelolaMerge(tahun, trigger);
+      // 6. Merge E-Purchasing
+      await executeEPurchasingMerge(tahun, trigger);
     } catch (error) {
       console.error(`[Auto-Merge] Failed for year ${tahun}:`, error);
     } finally {
@@ -1195,6 +1197,170 @@ export const executeRupSwakelolaMerge = async (tahun: string, trigger: string = 
       type: 'rup-swakelola',
       timestamp: new Date().toISOString(),
       tahun,
+      trigger,
+      status: 'failed',
+      duration_ms: Date.now() - startTime,
+      error: error.message,
+      anomalies: []
+    };
+    await appendMergeHistory(result);
+    return result;
+  }
+};
+
+// ─── E-Purchasing Merge ─────────────────────────────────────────────────────
+export const checkEPurchasingPrerequisites = async (tahun: string) => {
+  const sources = [
+    { group: 'ekatalog', endpoint: 'paket-e-purchasing', label: 'Paket E-Purchasing', required: true },
+    { group: 'rup', endpoint: 'paket-penyedia', label: 'Paket Penyedia RUP', required: false }
+  ];
+
+  const results = [];
+  let allRequiredFound = true;
+
+  for (const src of sources) {
+    const filePath = path.resolve(dataDir, `${src.group}/${src.endpoint}_${tahun}.json`);
+    let found = false;
+    let count = 0;
+    try {
+      const stats = await fs.stat(filePath);
+      if (stats.isFile()) {
+        found = true;
+        const data = await readJsonSafe(filePath);
+        if (data && Array.isArray(data)) count = data.length;
+      }
+    } catch (e) {
+      // file not found
+    }
+
+    if (src.required && !found) allRequiredFound = false;
+    results.push({ ...src, found, count });
+  }
+
+  // Check Penyedia Master
+  let penyediaFound = false;
+  let penyediaCount = 0;
+  try {
+    const penyediaData = await loadPenyediaMaster();
+    if (penyediaData && penyediaData.length > 0) {
+      penyediaFound = true;
+      penyediaCount = penyediaData.length;
+    }
+  } catch (e) {}
+
+  results.push({ group: 'master', endpoint: 'penyedia-master', label: 'Master Penyedia', required: false, found: penyediaFound, count: penyediaCount });
+
+  return { sources: results, allRequiredFound };
+};
+
+export const executeEPurchasingMerge = async (tahun: string, trigger: string = 'manual') => {
+  const startTime = Date.now();
+  
+  try {
+    const prereq = await checkEPurchasingPrerequisites(tahun);
+    if (!prereq.allRequiredFound) {
+      const missing = prereq.sources.filter(s => s.required && !s.found).map(s => s.label);
+      throw new Error(`Data wajib belum tersedia: ${missing.join(', ')}`);
+    }
+
+    // Load sources
+    const epurchasingData: any[] = (await readJsonSafe(path.resolve(dataDir, `ekatalog/paket-e-purchasing_${tahun}.json`))) || [];
+    const paketPenyediaData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-penyedia_${tahun}.json`))) || [];
+    const penyediaData: any[] = await loadPenyediaMaster();
+
+    // Lookup map RUP Penyedia
+    const rupMap = new Map<string, any>();
+    for (const item of paketPenyediaData) {
+      if (item.kd_rup) rupMap.set(String(item.kd_rup), item);
+    }
+
+    // Lookup map Master Penyedia
+    const penyediaMap = new Map<string, any>();
+    for (const item of penyediaData) {
+      if (item.kode_penyedia) penyediaMap.set(String(item.kode_penyedia), item);
+    }
+
+    const anomalies: string[] = [];
+    let rupMatchedCount = 0;
+    let penyediaMatchedCount = 0;
+
+    const mergedData = epurchasingData.map(item => {
+      const enriched = { ...item };
+      const rupCode = String(item.rup_code || '');
+      const kodePenyedia = String(item.kode_penyedia || '');
+
+      // 1. Merge: RUP Penyedia
+      const rup = rupMap.get(rupCode);
+      if (rup) {
+        enriched.rup_nama_paket = rup.nama_paket;
+        enriched.rup_pagu = rup.pagu;
+        enriched.rup_jenis_pengadaan = rup.jenis_pengadaan;
+        enriched.rup_metode_pengadaan = rup.metode_pengadaan;
+        enriched.rup_status_aktif = rup.status_aktif_rup;
+        enriched.rup_status_umumkan = rup.status_umumkan_rup;
+        enriched._rup_matched = true;
+        rupMatchedCount++;
+      } else {
+        enriched._rup_matched = false;
+        if (rupCode) anomalies.push(`E-Purchasing "${item.order_id}" (rup_code: ${rupCode}) tidak ditemukan di RUP Penyedia`);
+      }
+
+      // 2. Merge: Master Penyedia
+      const penyedia = penyediaMap.get(kodePenyedia);
+      if (penyedia) {
+        enriched.penyedia_nama = penyedia.nama_penyedia;
+        enriched.penyedia_npwp = penyedia.npwp;
+        enriched.penyedia_status_umkk = penyedia.status_umkk;
+        enriched.penyedia_provinsi = penyedia.provinsi;
+        enriched.penyedia_kabupaten = penyedia.kabupaten;
+        enriched._penyedia_matched = true;
+        penyediaMatchedCount++;
+      } else {
+        enriched._penyedia_matched = false;
+      }
+
+      return enriched;
+    });
+
+    // Save Merged Data
+    const mergedFilePath = path.resolve(mergedDir, `epurchasing_enriched_${tahun}.json`);
+    await fs.mkdir(mergedDir, { recursive: true });
+    await fs.writeFile(mergedFilePath, JSON.stringify(mergedData, null, 2), 'utf-8');
+
+    // Update Cache
+    mergedCache[`epurchasing_enriched_${tahun}`] = mergedData;
+
+    const mergeResult = {
+      id: `merge_epurchasing_${Date.now()}`,
+      tahun,
+      type: 'epurchasing',
+      timestamp: new Date().toISOString(),
+      trigger,
+      duration_ms: Date.now() - startTime,
+      status: 'success',
+      sources: {
+        epurchasing: { found: true, count: epurchasingData.length },
+        paket_penyedia: { found: paketPenyediaData.length > 0, count: paketPenyediaData.length },
+        penyedia_master: { found: penyediaData.length > 0, count: penyediaData.length }
+      },
+      result: {
+        total_records: mergedData.length,
+        rup_matched: rupMatchedCount,
+        penyedia_matched: penyediaMatchedCount
+      },
+      anomalies
+    };
+
+    await appendMergeHistory(mergeResult);
+    console.log(`[Merge] EPurchasing Selesai: ${mergedData.length} records merged`);
+    return mergeResult;
+
+  } catch (error: any) {
+    const result = {
+      id: `merge_epurchasing_${Date.now()}`,
+      tahun,
+      type: 'epurchasing',
+      timestamp: new Date().toISOString(),
       trigger,
       status: 'failed',
       duration_ms: Date.now() - startTime,
