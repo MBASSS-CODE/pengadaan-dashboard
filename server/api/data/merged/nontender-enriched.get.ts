@@ -83,6 +83,12 @@ export default defineEventHandler(async (event) => {
 
     // ─── Pagination ──────────────────────────────────────────────────────
     const totalFiltered = filtered.length;
+    
+    // Calculate totals for the filtered data
+    const totalHps = filtered.reduce((sum: number, item: any) => sum + (Number(item.hps) || 0), 0);
+    const rupMatchedCount = filtered.filter((item: any) => item._rup_matched).length;
+    const ppkCompletedCount = filtered.filter((item: any) => item._ppk_completed).length;
+
     const totalPages = Math.ceil(totalFiltered / limit);
     const startIndex = (page - 1) * limit;
     const paginatedData = filtered.slice(startIndex, startIndex + limit);
@@ -94,6 +100,9 @@ export default defineEventHandler(async (event) => {
         page,
         limit,
         totalItems: totalFiltered,
+        totalHps,
+        rupMatchedCount,
+        ppkCompletedCount,
         totalPages,
         totalAllItems: allData.length,
       },

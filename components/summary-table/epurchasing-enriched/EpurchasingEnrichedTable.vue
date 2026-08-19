@@ -1,6 +1,35 @@
 <template>
   <ClientOnly>
-    <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-[0_4px_15px_rgba(0,0,0,0.05)] overflow-hidden">
+    <div class="flex flex-col gap-4">
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Pesanan</div>
+          <div class="text-2xl font-bold text-[color:hsl(var(--maz-primary))]">
+            {{ loading ? '...' : totalAllItems.toLocaleString('id-ID') }}
+          </div>
+        </div>
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Nilai Pembelian</div>
+          <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+            {{ loading ? '...' : formatRupiah(totalBelanja) }}
+          </div>
+        </div>
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Terkoneksi RUP</div>
+          <div class="text-2xl font-bold text-teal-600 dark:text-teal-400">
+            {{ loading ? '...' : rupMatched.toLocaleString('id-ID') }}
+          </div>
+        </div>
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Penyedia UMKM</div>
+          <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+            {{ loading ? '...' : umkmCount.toLocaleString('id-ID') }}
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-[0_4px_15px_rgba(0,0,0,0.05)] overflow-hidden">
       <!-- Search/Filter Bar -->
       <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col gap-4">
         <!-- Search Row -->
@@ -402,6 +431,7 @@
       </template>
     </MazDialog>
 
+    </div>
   </ClientOnly>
 </template>
 
@@ -414,6 +444,9 @@ const loading = ref(true);
 const error = ref(false);
 const items = ref([]);
 const totalAllItems = ref(0);
+const totalBelanja = ref(0);
+const rupMatched = ref(0);
+const umkmCount = ref(0);
 
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
@@ -455,6 +488,9 @@ const loadData = async () => {
       items.value = res.data;
       totalAllItems.value = res.meta.totalItems;
       totalPages.value = res.meta.totalPages;
+      totalBelanja.value = res.meta.totalBelanja || 0;
+      rupMatched.value = res.meta.rupMatched || 0;
+      umkmCount.value = res.meta.umkmCount || 0;
       
       statusOptions.value = (res.filterOptions?.status || []).map(v => ({ label: v || 'NULL', value: v }));
       shipmentStatusOptions.value = (res.filterOptions?.shipmentStatus || []).map(v => ({ label: v || 'NULL', value: v }));

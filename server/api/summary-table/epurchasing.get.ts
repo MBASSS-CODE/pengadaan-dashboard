@@ -71,12 +71,14 @@ export default defineEventHandler(async (event) => {
     let qtyCount = 0;
     let rupMatched = 0;
     let penyediaMatched = 0;
+    let umkmCount = 0;
 
     for (const item of filteredData) {
       if (item.total) totalBelanja += Number(item.total) || 0;
       if (item.total_qty) qtyCount += Number(item.total_qty) || 0;
       if (item._rup_matched) rupMatched++;
       if (item._penyedia_matched) penyediaMatched++;
+      if (item.penyedia_status_umkk && item.penyedia_status_umkk !== 'Non-UMKM' && item.penyedia_status_umkk !== 'Tidak Diketahui') umkmCount++;
     }
 
     // Sort newest first or by order_date descending
@@ -101,7 +103,8 @@ export default defineEventHandler(async (event) => {
         totalBelanja,
         qtyCount,
         rupMatched,
-        penyediaMatched
+        penyediaMatched,
+        umkmCount
       },
       filterOptions: {
         status: uniqueStatus,

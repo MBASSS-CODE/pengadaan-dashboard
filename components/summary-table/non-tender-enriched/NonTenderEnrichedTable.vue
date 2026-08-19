@@ -3,7 +3,36 @@
     <!-- ClientOnly wrapper to prevent SSR Hydration Style Mismatches from MazUI dynamic CSS variables & extensions -->
     <ClientOnly>
       <!-- Main Content Card -->
-      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-[0_4px_15px_rgba(0,0,0,0.05)] overflow-hidden">
+      <div class="flex flex-col gap-4">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+            <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Paket Non-Tender</div>
+            <div class="text-2xl font-bold text-[color:hsl(var(--maz-primary))]">
+              {{ loading ? '...' : totalItems.toLocaleString('id-ID') }}
+            </div>
+          </div>
+          <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+            <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Terintegrasi RUP</div>
+            <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+              {{ loading ? '...' : rupMatchedCount.toLocaleString('id-ID') }}
+            </div>
+          </div>
+          <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+            <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total HPS (Rp)</div>
+            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {{ loading ? '...' : formatRupiah(totalHps) }}
+            </div>
+          </div>
+          <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+            <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">PPK Tervalidasi</div>
+            <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              {{ loading ? '...' : ppkCompletedCount.toLocaleString('id-ID') }}
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-[0_4px_15px_rgba(0,0,0,0.05)] overflow-hidden">
         
         <!-- Search/Filter Bar -->
         <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col gap-4">
@@ -527,6 +556,8 @@
           </div>
         </template>
       </MazDialog>
+
+      </div>
     </ClientOnly>
   </div>
 </template>
@@ -552,6 +583,9 @@ const pageData = ref([]);
 const totalItems = ref(0);
 const totalPages = ref(0);
 const totalAllItems = ref(0);
+const totalHps = ref(0);
+const rupMatchedCount = ref(0);
+const ppkCompletedCount = ref(0);
 
 const searchQuery = ref('');
 
@@ -641,6 +675,9 @@ const loadData = async () => {
     totalItems.value = response.meta?.totalItems || 0;
     totalPages.value = response.meta?.totalPages || 0;
     totalAllItems.value = response.meta?.totalAllItems || 0;
+    totalHps.value = response.meta?.totalHps || 0;
+    rupMatchedCount.value = response.meta?.rupMatchedCount || 0;
+    ppkCompletedCount.value = response.meta?.ppkCompletedCount || 0;
     
     if (response.filterOptions) {
       statusOptions.value = [

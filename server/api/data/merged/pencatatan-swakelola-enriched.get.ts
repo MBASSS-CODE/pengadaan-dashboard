@@ -65,6 +65,11 @@ export default defineEventHandler(async (event) => {
 
     // ─── Pagination ──────────────────────────────────────────────────────
     const totalFiltered = filtered.length;
+    
+    // Calculate totals for the filtered data
+    const totalPagu = filtered.reduce((sum: number, item: any) => sum + (Number(item.pagu) || 0), 0);
+    const totalRealisasi = filtered.reduce((sum: number, item: any) => sum + (Number(item.total_realisasi) || 0), 0);
+
     const totalPages = Math.ceil(totalFiltered / limit);
     const startIndex = (page - 1) * limit;
     const paginatedData = filtered.slice(startIndex, startIndex + limit);
@@ -76,6 +81,8 @@ export default defineEventHandler(async (event) => {
         page,
         limit,
         totalItems: totalFiltered,
+        totalPagu,
+        totalRealisasi,
         totalPages,
         totalAllItems: allData.length,
       },

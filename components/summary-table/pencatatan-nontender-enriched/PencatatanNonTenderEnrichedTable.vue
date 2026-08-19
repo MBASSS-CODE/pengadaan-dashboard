@@ -1,6 +1,29 @@
 <template>
-  <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-[0_4px_15px_rgba(0,0,0,0.05)] overflow-hidden">
-    <!-- Search/Filter Bar -->
+  <div class="flex flex-col gap-4">
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+        <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Paket Pencatatan</div>
+        <div class="text-2xl font-bold text-[color:hsl(var(--maz-primary))]">
+          {{ loading ? '...' : totalItems.toLocaleString('id-ID') }}
+        </div>
+      </div>
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+        <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Pagu (Rp)</div>
+        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+          {{ loading ? '...' : formatRupiah(totalPagu) }}
+        </div>
+      </div>
+      <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+        <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Realisasi (Rp)</div>
+        <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+          {{ loading ? '...' : formatRupiah(totalRealisasi) }}
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-[0_4px_15px_rgba(0,0,0,0.05)] overflow-hidden">
+      <!-- Search/Filter Bar -->
     <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col gap-4">
       <!-- Search Row -->
       <div class="w-full flex items-center gap-4">
@@ -441,7 +464,7 @@
       </template>
     </MazDialog>
 
-
+    </div>
   </div>
 </template>
 
@@ -466,6 +489,8 @@ const pageData = ref([]);
 const totalItems = ref(0);
 const totalPages = ref(0);
 const totalAllItems = ref(0);
+const totalPagu = ref(0);
+const totalRealisasi = ref(0);
 
 const searchQuery = ref('');
 const selectedStatus = ref('ALL');
@@ -536,6 +561,8 @@ const loadData = async (force = false) => {
     totalItems.value = response.meta?.totalItems || 0;
     totalPages.value = response.meta?.totalPages || 0;
     totalAllItems.value = response.meta?.totalAllItems || 0;
+    totalPagu.value = response.meta?.totalPagu || 0;
+    totalRealisasi.value = response.meta?.totalRealisasi || 0;
     
     if (response.filterOptions) {
       if (response.filterOptions.statusNontender && response.filterOptions.statusNontender.length > 0) {
