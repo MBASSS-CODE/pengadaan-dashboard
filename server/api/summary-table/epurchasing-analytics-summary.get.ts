@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
         'Tidak Terkoneksi': { count: 0, total: 0 }
       },
       topPenyedia: {} as Record<string, { count: number; total: number }>,
+      topPpk: {} as Record<string, { count: number; total: number }>,
       orderStatus: {} as Record<string, { count: number; total: number }>,
       minikom: {
         'Produk Lokal': { count: 0, total: 0 },
@@ -87,6 +88,18 @@ export default defineEventHandler(async (event) => {
         penyediaEntry.total += total;
       }
 
+      // 4b. Top PPK
+      const ppk = item.ppk_nama_lengkap || item.rup_nama_ppk || 'Tidak Diketahui';
+      if (ppk !== 'Tidak Diketahui') {
+        let ppkEntry = maps.topPpk[ppk];
+        if (!ppkEntry) {
+          ppkEntry = { count: 0, total: 0 };
+          maps.topPpk[ppk] = ppkEntry;
+        }
+        ppkEntry.count++;
+        ppkEntry.total += total;
+      }
+
       // 5. Order Status
       const status = item.status || 'Tidak Diketahui';
       let statusEntry = maps.orderStatus[status];
@@ -135,6 +148,9 @@ export default defineEventHandler(async (event) => {
 
     // Top 10 Penyedia
     const topPenyediaArray = formatToArray(maps.topPenyedia, 'total').slice(0, 10);
+    
+    // Top 10 PPK
+    const topPpkArray = formatToArray(maps.topPpk, 'total').slice(0, 10);
 
     return {
       success: true,
@@ -147,6 +163,7 @@ export default defineEventHandler(async (event) => {
         umkm: formatToArray(maps.umkm, 'total'),
         rupConnection: formatToArray(maps.rupConnection, 'none'),
         topPenyedia: topPenyediaArray,
+        topPpk: topPpkArray,
         orderStatus: formatToArray(maps.orderStatus, 'total'),
         minikom: formatToArray(maps.minikom, 'none')
       }

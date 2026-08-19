@@ -102,8 +102,9 @@
             <tr class="border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] text-xs font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">
               <th class="py-3 px-4 text-center w-16">No</th>
               <th class="py-3 px-4 min-w-[200px]">Order ID & Tanggal</th>
-              <th class="py-3 px-4 min-w-[250px]">Profil Penyedia</th>
+              <th class="py-3 px-4 min-w-[200px]">Profil Penyedia</th>
               <th class="py-3 px-4 min-w-[250px]">Tautan RUP Penyedia</th>
+              <th class="py-3 px-4 min-w-[200px]">PPK</th>
               <th class="py-3 px-4 min-w-[150px]">Status Pesanan</th>
               <th class="py-3 px-4 text-right min-w-[150px]">Total Nilai</th>
               <th class="py-3 px-4 text-center w-20">Aksi</th>
@@ -162,6 +163,19 @@
                   </div>
                   <div v-else class="text-xs text-[color:hsl(var(--maz-muted))] italic">
                     Tautan RUP tidak tersedia
+                  </div>
+                </td>
+
+                <!-- PPK -->
+                <td class="py-4 px-4">
+                  <div v-if="item.ppk_nama_lengkap || item.rup_nama_ppk" class="text-sm">
+                    <div class="font-bold text-[color:hsl(var(--maz-foreground))] text-xs mb-0.5">{{ item.ppk_nama_lengkap || item.rup_nama_ppk }}</div>
+                    <div class="text-[color:hsl(var(--maz-muted))] text-[10px] font-mono">
+                      NIP: {{ item.ppk_nip_asli || item.rup_nip_ppk || '-' }}
+                    </div>
+                  </div>
+                  <div v-else class="text-xs text-[color:hsl(var(--maz-muted))] italic">
+                    -
                   </div>
                 </td>
 
@@ -316,6 +330,33 @@
                   <p class="text-sm font-medium">{{ selectedItem.penyedia_status_umkk || '-' }}</p>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info PPK -->
+        <div v-if="selectedItem.ppk_nama_lengkap || selectedItem.rup_nama_ppk" class="rounded-xl border border-[color:hsl(var(--maz-border))] p-5 relative overflow-hidden mt-2">
+          <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+          <h3 class="font-bold text-sm text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-4 flex items-center gap-2">
+            Informasi PPK
+          </h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">Nama PPK</p>
+              <p class="text-sm font-bold text-[color:hsl(var(--maz-foreground))]">{{ selectedItem.ppk_nama_lengkap || selectedItem.rup_nama_ppk }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">NIP</p>
+              <p class="text-sm font-medium font-mono">{{ selectedItem.ppk_nip_asli || selectedItem.rup_nip_ppk || '-' }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">Jabatan</p>
+              <p class="text-sm font-medium">{{ selectedItem.ppk_jabatan || '-' }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">Kontak</p>
+              <p class="text-xs text-[color:hsl(var(--maz-muted))]">{{ selectedItem.ppk_telepon || '-' }} / {{ selectedItem.ppk_email || '-' }}</p>
             </div>
           </div>
         </div>

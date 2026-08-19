@@ -116,6 +116,14 @@
           </div>
         </div>
 
+        <!-- 3b. Top 10 PPK -->
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+          <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6">Top 10 PPK (Berdasarkan Nilai Pesanan)</h3>
+          <div class="w-full min-h-[400px]">
+            <Bar v-if="topPpkChartData" :data="topPpkChartData" :options="horizontalBarOptions" />
+          </div>
+        </div>
+
         <!-- 4. Status Pesanan dan Minikom -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col">
@@ -157,6 +165,7 @@ const summary = ref({
   umkm: [],
   rupConnection: [],
   topPenyedia: [],
+  topPpk: [],
   orderStatus: [],
   minikom: []
 });
@@ -226,6 +235,19 @@ const topPenyediaChartData = computed(() => {
       backgroundColor: '#8b5cf6',
       borderRadius: 4,
       data: summary.value.topPenyedia.map(i => i.total)
+    }]
+  };
+});
+
+const topPpkChartData = computed(() => {
+  if (!summary.value.topPpk || !summary.value.topPpk.length) return null;
+  return {
+    labels: summary.value.topPpk.map(i => i.label.length > 20 ? i.label.substring(0, 20) + '...' : i.label),
+    datasets: [{
+      label: 'Total Nilai (Rp)',
+      backgroundColor: '#f59e0b',
+      borderRadius: 4,
+      data: summary.value.topPpk.map(i => i.total)
     }]
   };
 });

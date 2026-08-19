@@ -1267,6 +1267,7 @@ export const executeEPurchasingMerge = async (tahun: string, trigger: string = '
     const epurchasingData: any[] = (await readJsonSafe(path.resolve(dataDir, `ekatalog/paket-e-purchasing_${tahun}.json`))) || [];
     const paketPenyediaData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-penyedia_${tahun}.json`))) || [];
     const penyediaData: any[] = await loadPenyediaMaster();
+    const ppkData: any[] = await loadPpkMaster();
 
     // Lookup map RUP Penyedia
     const rupMap = new Map<string, any>();
@@ -1278,6 +1279,12 @@ export const executeEPurchasingMerge = async (tahun: string, trigger: string = '
     const penyediaMap = new Map<string, any>();
     for (const item of penyediaData) {
       if (item.kode_penyedia) penyediaMap.set(String(item.kode_penyedia), item);
+    }
+
+    // Lookup map PPK
+    const ppkMap = new Map<string, any>();
+    for (const item of ppkData) {
+      if (item.nip_nama_masked) ppkMap.set(item.nip_nama_masked, item);
     }
 
     const anomalies: string[] = [];
@@ -1298,6 +1305,32 @@ export const executeEPurchasingMerge = async (tahun: string, trigger: string = '
         enriched.rup_metode_pengadaan = rup.metode_pengadaan;
         enriched.rup_status_aktif = rup.status_aktif_rup;
         enriched.rup_status_umumkan = rup.status_umumkan_rup;
+        
+        // Merge PPK from RUP and PPK Master
+        const nip = rup.nip_ppk || '';
+        const nama = rup.nama_ppk || '';
+        enriched.rup_nama_ppk = nama;
+        enriched.rup_nip_ppk = nip;
+        
+        let maskedKey = '';
+        if (nip && nama) {
+          maskedKey = `${nip} - ${nama}`;
+        } else {
+          maskedKey = nip || nama || '';
+        }
+
+        const ppk = ppkMap.get(maskedKey);
+        if (ppk) {
+          enriched.ppk_nama_lengkap = ppk.nama_lengkap;
+          enriched.ppk_nip_asli = ppk.nip_asli;
+          enriched.ppk_jabatan = ppk.jabatan;
+          enriched.ppk_email = ppk.email;
+          enriched.ppk_telepon = ppk.telepon;
+          enriched._ppk_completed = true;
+        } else {
+          enriched._ppk_completed = false;
+        }
+
         enriched._rup_matched = true;
         rupMatchedCount++;
       } else {
