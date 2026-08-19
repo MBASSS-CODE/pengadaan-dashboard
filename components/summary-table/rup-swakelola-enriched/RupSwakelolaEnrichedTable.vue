@@ -268,6 +268,40 @@
       </div>
     </div>
 
+    <!-- Export Modal -->
+    <MazDialog v-model="exportModal" title="Export ke Excel (XLSX)">
+      <div class="flex flex-col gap-4 py-2">
+        <p class="text-sm text-[color:hsl(var(--maz-muted))]">
+          Pilih mode ekspor data RUP Swakelola Enriched untuk Tahun Anggaran {{ props.year }}:
+        </p>
+        
+        <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] border border-[color:hsl(var(--maz-border))] p-4 rounded-lg">
+          <div class="flex flex-col gap-3">
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="radio" v-model="exportMode" value="filtered" class="mt-1" />
+              <div>
+                <div class="font-semibold text-sm">Sesuai Filter Saat Ini</div>
+                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor data yang tampil pada tabel saat ini berdasarkan pencarian dan filter yang aktif (estimasi: {{ totalItems }} data).</div>
+              </div>
+            </label>
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="radio" v-model="exportMode" value="all" class="mt-1" />
+              <div>
+                <div class="font-semibold text-sm">Seluruh Data (Tahun {{ props.year }})</div>
+                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor seluruh data master untuk tahun anggaran {{ props.year }} tanpa filter apapun.</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <MazBtn @click="exportModal = false" color="transparent" size="sm">Batal</MazBtn>
+          <MazBtn @click="executeExport" :loading="exportLoading" color="success" size="sm">Download Excel</MazBtn>
+        </div>
+      </template>
+    </MazDialog>
+
     <!-- Detail Dialog -->
     <MazDialog v-model="isDetailOpen" :title="`Detail RUP Swakelola: ${selectedRow?.kd_rup || ''}`" max-width="900px">
       <div v-if="selectedRow" class="space-y-6">
@@ -360,6 +394,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
+import { utils, writeFile } from 'xlsx';
 
 const props = defineProps({
   year: {
@@ -496,6 +531,69 @@ const loadData = async () => {
 watch(() => props.year, () => {
   resetFilters();
 });
+
+// ─── Export Logic ───────────────────────────────────────────
+const exportModal = ref(false);
+const exportMode = ref('filtered');
+const exportLoading = ref(false);
+
+const executeExport = async () => {
+  exportLoading.value = true;
+  try {
+    const params = {
+      tahun: props.year,
+      page: 1,
+      limit: 100000 // limit besar untuk mengambil seluruh data
+    };
+
+    if (exportMode.value === 'filtered') {
+      if (searchQuery.value) params.search = searchQuery.value;
+      if (filterTipeSwakelola.value) params.tipeSwakelola = filterTipeSwakelola.value.join(',');
+      if (filterStatusPelaksanaan.value) params.statusPelaksanaan = filterStatusPelaksanaan.value.join(',');
+      if (filterSumberDana.value) params.sumberDana = filterSumberDana.value.join(',');
+      if (filterPpk.value) params.ppk = filterPpk.value.join(',');
+      if (filterUmumkan.value !== 'ALL') params.statusUmumkan = filterUmumkan.value;
+    }
+
+    const res = await $fetch('/api/data/merged/rup-swakelola-enriched', { params });
+
+    if (res.success && res.data) {
+      const flatData = res.data.map((row, i) => ({
+        'No': i + 1,
+        'Kode RUP': row.kd_rup,
+        'Nama Paket': row.nama_paket,
+        'Pagu (Rp)': row.pagu,
+        'Tipe Swakelola': row.tipe_swakelola || '-',
+        'Sumber Dana': row.sumber_dana_list || '-',
+        'Nama PPK': row.ppk_nama_lengkap || row.nama_ppk || '-',
+        'Satuan Kerja': row.nama_satker || '-',
+        'Status Aktif': row.status_aktif_rup ? 'Aktif' : 'Non-Aktif',
+        'Status Umumkan': row.status_umumkan_rup || '-',
+        'Status Pelaksanaan': row.pelaksanaan_status || '-',
+        'Kode Pencatatan': row.pelaksanaan_kd_pct || '-'
+      }));
+
+      const ws = utils.json_to_sheet(flatData);
+      const wb = utils.book_new();
+      utils.book_append_sheet(wb, ws, "RUP Swakelola");
+
+      const wscols = [
+        {wch: 5}, {wch: 15}, {wch: 40}, {wch: 15}, {wch: 15}, {wch: 20},
+        {wch: 30}, {wch: 30}, {wch: 15}, {wch: 15}, {wch: 20}, {wch: 20}
+      ];
+      ws['!cols'] = wscols;
+
+      const filename = `RUP_Swakelola_Enriched_${props.year}${exportMode.value === 'filtered' ? '_Filtered' : ''}.xlsx`;
+      writeFile(wb, filename);
+      exportModal.value = false;
+    }
+  } catch (err) {
+    console.error('Failed to export:', err);
+    alert('Gagal melakukan ekspor data. Silakan coba lagi.');
+  } finally {
+    exportLoading.value = false;
+  }
+};
 
 onMounted(() => {
   loadData();
