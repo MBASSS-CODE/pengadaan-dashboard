@@ -11,7 +11,12 @@ export default defineEventHandler(async (event) => {
 
   try {
     const filePath = path.resolve(getDataDir(), 'merged', `pencatatan-nontender-enriched_${tahun}.json`);
-    const data = await readJsonSafe(filePath);
+    let data = (await readJsonSafe(filePath)) as any[];
+
+    const satker = query.satker as string;
+    if (satker && data) {
+      data = data.filter((item: any) => String(item.kd_satker) === satker);
+    }
 
     if (!data || !Array.isArray(data)) {
       return { success: false, message: 'Data pencatatan tidak ditemukan', summary: null };

@@ -438,7 +438,14 @@
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue';
 import { utils, writeFile } from 'xlsx';
-const { selectedYear } = defineProps({ selectedYear: { type: String, required: true } });
+const { selectedYear } = defineProps({ selectedYear: {
+    type: String,
+    required: true
+  },
+  selectedSatker: {
+    type: String,
+    default: null
+  } });
 
 const loading = ref(true);
 const error = ref(false);

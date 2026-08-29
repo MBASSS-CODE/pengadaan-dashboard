@@ -152,7 +152,14 @@ import { Bar, Doughnut, Line } from 'vue-chartjs';
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, PointElement, LineElement);
 
-const { selectedYear } = defineProps({ selectedYear: { type: String, required: true } });
+const { selectedYear } = defineProps({ selectedYear: {
+    type: String,
+    required: true
+  },
+  selectedSatker: {
+    type: String,
+    default: null
+  } });
 
 const loading = ref(true);
 const error = ref(false);

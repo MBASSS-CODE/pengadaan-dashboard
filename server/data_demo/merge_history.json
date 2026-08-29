@@ -1,5 +1,131 @@
 [
   {
+    "id": "merge_epurchasing_1788025990306",
+    "tahun": "2026",
+    "type": "epurchasing",
+    "timestamp": "2026-08-29T17:53:10.306Z",
+    "trigger": "demo",
+    "duration_ms": 4,
+    "status": "success",
+    "sources": {
+      "epurchasing": {
+        "found": true,
+        "count": 100
+      },
+      "paket_penyedia": {
+        "found": true,
+        "count": 200
+      },
+      "penyedia_master": {
+        "found": true,
+        "count": 50
+      }
+    },
+    "result": {
+      "total_records": 100,
+      "rup_matched": 100,
+      "penyedia_matched": 100
+    },
+    "anomalies": []
+  },
+  {
+    "id": "99abef55-7d42-4d66-852a-a9d0cd9b9cc5",
+    "type": "pencatatan-swakelola",
+    "timestamp": "2026-08-29T17:53:10.301Z",
+    "tahun": "2026",
+    "trigger": "demo",
+    "status": "success",
+    "duration_ms": 3,
+    "result": {
+      "total_records": 25
+    },
+    "anomalies": []
+  },
+  {
+    "id": "8f35413a-f6a7-4146-885b-0c550a8c1265",
+    "type": "pencatatan-nontender",
+    "timestamp": "2026-08-29T17:53:10.297Z",
+    "tahun": "2026",
+    "trigger": "demo",
+    "status": "success",
+    "duration_ms": 2,
+    "result": {
+      "total_records": 25
+    },
+    "anomalies": []
+  },
+  {
+    "id": "0c1e7a5f-5291-494f-adf9-a0d6a4ecc1b1",
+    "type": "rup-swakelola",
+    "timestamp": "2026-08-29T17:53:10.293Z",
+    "tahun": "2026",
+    "trigger": "demo",
+    "status": "success",
+    "duration_ms": 4,
+    "result": {
+      "total_records": 50
+    },
+    "anomalies": []
+  },
+  {
+    "id": "d68f4665-ad65-4dd1-93a3-d4efe10d7f09",
+    "type": "rup-penyedia",
+    "timestamp": "2026-08-29T17:53:10.288Z",
+    "tahun": "2026",
+    "trigger": "demo",
+    "status": "success",
+    "duration_ms": 5,
+    "result": {
+      "total_records": 200
+    },
+    "anomalies": []
+  },
+  {
+    "id": "merge_1788025990281",
+    "tahun": "2026",
+    "timestamp": "2026-08-29T17:53:10.281Z",
+    "trigger": "demo",
+    "duration_ms": 13,
+    "status": "success",
+    "sources": {
+      "non_tender_pengumuman": {
+        "found": true,
+        "count": 50
+      },
+      "paket_penyedia": {
+        "found": true,
+        "count": 200
+      },
+      "master_satker": {
+        "found": true,
+        "count": 5
+      },
+      "history_kaji_ulang": {
+        "found": true,
+        "count": 68
+      },
+      "paket_anggaran_penyedia": {
+        "found": true,
+        "count": 200
+      },
+      "ppk_master": {
+        "found": true,
+        "count": 20
+      }
+    },
+    "result": {
+      "total_records": 50,
+      "rup_matched": 50,
+      "rup_unmatched": 0,
+      "satker_matched": 50,
+      "ppk_completed": 50,
+      "ppk_incomplete": 0,
+      "has_kaji_ulang": 8,
+      "anggaran_matched": 50
+    },
+    "anomalies": []
+  },
+  {
     "id": "merge_epurchasing_1788024737177",
     "tahun": "2026",
     "type": "epurchasing",

@@ -21,6 +21,12 @@ export default defineEventHandler(async (event) => {
 
     let filteredData = data;
 
+    // Filter by Satker
+    const satker = query.satker as string;
+    if (satker) {
+      filteredData = filteredData.filter((item: any) => String(item.kd_satker) === satker);
+    }
+
     // Filter Global Search
     const search = query.search as string;
     if (search) {

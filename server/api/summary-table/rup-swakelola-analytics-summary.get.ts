@@ -8,7 +8,12 @@ export default defineEventHandler(async (event) => {
 
   try {
     const filePath = path.resolve(getDataDir(), 'merged', `rup-swakelola-enriched_${tahun}.json`);
-    const data = await readJsonSafe(filePath);
+    let data = (await readJsonSafe(filePath)) as any[];
+
+    const satker = query.satker as string;
+    if (satker && data) {
+      data = data.filter((item: any) => String(item.kd_satker) === satker);
+    }
 
     if (!data) {
       return {

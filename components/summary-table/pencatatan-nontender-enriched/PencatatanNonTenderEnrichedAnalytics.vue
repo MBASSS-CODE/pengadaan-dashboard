@@ -380,6 +380,10 @@ const props = defineProps({
   selectedYear: {
     type: String,
     required: true
+  },
+  selectedSatker: {
+    type: String,
+    default: null
   }
 });
 
@@ -481,7 +485,7 @@ const loadStatsAndAnalytics = async () => {
   loading.value = true;
   try {
     const res = await $fetch('/api/summary-table/pencatatan-analytics-summary', {
-      params: { tahun: props.selectedYear }
+      params: { tahun: props.selectedYear, satker: props.selectedSatker || undefined }
     });
 
     if (res.success && res.summary) {
@@ -584,6 +588,9 @@ onMounted(() => {
 });
 
 watch(() => props.selectedYear, () => {
+  loadStatsAndAnalytics();
+});
+watch(() => props.selectedSatker, () => {
   loadStatsAndAnalytics();
 });
 </script>
