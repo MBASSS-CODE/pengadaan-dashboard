@@ -1,37 +1,37 @@
 [
   {
-    "kd_satker": "810050",
-    "nama_satker": "Dinas Hadiah Sidayu",
+    "kd_satker": "070371",
+    "nama_satker": "Dinas Perangkat Lunak Airmadidi",
     "status_satker": "Aktif",
     "jenis_satker": "OPD",
-    "alamat": "Ds. Novita no 31"
+    "alamat": "Kpg. Restu no 11"
   },
   {
-    "kd_satker": "272033",
-    "nama_satker": "Dinas Permainan Kajen",
+    "kd_satker": "216010",
+    "nama_satker": "Dinas Peralatan Jakarta",
     "status_satker": "Aktif",
     "jenis_satker": "OPD",
-    "alamat": "Psr. Asirwada no 91"
+    "alamat": "Jr. Gaman no 22"
   },
   {
-    "kd_satker": "945978",
-    "nama_satker": "Dinas Komputer Jepara",
+    "kd_satker": "535509",
+    "nama_satker": "Dinas Bayi Ponorogo",
     "status_satker": "Aktif",
     "jenis_satker": "OPD",
-    "alamat": "Gg. Yulia no 7"
+    "alamat": "Jr. Gilda no 7"
   },
   {
-    "kd_satker": "485784",
-    "nama_satker": "Dinas Pakaian Cibinong",
+    "kd_satker": "475369",
+    "nama_satker": "Dinas Taman Purwokerto",
     "status_satker": "Aktif",
     "jenis_satker": "OPD",
-    "alamat": "Jr. Jailani no 65"
+    "alamat": "Ds. Mala no 82"
   },
   {
-    "kd_satker": "899663",
-    "nama_satker": "Dinas Luar Ruangan & Aktivitas Donggala",
+    "kd_satker": "634903",
+    "nama_satker": "Dinas Olahraga Pemalang",
     "status_satker": "Aktif",
     "jenis_satker": "OPD",
-    "alamat": "Jr. Wadi no 4"
+    "alamat": "Ds. Tari no 97"
   }
 ]

@@ -162,8 +162,11 @@ for (let i = 0; i < 25; i++) {
     kd_satker: rup.kd_satker,
     nama_satker: satkerList.find(s => s.kd_satker === rup.kd_satker)?.nama_satker,
     nama_paket: rup.nama_paket,
+    pagu: rup.pagu,
     total_realisasi: rup.pagu * faker.number.float({ min: 0.8, max: 1.0, fractionDigits: 2 }),
-    status_swakelola: faker.helpers.arrayElement(['Selesai', 'Proses', 'Batal']),
+    status_swakelola_pct: faker.helpers.arrayElement(['Selesai', 'Proses', 'Batal']),
+    tipe_swakelola_nama: faker.helpers.arrayElement(['Tipe I', 'Tipe II', 'Tipe III', 'Tipe IV']),
+    sumber_dana: faker.helpers.arrayElement(['APBN', 'APBD', 'BLU']),
     nip_ppk: rup.nip_ppk,
     nama_ppk: rup.nama_ppk,
     tgl_mulai: faker.date.recent().toISOString()
@@ -192,8 +195,13 @@ for (let i = 0; i < 25; i++) {
     kd_satker: rup.kd_satker,
     nama_satker: satkerList.find(s => s.kd_satker === rup.kd_satker)?.nama_satker,
     nama_paket: rup.nama_paket,
+    pagu: rup.pagu,
     total_realisasi: rup.pagu * faker.number.float({ min: 0.8, max: 1.0, fractionDigits: 2 }),
-    status_nontender: faker.helpers.arrayElement(['Selesai', 'Proses', 'Batal']),
+    status_nontender_pct: faker.helpers.arrayElement(['Selesai', 'Proses', 'Batal']),
+    mtd_pemilihan: faker.helpers.arrayElement(['Pengadaan Langsung', 'Penunjukan Langsung', 'E-Purchasing', 'Tender Cepat']),
+    kategori_pengadaan: faker.helpers.arrayElement(['Barang', 'Jasa Konsultansi', 'Jasa Lainnya', 'Pekerjaan Konstruksi']),
+    sumber_dana: faker.helpers.arrayElement(['APBN', 'APBD', 'BLU']),
+    bukti_pembayaran: faker.helpers.arrayElement(['Kuitansi', 'Faktur', 'Invoice']),
     nip_ppk: rup.nip_ppk,
     nama_ppk: rup.nama_ppk,
     tgl_mulai: faker.date.recent().toISOString()
@@ -209,11 +217,48 @@ for (let i = 0; i < 25; i++) {
 fs.writeFileSync(path.join(demoDir, 'tender', `pencatatan-non-tender_${tahun}.json`), JSON.stringify(pencatatanNonTenderList, null, 2));
 fs.writeFileSync(path.join(demoDir, 'tender', `pencatatan-non-tender-realisasi_${tahun}.json`), JSON.stringify(pencatatanNonTenderRealisasiList, null, 2));
 
+// 10. Generate History Kaji Ulang
+const historyKajiUlangList = [];
+// 30% of penyedia and swakelola have kaji ulang
+const allRupList = [...rupPenyediaList, ...rupSwakelolaList];
+for (const rup of allRupList) {
+  if (Math.random() < 0.3) {
+    historyKajiUlangList.push({
+      kd_rup_baru: rup.kd_rup,
+      kd_rup_lama: faker.string.numeric(7),
+      alasan_kaji_ulang: faker.lorem.sentence(),
+      tgl_kaji_ulang: faker.date.recent().toISOString()
+    });
+  }
+}
+fs.writeFileSync(path.join(demoDir, 'rup', `history-kaji-ulang_${tahun}.json`), JSON.stringify(historyKajiUlangList, null, 2));
+
+// 11. Generate Anggaran Penyedia
+const anggaranPenyediaList = [];
+for (const rup of rupPenyediaList) {
+  anggaranPenyediaList.push({
+    kd_rup: rup.kd_rup,
+    mak: `054.01.${faker.string.numeric(4)}.${faker.string.numeric(4)}`,
+    sumber_dana: faker.helpers.arrayElement(['APBN', 'APBD', 'BLU']),
+    pagu: rup.pagu
+  });
+}
+fs.writeFileSync(path.join(demoDir, 'rup', `paket-anggaran-penyedia_${tahun}.json`), JSON.stringify(anggaranPenyediaList, null, 2));
+
+// 12. Generate Anggaran Swakelola
+const anggaranSwakelolaList = [];
+for (const rup of rupSwakelolaList) {
+  anggaranSwakelolaList.push({
+    kd_rup: rup.kd_rup,
+    mak: `054.01.${faker.string.numeric(4)}.${faker.string.numeric(4)}`,
+    sumber_dana: faker.helpers.arrayElement(['APBN', 'APBD', 'BLU']),
+    pagu: rup.pagu
+  });
+}
+fs.writeFileSync(path.join(demoDir, 'rup', `paket-anggaran-swakelola_${tahun}.json`), JSON.stringify(anggaranSwakelolaList, null, 2));
+
 // Empty files for others to prevent merge errors
 const emptyFiles = [
-  `rup/history-kaji-ulang_${tahun}.json`,
-  `rup/paket-anggaran-penyedia_${tahun}.json`,
-  `rup/paket-anggaran-swakelola_${tahun}.json`,
   `endpoints_config.json`,
   `cron_config.json`
 ];
