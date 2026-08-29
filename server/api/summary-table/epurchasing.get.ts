@@ -1,3 +1,4 @@
+import { getDataDir } from '../../utils/dataDir';
 import path from 'path';
 import { readJsonSafe } from '../../utils/mergeManager';
 
@@ -8,7 +9,7 @@ export default defineEventHandler(async (event) => {
   const limit = parseInt(query.limit as string) || 50;
 
   try {
-    const filePath = path.resolve(process.cwd(), 'server', 'data', 'merged', `epurchasing_enriched_${tahun}.json`);
+    const filePath = path.resolve(getDataDir(), 'merged', `epurchasing_enriched_${tahun}.json`);
     const data = await readJsonSafe(filePath);
 
     if (!data) {

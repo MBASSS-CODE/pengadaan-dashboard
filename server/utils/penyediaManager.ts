@@ -1,3 +1,4 @@
+import { getDataDir } from './dataDir';
 import fs from 'fs/promises';
 import path from 'path';
 import { pool, initDB } from './db';
@@ -9,7 +10,7 @@ const formatDateTime = (date: Date) => date.toISOString().slice(0, 19).replace('
  * Get unique kode_penyedia from ekatalog and save directly to Database as PENDING
  */
 export const extractAndSavePenyedia = async (tahun: string): Promise<number> => {
-  const filePath = path.resolve(process.cwd(), `server/data/ekatalog/paket-e-purchasing_${tahun}.json`);
+  const filePath = path.resolve(getDataDir(), `ekatalog/paket-e-purchasing_${tahun}.json`);
   const allPenyedia = new Set<string>();
 
   try {
@@ -186,6 +187,17 @@ export const processPenyediaQueue = async (): Promise<void> => {
  * Load all penyedia master data for the dashboard list
  */
 export const loadPenyediaMaster = async (): Promise<any[]> => {
+  if (process.env.USE_DEMO_DATA === 'true') {
+    try {
+      const filePath = path.resolve(getDataDir(), 'penyedia_master.json');
+      const raw = await fs.readFile(filePath, 'utf-8');
+      return JSON.parse(raw);
+    } catch (e) {
+      console.error('Failed to load Penyedia Master from JSON:', e);
+      return [];
+    }
+  }
+
   try {
     await initDB();
     const [rows] = await pool.query('SELECT * FROM penyedia_master ORDER BY created_at DESC');
@@ -200,7 +212,7 @@ export const loadPenyediaMaster = async (): Promise<any[]> => {
  * Check if e-purchasing file exists for a given year (legacy support)
  */
 export const checkEPurchasingExists = async (tahun: string): Promise<boolean> => {
-  const filePath = path.resolve(process.cwd(), `server/data/ekatalog/paket-e-purchasing_${tahun}.json`);
+  const filePath = path.resolve(getDataDir(), `ekatalog/paket-e-purchasing_${tahun}.json`);
   try {
     await fs.access(filePath);
     return true;

@@ -1,0 +1,30 @@
+[
+  {
+    "pagu_program": 83368033000,
+    "tahun_anggaran": 2026,
+    "kd_program": 2781747,
+    "kd_satker": 15760,
+    "nama_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+    "is_deleted": false,
+    "kd_klpd": "K22",
+    "kd_program_str": "WA",
+    "jenis_klpd": "KEMENTERIAN",
+    "kd_program_lokal": null,
+    "nama_program": "Program Dukungan Manajemen",
+    "last_update_ref": "588a90f8-e63f-50d6-8977-56ffebfb4e1d.DeNoDiUFg992hp8O.5fUgRgiGpBf4fT636Dbc8UbHjQFLsa26srWYGXafnJY"
+  },
+  {
+    "tahun_anggaran": 2026,
+    "kd_program_lokal": null,
+    "is_deleted": false,
+    "jenis_klpd": "KEMENTERIAN",
+    "pagu_program": 98704083000,
+    "kd_klpd": "K22",
+    "kd_program": 2781748,
+    "kd_satker": 15760,
+    "kd_program_str": "CO",
+    "nama_klpd": "Kementerian Pendayagunaan Aparatur Negara Dan Reformasi Birokrasi",
+    "nama_program": "Program Kebijakan, Pembinaan Profesi, dan Tata Kelola ASN",
+    "last_update_ref": "588a90f8-e63f-50d6-8977-56ffebfb4e1d.DeNoDiUFg992hp8O.5fUgRgiGpBf4fT636Dbc8UbHjQFLsa26srWYGXafnJY"
+  }
+]

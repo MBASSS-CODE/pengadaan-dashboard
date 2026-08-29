@@ -1,3 +1,4 @@
+import { getDataDir } from '../../utils/dataDir';
 import path from 'path';
 import { readJsonSafe } from '../../utils/mergeManager';
 
@@ -9,7 +10,7 @@ export default defineEventHandler(async (event) => {
   const tahun = (query.tahun as string) || new Date().getFullYear().toString();
 
   try {
-    const filePath = path.resolve(process.cwd(), 'server', 'data', 'merged', `pencatatan-swakelola-enriched_${tahun}.json`);
+    const filePath = path.resolve(getDataDir(), 'merged', `pencatatan-swakelola-enriched_${tahun}.json`);
     const data = await readJsonSafe(filePath);
 
     if (!data || !Array.isArray(data)) {

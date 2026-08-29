@@ -1,0 +1,37 @@
+[
+  {
+    "kd_satker": "810050",
+    "nama_satker": "Dinas Hadiah Sidayu",
+    "status_satker": "Aktif",
+    "jenis_satker": "OPD",
+    "alamat": "Ds. Novita no 31"
+  },
+  {
+    "kd_satker": "272033",
+    "nama_satker": "Dinas Permainan Kajen",
+    "status_satker": "Aktif",
+    "jenis_satker": "OPD",
+    "alamat": "Psr. Asirwada no 91"
+  },
+  {
+    "kd_satker": "945978",
+    "nama_satker": "Dinas Komputer Jepara",
+    "status_satker": "Aktif",
+    "jenis_satker": "OPD",
+    "alamat": "Gg. Yulia no 7"
+  },
+  {
+    "kd_satker": "485784",
+    "nama_satker": "Dinas Pakaian Cibinong",
+    "status_satker": "Aktif",
+    "jenis_satker": "OPD",
+    "alamat": "Jr. Jailani no 65"
+  },
+  {
+    "kd_satker": "899663",
+    "nama_satker": "Dinas Luar Ruangan & Aktivitas Donggala",
+    "status_satker": "Aktif",
+    "jenis_satker": "OPD",
+    "alamat": "Jr. Wadi no 4"
+  }
+]

@@ -1,0 +1,395 @@
+[
+  {
+    "id": "8f149adc-11a0-46bf-950c-31d477472bd9",
+    "type": "pencatatan-nontender",
+    "timestamp": "2026-08-29T17:06:57.807Z",
+    "tahun": "2026",
+    "trigger": "manual",
+    "status": "success",
+    "duration_ms": 9,
+    "result": {
+      "total_records": 25
+    },
+    "anomalies": []
+  },
+  {
+    "id": "merge_1788022964166",
+    "tahun": "2026",
+    "timestamp": "2026-08-29T17:02:44.166Z",
+    "trigger": "manual",
+    "duration_ms": 19,
+    "status": "success",
+    "sources": {
+      "non_tender_pengumuman": {
+        "found": true,
+        "count": 50
+      },
+      "paket_penyedia": {
+        "found": true,
+        "count": 200
+      },
+      "master_satker": {
+        "found": true,
+        "count": 5
+      },
+      "history_kaji_ulang": {
+        "found": false,
+        "count": 0
+      },
+      "paket_anggaran_penyedia": {
+        "found": false,
+        "count": 0
+      },
+      "ppk_master": {
+        "found": true,
+        "count": 20
+      }
+    },
+    "result": {
+      "total_records": 50,
+      "rup_matched": 50,
+      "rup_unmatched": 0,
+      "satker_matched": 50,
+      "ppk_completed": 50,
+      "ppk_incomplete": 0,
+      "has_kaji_ulang": 0,
+      "anggaran_matched": 0
+    },
+    "anomalies": []
+  },
+  {
+    "id": "85bed102-575d-41d6-968c-c6ea84cffe33",
+    "type": "rup-penyedia",
+    "timestamp": "2026-08-29T17:02:41.267Z",
+    "tahun": "2026",
+    "trigger": "manual",
+    "status": "success",
+    "duration_ms": 21,
+    "result": {
+      "total_records": 200
+    },
+    "anomalies": []
+  },
+  {
+    "id": "merge_epurchasing_1788011393312",
+    "tahun": "2026",
+    "type": "epurchasing",
+    "timestamp": "2026-08-29T13:49:53.312Z",
+    "trigger": "manual",
+    "duration_ms": 6,
+    "status": "success",
+    "sources": {
+      "epurchasing": {
+        "found": true,
+        "count": 100
+      },
+      "paket_penyedia": {
+        "found": true,
+        "count": 200
+      },
+      "penyedia_master": {
+        "found": true,
+        "count": 50
+      }
+    },
+    "result": {
+      "total_records": 100,
+      "rup_matched": 100,
+      "penyedia_matched": 100
+    },
+    "anomalies": []
+  },
+  {
+    "id": "0ec4f904-d09a-4194-9170-035587bc9afe",
+    "type": "rup-swakelola",
+    "timestamp": "2026-08-29T13:49:51.020Z",
+    "tahun": "2026",
+    "trigger": "manual",
+    "status": "success",
+    "duration_ms": 5,
+    "result": {
+      "total_records": 50
+    },
+    "anomalies": []
+  },
+  {
+    "id": "bffa2ad4-b894-44d2-8342-6df048621c23",
+    "type": "pencatatan-swakelola",
+    "timestamp": "2026-08-29T13:49:49.020Z",
+    "tahun": "2026",
+    "trigger": "manual_admin",
+    "status": "success",
+    "duration_ms": 4,
+    "result": {
+      "total_records": 25
+    },
+    "anomalies": []
+  },
+  {
+    "id": "07c91733-7680-4ed3-9d78-7934aeff0e07",
+    "type": "rup-penyedia",
+    "timestamp": "2026-08-29T13:37:53.483Z",
+    "tahun": "2026",
+    "trigger": "demo",
+    "status": "success",
+    "duration_ms": 49,
+    "result": {
+      "total_records": 200
+    },
+    "anomalies": []
+  },
+  {
+    "id": "merge_1788010673432",
+    "tahun": "2026",
+    "timestamp": "2026-08-29T13:37:53.432Z",
+    "trigger": "demo",
+    "duration_ms": 11,
+    "status": "success",
+    "sources": {
+      "non_tender_pengumuman": {
+        "found": true,
+        "count": 50
+      },
+      "paket_penyedia": {
+        "found": true,
+        "count": 200
+      },
+      "master_satker": {
+        "found": true,
+        "count": 5
+      },
+      "history_kaji_ulang": {
+        "found": false,
+        "count": 0
+      },
+      "paket_anggaran_penyedia": {
+        "found": false,
+        "count": 0
+      },
+      "ppk_master": {
+        "found": true,
+        "count": 20
+      }
+    },
+    "result": {
+      "total_records": 50,
+      "rup_matched": 50,
+      "rup_unmatched": 0,
+      "satker_matched": 50,
+      "ppk_completed": 50,
+      "ppk_incomplete": 0,
+      "has_kaji_ulang": 0,
+      "anggaran_matched": 0
+    },
+    "anomalies": []
+  },
+  {
+    "id": "merge_epurchasing_1788010333434",
+    "tahun": "2026",
+    "type": "epurchasing",
+    "timestamp": "2026-08-29T13:32:13.434Z",
+    "trigger": "manual",
+    "duration_ms": 35,
+    "status": "success",
+    "sources": {
+      "epurchasing": {
+        "found": true,
+        "count": 100
+      },
+      "paket_penyedia": {
+        "found": true,
+        "count": 200
+      },
+      "penyedia_master": {
+        "found": true,
+        "count": 117
+      }
+    },
+    "result": {
+      "total_records": 100,
+      "rup_matched": 100,
+      "penyedia_matched": 0
+    },
+    "anomalies": []
+  },
+  {
+    "id": "68210eea-e7d2-4da5-8b13-507755b7dcc7",
+    "type": "rup-swakelola",
+    "timestamp": "2026-08-29T13:32:11.204Z",
+    "tahun": "2026",
+    "trigger": "manual",
+    "status": "success",
+    "duration_ms": 5,
+    "result": {
+      "total_records": 50
+    },
+    "anomalies": []
+  },
+  {
+    "id": "merge_1788010316188",
+    "tahun": "2026",
+    "timestamp": "2026-08-29T13:31:56.188Z",
+    "trigger": "manual",
+    "duration_ms": 6,
+    "status": "success",
+    "sources": {
+      "non_tender_pengumuman": {
+        "found": true,
+        "count": 50
+      },
+      "paket_penyedia": {
+        "found": true,
+        "count": 200
+      },
+      "master_satker": {
+        "found": true,
+        "count": 5
+      },
+      "history_kaji_ulang": {
+        "found": false,
+        "count": 0
+      },
+      "paket_anggaran_penyedia": {
+        "found": false,
+        "count": 0
+      },
+      "ppk_master": {
+        "found": true,
+        "count": 14
+      }
+    },
+    "result": {
+      "total_records": 50,
+      "rup_matched": 50,
+      "rup_unmatched": 0,
+      "satker_matched": 50,
+      "ppk_completed": 0,
+      "ppk_incomplete": 50,
+      "has_kaji_ulang": 0,
+      "anggaran_matched": 0
+    },
+    "anomalies": [
+      "50 PPK belum dilengkapi datanya"
+    ]
+  },
+  {
+    "id": "merge_1788010111673",
+    "tahun": "2026",
+    "timestamp": "2026-08-29T13:28:31.673Z",
+    "trigger": "manual",
+    "duration_ms": 10,
+    "status": "success",
+    "sources": {
+      "non_tender_pengumuman": {
+        "found": true,
+        "count": 50
+      },
+      "paket_penyedia": {
+        "found": true,
+        "count": 200
+      },
+      "master_satker": {
+        "found": true,
+        "count": 5
+      },
+      "history_kaji_ulang": {
+        "found": false,
+        "count": 0
+      },
+      "paket_anggaran_penyedia": {
+        "found": false,
+        "count": 0
+      },
+      "ppk_master": {
+        "found": true,
+        "count": 14
+      }
+    },
+    "result": {
+      "total_records": 50,
+      "rup_matched": 50,
+      "rup_unmatched": 0,
+      "satker_matched": 50,
+      "ppk_completed": 0,
+      "ppk_incomplete": 50,
+      "has_kaji_ulang": 0,
+      "anggaran_matched": 0
+    },
+    "anomalies": [
+      "50 PPK belum dilengkapi datanya"
+    ]
+  },
+  {
+    "id": "84d19e3f-9432-4b85-bdab-564cfc210bcd",
+    "type": "rup-penyedia",
+    "timestamp": "2026-08-29T13:28:29.047Z",
+    "tahun": "2026",
+    "trigger": "manual",
+    "status": "success",
+    "duration_ms": 21,
+    "result": {
+      "total_records": 200
+    },
+    "anomalies": []
+  },
+  {
+    "id": "fd3281b1-e6e2-4df5-afd1-d7c9a7f5e116",
+    "type": "rup-penyedia",
+    "timestamp": "2026-08-29T13:23:39.141Z",
+    "tahun": "2026",
+    "trigger": "demo",
+    "status": "success",
+    "duration_ms": 23,
+    "result": {
+      "total_records": 200
+    },
+    "anomalies": []
+  },
+  {
+    "id": "merge_1788009819116",
+    "tahun": "2026",
+    "timestamp": "2026-08-29T13:23:39.116Z",
+    "trigger": "demo",
+    "duration_ms": 38,
+    "status": "success",
+    "sources": {
+      "non_tender_pengumuman": {
+        "found": true,
+        "count": 50
+      },
+      "paket_penyedia": {
+        "found": true,
+        "count": 200
+      },
+      "master_satker": {
+        "found": true,
+        "count": 5
+      },
+      "history_kaji_ulang": {
+        "found": false,
+        "count": 0
+      },
+      "paket_anggaran_penyedia": {
+        "found": false,
+        "count": 0
+      },
+      "ppk_master": {
+        "found": true,
+        "count": 14
+      }
+    },
+    "result": {
+      "total_records": 50,
+      "rup_matched": 50,
+      "rup_unmatched": 0,
+      "satker_matched": 50,
+      "ppk_completed": 0,
+      "ppk_incomplete": 50,
+      "has_kaji_ulang": 0,
+      "anggaran_matched": 0
+    },
+    "anomalies": [
+      "50 PPK belum dilengkapi datanya"
+    ]
+  }
+]

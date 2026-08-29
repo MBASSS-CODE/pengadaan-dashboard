@@ -1,5 +1,6 @@
 import { getMergeHistory } from '~/server/utils/mergeManager';
 import { loadPpkMaster } from '~/server/utils/ppkManager';
+import { getDataDir } from '~/server/utils/dataDir';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -10,7 +11,7 @@ export default defineEventHandler(async (event) => {
     // or just pass a custom one for Swakelola specifically, but for simplicity
     // we'll just check if the data exists
     
-    const dataDir = 'server/data';
+    const dataDir = getDataDir();
     const fs = await import('fs/promises');
     const path = await import('path');
     

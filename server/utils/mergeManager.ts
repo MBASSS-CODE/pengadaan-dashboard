@@ -1,3 +1,4 @@
+import { getDataDir } from './dataDir';
 import fs from 'fs/promises';
 import path from 'path';
 import { loadPpkMaster } from './ppkManager';
@@ -12,7 +13,7 @@ let mergeDebounceTimers: Record<string, ReturnType<typeof setTimeout> | null> = 
 const MERGE_DEBOUNCE_MS = 5000;
 
 // ─── File Paths ─────────────────────────────────────────────────────────────
-const dataDir = path.resolve(process.cwd(), 'server/data');
+const dataDir = getDataDir();
 const mergedDir = path.resolve(dataDir, 'merged');
 const mergeHistoryPath = path.resolve(dataDir, 'merge_history.json');
 
@@ -472,7 +473,7 @@ export const executeRupPenyediaMerge = async (tahun: string, trigger: string = '
   const startTime = Date.now();
   
   try {
-    const dataDir = path.resolve(process.cwd(), 'server', 'data');
+    const dataDir = getDataDir();
     
     // Load all data sources
     const paketPenyediaData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-penyedia_${tahun}.json`))) || [];
@@ -704,7 +705,7 @@ export const executePencatatanNonTenderMerge = async (tahun: string, trigger: st
   const startTime = Date.now();
   
   try {
-    const dataDir = path.resolve(process.cwd(), 'server', 'data');
+    const dataDir = getDataDir();
     
     // Load data sources
     const pencatatanData: any[] = (await readJsonSafe(path.resolve(dataDir, `tender/pencatatan-non-tender_${tahun}.json`))) || [];
@@ -882,7 +883,7 @@ export const executePencatatanSwakelolaMerge = async (tahun: string, trigger: st
   const startTime = Date.now();
   
   try {
-    const dataDir = path.resolve(process.cwd(), 'server', 'data');
+    const dataDir = getDataDir();
     
     // Load data sources
     const pencatatanData: any[] = (await readJsonSafe(path.resolve(dataDir, `tender/pencatatan-swakelola_${tahun}.json`))) || [];
@@ -1028,7 +1029,7 @@ export const executeRupSwakelolaMerge = async (tahun: string, trigger: string = 
   const startTime = Date.now();
   
   try {
-    const dataDir = path.resolve(process.cwd(), 'server', 'data');
+    const dataDir = getDataDir();
     
     // Load all data sources
     const paketSwakelolaData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-swakelola_${tahun}.json`))) || [];

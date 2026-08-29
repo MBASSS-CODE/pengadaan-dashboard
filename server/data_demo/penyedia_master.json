@@ -1,0 +1,452 @@
+[
+  {
+    "kode_penyedia": "f174f022-e372-4af0-a624-d9c929dcc99a",
+    "nama_penyedia": "CV Novitasari (Persero) Tbk",
+    "npwp": "695467041363651",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Ds. Sabian no 2",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "cef13142-dbd8-41c2-ba7b-65660ad025be",
+    "nama_penyedia": "Pertiwi (Persero) Tbk",
+    "npwp": "105358048328488",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Gg. Jagapati no 55",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "e04fd07b-50a3-41d2-96fc-3cd0e21f59a4",
+    "nama_penyedia": "UD Latupono Tbk",
+    "npwp": "869170105883097",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Ki. Salwa no 17",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "5a90b795-fbf5-44bd-889b-3322e59e09a8",
+    "nama_penyedia": "Fa Firmansyah",
+    "npwp": "267038600139646",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Ds. Mangunsong no 2",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "8b088393-290f-44aa-a1ce-0d75df92b630",
+    "nama_penyedia": "Saraswati Tbk",
+    "npwp": "470568519930844",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Jln. Gatot no 22",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "008c34b8-a7dd-408f-9029-91e8fa4e8b5a",
+    "nama_penyedia": "Mandasari (Persero) Tbk",
+    "npwp": "658688703587921",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Gg. Najmudin no 6",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "9bb2a13d-554b-45f5-9074-36700fb4e172",
+    "nama_penyedia": "Melani Tbk",
+    "npwp": "120950800726894",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Ds. Rita no 2",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "ce1a9cbf-d6a8-4e2a-99a4-dd2ae154ac8e",
+    "nama_penyedia": "Zulkarnain (Persero) Tbk",
+    "npwp": "752978236476140",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Psr. Dadi no 7",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "fe4fba3d-16a0-4f5e-abc4-71a200d6903f",
+    "nama_penyedia": "Leilani (Persero) Tbk",
+    "npwp": "609005310400642",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Dk. Febrina no 16",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "bb052e31-17f8-470f-bdab-de477f07f198",
+    "nama_penyedia": "Mardhiyah Tbk",
+    "npwp": "785575486430427",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Jr. Kemba no 39",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "5e97ffce-4be3-41db-95a1-87c3b01a3801",
+    "nama_penyedia": "Perum Antoni",
+    "npwp": "665931634490608",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Gg. Gabriella no 7",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "1be45fe5-75d0-4835-af15-1d1232dd11fb",
+    "nama_penyedia": "PT Pratama",
+    "npwp": "776382019037063",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Jln. Ratih no 9",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "43f83030-9586-43f7-946d-80406df1171a",
+    "nama_penyedia": "Natsir Tbk",
+    "npwp": "183622112097546",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Jln. Rahardian no 2",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "1b4a9ba8-2e63-4b80-83b7-efe889bf1cd2",
+    "nama_penyedia": "PD Dirgantara",
+    "npwp": "602973099358336",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Kpg. Jamil no 7",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "81fcfdf5-6eda-41ca-b536-0bf018eefaa4",
+    "nama_penyedia": "Perum Azizah (Persero) Tbk",
+    "npwp": "504849697933121",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Jr. Lasmono no 8",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "df6acd53-e622-4ba1-a999-a178c4687276",
+    "nama_penyedia": "KKB Darmawan Tbk",
+    "npwp": "333459686259710",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Dk. Danang no 77",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "5931c65f-2dea-4187-a196-bd48cbe46257",
+    "nama_penyedia": "CV Anggraini Tbk",
+    "npwp": "441711654694366",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Ki. Irnanto no 5",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "c2d53d14-ac23-479c-818e-611d43b9cf45",
+    "nama_penyedia": "Yayasan Mahestri (Persero) Tbk",
+    "npwp": "074274175238717",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Dk. Alambana no 3",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "3760e52c-3d42-4ed3-b796-d1c31c1259a5",
+    "nama_penyedia": "PT Wibowo",
+    "npwp": "418131590244948",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Dk. Rita no 8",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "c54c9d24-1fbd-440e-9252-8a9cf980b747",
+    "nama_penyedia": "Maryadi Tbk",
+    "npwp": "999540177508823",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Psr. Saragih no 3",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "4f45d723-f29d-4ccc-b2e9-a504488d26d2",
+    "nama_penyedia": "Prasasta Tbk",
+    "npwp": "812735527298841",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Gg. Lili no 66",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "9b3eefe6-e4d8-4059-b294-fd1da2e7a24d",
+    "nama_penyedia": "Airlangga Tbk",
+    "npwp": "289631803478380",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Ds. Gadang no 45",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "6a59d945-579f-498c-b72c-ca2516ba6598",
+    "nama_penyedia": "PD Sudrajat Tbk",
+    "npwp": "652315136756763",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Kpg. Perdana no 4",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "ce7f8cf8-f092-4305-aa7c-56608904956b",
+    "nama_penyedia": "UD Saputri (Persero) Tbk",
+    "npwp": "444949783706236",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Jln. Jane no 78",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "f77f9ca2-4a44-456f-8421-60a2c3d18b3e",
+    "nama_penyedia": "UD Wardana Tbk",
+    "npwp": "742683072040141",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Jr. Nurdiyanti no 6",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "8c874969-b853-4aa8-9a90-2291861cbab9",
+    "nama_penyedia": "Anandya Tbk",
+    "npwp": "388565801368986",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Gg. Almira no 82",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "ee6b0fb9-6206-42a9-955c-7913c322ac3c",
+    "nama_penyedia": "PT Yulianti",
+    "npwp": "701099689497888",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Jr. Pradana no 5",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "e5f35174-fc5c-47ae-a23a-dab2777de6b7",
+    "nama_penyedia": "PD Kusuma Tbk",
+    "npwp": "562547595303074",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Gg. Cindy no 3",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "9b3e751f-f3da-4019-b780-38d722f9e948",
+    "nama_penyedia": "Purnawarman Tbk",
+    "npwp": "888666384894238",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Kpg. Niyaga no 45",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "a9443443-2fcd-44cd-81fb-56c0f5e3e4c9",
+    "nama_penyedia": "PT Nathania",
+    "npwp": "871092105297628",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Gg. Sitompul no 4",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "206fd48a-1428-4d3a-90a6-e5af3455f06b",
+    "nama_penyedia": "Perum Irawan (Persero) Tbk",
+    "npwp": "552240846720429",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Jln. Febriana no 49",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "dd465ffa-b988-4f4d-a575-dbaf659dfe36",
+    "nama_penyedia": "CV Irfandi Tbk",
+    "npwp": "070416250359782",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Psr. Ramadhani no 10",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "17ab1807-b990-47ab-a66c-c1d844f689dd",
+    "nama_penyedia": "Winarno (Persero) Tbk",
+    "npwp": "755295090346705",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Dk. Candra no 64",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "6aa9ac5e-8a03-413d-8803-f0b7fc98009b",
+    "nama_penyedia": "Maulana Tbk",
+    "npwp": "695607144397627",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Kpg. Rahmawati no 84",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "867a0827-aaa8-4f5b-9224-2cadc399c2a6",
+    "nama_penyedia": "Perum Yanuar Tbk",
+    "npwp": "714285971020574",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Jln. Kariman no 95",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "c4a5faf9-370d-49cf-8cbc-6da6d1c3cf9a",
+    "nama_penyedia": "Fujiati Tbk",
+    "npwp": "500920257727890",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Jln. Pudjiastuti no 29",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "5641cd7d-f761-4811-9f75-c301cd86f2c3",
+    "nama_penyedia": "Fernanda (Persero) Tbk",
+    "npwp": "948690726366611",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Ki. Genta no 55",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "27147b54-8211-40bb-8cf3-2c00ebb4aad4",
+    "nama_penyedia": "Fa Salsabilla Tbk",
+    "npwp": "478177173772589",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Ki. Cakrabuana no 3",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "d3d579b4-852e-4a9e-adcf-913f60ccc752",
+    "nama_penyedia": "Yayasan Agustina",
+    "npwp": "576067569531667",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Kpg. Pradipta no 19",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "7df87168-f0fe-43f8-856e-6432b70a71e9",
+    "nama_penyedia": "Yayasan Anggraini",
+    "npwp": "293223317912563",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Gg. Digdaya no 8",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "eb7ac220-c35f-4801-b120-6ec23c4cc866",
+    "nama_penyedia": "Afifah Tbk",
+    "npwp": "840405221270819",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Ds. Hidayanto no 6",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "b4659595-6296-48a6-9c49-ae49d342c662",
+    "nama_penyedia": "KKB Mandala",
+    "npwp": "981305826397654",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Psr. Simanjuntak no 48",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "3d1ec1c1-4468-4973-9690-ec619bf9eecb",
+    "nama_penyedia": "KKB Wicaksono Tbk",
+    "npwp": "681115796836814",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Ki. Noviana no 41",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "998f2278-d973-498f-a5cd-ea2bf9105750",
+    "nama_penyedia": "Waskita Tbk",
+    "npwp": "292235450690436",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Gg. Wakiman no 21",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "687d2f9f-f4bb-4850-aabe-7706db4d8a2f",
+    "nama_penyedia": "PD Aurelia",
+    "npwp": "132655281525698",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Jln. Warsita no 96",
+    "status_umkk": "UMKM"
+  },
+  {
+    "kode_penyedia": "2d33b76a-cadf-4185-b019-beabde7134f0",
+    "nama_penyedia": "Perum Hidayat",
+    "npwp": "877835276851832",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Dk. Joko no 1",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "f016acf9-711d-4855-8d07-f1a46150e976",
+    "nama_penyedia": "Maharani Tbk",
+    "npwp": "290517145706664",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "PT",
+    "alamat": "Ds. Yanuar no 17",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "0f32927b-9568-4792-9955-57df4f34e9d9",
+    "nama_penyedia": "Anandya (Persero) Tbk",
+    "npwp": "264746026817534",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Psr. Kahyang no 9",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "947770dc-1993-4f79-a3fa-609629236f4a",
+    "nama_penyedia": "Tamba (Persero) Tbk",
+    "npwp": "605753754844013",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "Firma",
+    "alamat": "Ki. Suci no 96",
+    "status_umkk": "Non-UMKM"
+  },
+  {
+    "kode_penyedia": "2541670f-983d-4047-a1b5-c62f62102e6f",
+    "nama_penyedia": "KKB Oktavian Tbk",
+    "npwp": "193188371683187",
+    "jenis_perusahaan": "Badan Usaha",
+    "bentuk_usaha": "CV",
+    "alamat": "Dk. Cemani no 42",
+    "status_umkk": "UMKM"
+  }
+]

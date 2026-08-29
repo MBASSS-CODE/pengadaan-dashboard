@@ -1,3 +1,4 @@
+import { getDataDir } from './dataDir';
 import fs from 'fs/promises';
 import path from 'path';
 import { isMergeSourceEndpoint, triggerAutoMerge } from './mergeManager';
@@ -163,7 +164,7 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
   // Only write to file if at least one fetch succeeded, to avoid wiping out cache with empty arrays
   if (fetchSuccess) {
     // Ensure directory exists
-    const dirPath = path.resolve(process.cwd(), `server/data/${group}`);
+    const dirPath = path.resolve(getDataDir(), `${group}`);
     // Tambahkan tahun ke nama file agar tidak bentrok
     const filePath = path.resolve(dirPath, `${endpoint}_${tahun}.json`);
     
@@ -199,7 +200,7 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
  */
 export const getEndpointData = async (group: string, endpoint: string, tahun: string, extraParams: any = {}, forceRefresh: boolean = false) => {
   const cacheKey = `${group}_${endpoint}_${tahun}`;
-  const dirPath = path.resolve(process.cwd(), `server/data/${group}`);
+  const dirPath = path.resolve(getDataDir(), `${group}`);
   const filePath = path.resolve(dirPath, `${endpoint}_${tahun}.json`);
   
   if (!forceRefresh) {
@@ -247,7 +248,7 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
     return memoryCache[cacheKey];
   }
 
-  const dirPath = path.resolve(process.cwd(), 'server/data');
+  const dirPath = getDataDir();
   const filePath = path.resolve(dirPath, `dashboard_precomputed_${tahun}_${instansi}.json`);
 
   try {
@@ -285,7 +286,7 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
  * Get overall system statistics for cache and JSON storage
  */
 export const getSystemStats = async () => {
-  const dirPath = path.resolve(process.cwd(), 'server/data');
+  const dirPath = getDataDir();
   
   let totalFiles = 0;
   let totalSize = 0;

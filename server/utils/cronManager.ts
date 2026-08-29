@@ -1,3 +1,4 @@
+import { getDataDir } from './dataDir';
 import fs from 'fs/promises';
 import path from 'path';
 import * as cron from 'node-cron';
@@ -34,9 +35,9 @@ export const endpointRegistry: Record<string, { endpoint: string; label: string;
 // Daftar endpoint aktif per grup (akan di-load dari file config)
 let activeEndpoints: Record<string, string[]> = {};
 
-const configPath = path.resolve(process.cwd(), 'server/data/cron_config.json');
-const logsPath = path.resolve(process.cwd(), 'server/data/endpoint_logs.json');
-const endpointsConfigPath = path.resolve(process.cwd(), 'server/data/endpoints_config.json');
+const configPath = path.resolve(getDataDir(), 'cron_config.json');
+const logsPath = path.resolve(getDataDir(), 'endpoint_logs.json');
+const endpointsConfigPath = path.resolve(getDataDir(), 'endpoints_config.json');
 
 // ─── Endpoints Config (Persistence) ───────────────────────────────────────────
 
