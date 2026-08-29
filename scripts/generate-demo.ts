@@ -257,6 +257,64 @@ for (const rup of rupSwakelolaList) {
 }
 fs.writeFileSync(path.join(demoDir, 'rup', `paket-anggaran-swakelola_${tahun}.json`), JSON.stringify(anggaranSwakelolaList, null, 2));
 
+// 13. Generate Dashboard Precomputed Data (K22)
+const dashboardPrecomputed = {
+  data: {
+    belanja_barang_jasa: 150000000000,
+    total_nilai_perencanaan: 200000000000,
+    total_nilai_realisasi: 80000000000,
+    total_nilai_realisasi_pdn: 60000000000,
+    total_nilai_realisasi_umkk: 40000000000,
+    total_rup: 250, // 200 penyedia + 50 swakelola
+    total_realisasi: 150, // 100 epurchasing + 25 non tender + 25 swakelola
+    pdn: 120,
+    umkk: 80,
+    total_pdn: 80000000000,
+    total_umkk: 50000000000,
+    
+    // Perencanaan Counts
+    perencanaan_penyedia: 200,
+    perencanaan_swakelola: 50,
+    perencanaan_epurchasing: 150,
+    perencanaan_tender: 20,
+    perencanaan_langsung: 30,
+    perencanaan_barang: 100,
+    perencanaan_jasa_konsultasi: 50,
+    perencanaan_jasa_lainnya: 50,
+    perencanaan_pekerjaan_konstruksi: 50,
+    
+    // Perencanaan Totals
+    perencanaan_total_penyedia: 160000000000,
+    perencanaan_total_swakelola: 40000000000,
+    perencanaan_total_epurchasing: 80000000000,
+    perencanaan_total_tender: 50000000000,
+    perencanaan_total_langsung: 10000000000,
+    perencanaan_total_barang: 80000000000,
+    perencanaan_total_jasa_konsultasi: 40000000000,
+    perencanaan_total_jasa_lainnya: 40000000000,
+    perencanaan_total_pekerjaan_konstruksi: 40000000000,
+    
+    // Pelaksanaan Counts
+    pelaksanaan_epurchasing: 100,
+    pelaksanaan_langsung: 15,
+    pelaksanaan_penunjukan: 10,
+    pelaksanaan_barang: 80,
+    pelaksanaan_jasa_konsultasi: 20,
+    pelaksanaan_jasa_lainnya: 30,
+    pelaksanaan_pekerjaan_konstruksi: 20,
+    
+    // Pelaksanaan Totals
+    pelaksanaan_total_epurchasing: 60000000000,
+    pelaksanaan_total_langsung: 5000000000,
+    pelaksanaan_total_penunjukan: 15000000000,
+    pelaksanaan_total_barang: 40000000000,
+    pelaksanaan_total_jasa_konsultasi: 10000000000,
+    pelaksanaan_total_jasa_lainnya: 15000000000,
+    pelaksanaan_total_pekerjaan_konstruksi: 15000000000
+  }
+};
+fs.writeFileSync(path.join(demoDir, `dashboard_precomputed_${tahun}_K22.json`), JSON.stringify(dashboardPrecomputed, null, 2));
+
 // Empty files for others to prevent merge errors
 const emptyFiles = [
   `endpoints_config.json`,
