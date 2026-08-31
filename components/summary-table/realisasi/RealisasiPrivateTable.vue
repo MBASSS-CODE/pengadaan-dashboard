@@ -4,27 +4,27 @@
       <!-- Summary Cards -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
-          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Pesanan</div>
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Transaksi</div>
           <div class="text-2xl font-bold text-[color:hsl(var(--maz-primary))]">
             {{ loading ? '...' : totalAllItems.toLocaleString('id-ID') }}
           </div>
         </div>
         <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
-          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Nilai Pembelian</div>
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Nilai Realisasi</div>
           <div class="text-2xl font-bold text-green-600 dark:text-green-400">
             {{ loading ? '...' : formatRupiah(totalBelanja) }}
           </div>
         </div>
         <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
-          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Terkoneksi RUP</div>
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Nilai PDN</div>
           <div class="text-2xl font-bold text-teal-600 dark:text-teal-400">
-            {{ loading ? '...' : rupMatched.toLocaleString('id-ID') }}
+            {{ loading ? '...' : formatRupiah(totalPdn) }}
           </div>
         </div>
         <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
-          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Penyedia UMKM</div>
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Nilai UMK</div>
           <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
-            {{ loading ? '...' : umkmCount.toLocaleString('id-ID') }}
+            {{ loading ? '...' : formatRupiah(totalUmk) }}
           </div>
         </div>
       </div>
@@ -38,7 +38,7 @@
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Pencarian</label>
             <MazInput 
               v-model="searchQuery" 
-              placeholder="Cari Order ID, Nama Paket, atau Kode RUP..." 
+              placeholder="Cari Kode Paket, Nama Paket, Kode RUP, atau Penyedia..." 
               size="sm"
               @update:model-value="onSearch"
               clearable
@@ -61,8 +61,30 @@
         </div>
 
         <!-- Filters Row -->
-        <div class="flex justify-between items-end">
-          <div class="text-xs text-[color:hsl(var(--maz-muted))]">
+        <div class="flex flex-col sm:flex-row gap-4 items-end">
+          <div class="w-full sm:w-1/3">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Sumber Transaksi</label>
+            <MazSelect 
+              v-model="selectedSumber" 
+              :options="sumberOptions" 
+              size="sm" 
+              multiple 
+              clearable 
+              placeholder="Semua Sumber"
+            />
+          </div>
+          <div class="w-full sm:w-1/3">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Metode Pengadaan</label>
+            <MazSelect 
+              v-model="selectedMetode" 
+              :options="metodeOptions" 
+              size="sm" 
+              multiple 
+              clearable 
+              placeholder="Semua Metode"
+            />
+          </div>
+          <div class="w-full sm:w-1/3 text-right text-xs text-[color:hsl(var(--maz-muted))]">
             <span>Total: <strong class="text-[color:hsl(var(--maz-foreground))]">{{ totalAllItems }}</strong> data</span>
           </div>
         </div>
@@ -76,7 +98,7 @@
           </svg>
         </div>
         <h2 class="text-lg font-bold text-[color:hsl(var(--maz-foreground))] mb-1">Data Belum Di-merge</h2>
-        <p class="text-xs text-[color:hsl(var(--maz-muted))] mb-4 max-w-md mx-auto">Tidak ada data E-Purchasing Enriched untuk tahun {{ selectedYear }}.</p>
+        <p class="text-xs text-[color:hsl(var(--maz-muted))] mb-4 max-w-md mx-auto">Tidak ada data Realisasi Pengadaan untuk tahun {{ selectedYear }}.</p>
       </div>
 
       <!-- Error State -->
@@ -96,30 +118,36 @@
               <th class="py-3 px-4 text-center">No.</th>
               <th class="py-3 px-4">Nama Instansi</th>
               <th class="py-3 px-4">Nama Satuan Kerja</th>
-              <th class="py-3 px-4 text-center">Tahun Anggaran</th>
-              <th class="py-3 px-4 text-center">Cara Pengadaan</th>
+              <th class="py-3 px-4 text-center">Kode Paket</th>
+              <th class="py-3 px-4 text-center">Kode RUP</th>
+              <th class="py-3 px-4 text-center">T.A.</th>
+              <th class="py-3 px-4 text-center">Sumber Transaksi</th>
+              <th class="py-3 px-4 text-center">Sumber Dana</th>
+              <th class="py-3 px-4 min-w-[200px]">Nama Penyedia</th>
+              <th class="py-3 px-4 min-w-[200px]">Nama PPK</th>
               <th class="py-3 px-4 text-center">Metode Pengadaan</th>
               <th class="py-3 px-4 text-center">Jenis Pengadaan</th>
-              <th class="py-3 px-4 min-w-[200px]">Nama Paket</th>
-              <th class="py-3 px-4 text-center">Kode RUP</th>
-              <th class="py-3 px-4 text-center">Sumber Dana</th>
-              <th class="py-3 px-4 text-center">Produk Dalam Negeri</th>
+              <th class="py-3 px-4 min-w-[250px]">Nama Paket</th>
+              <th class="py-3 px-4 text-center">Status Paket</th>
+              <th class="py-3 px-4 text-center">Tahapan Pengadaan</th>
               <th class="py-3 px-4 text-right">Total Nilai (Rp)</th>
+              <th class="py-3 px-4 text-right">Nilai PDN (Rp)</th>
+              <th class="py-3 px-4 text-right">Nilai UMK (Rp)</th>
             </tr>
           </thead>
           <tbody class="align-middle relative">
             <tr v-if="loading && items.length === 0">
-              <td colspan="12" class="py-12 text-center">
+              <td colspan="17" class="py-12 text-center">
                 <MazSpinner color="primary" class="mx-auto" />
-                <p class="text-[color:hsl(var(--maz-muted))] mt-3 text-sm">Memuat data E-Purchasing...</p>
+                <p class="text-[color:hsl(var(--maz-muted))] mt-3 text-sm">Memuat data Realisasi Pengadaan...</p>
               </td>
             </tr>
             <tr v-else-if="items.length === 0 && !loading" class="border-b border-[color:hsl(var(--maz-border))]">
-              <td colspan="12" class="py-12 text-center text-[color:hsl(var(--maz-muted))]">
+              <td colspan="18" class="py-12 text-center text-[color:hsl(var(--maz-muted))]">
                 Tidak ada data yang cocok dengan filter pencarian.
               </td>
             </tr>
-            <template v-for="(item, index) in items" :key="item.order_id">
+            <template v-for="(item, index) in items" :key="index + '-' + item.kode_paket">
               <tr class="border-b border-[color:hsl(var(--maz-border))] hover:bg-[color:hsl(var(--maz-foreground)_/_2%)] transition-colors group text-sm">
                 <td class="py-3 px-4 text-center font-medium text-[color:hsl(var(--maz-muted))]">
                   {{ (currentPage - 1) * itemsPerPage + index + 1 }}
@@ -134,39 +162,63 @@
                 </td>
                 
                 <td class="py-3 px-4 text-center">
-                  {{ item.fiscal_year || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 text-center">
-                  E-Purchasing
-                </td>
-                
-                <td class="py-3 px-4 text-center">
-                  {{ item.rup_metode_pengadaan || 'E-Purchasing' }}
-                </td>
-                
-                <td class="py-3 px-4 text-center">
-                  {{ item.rup_jenis_pengadaan || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 max-w-[250px] truncate font-medium text-[color:hsl(var(--maz-primary))]" :title="item.rup_nama_paket || item.rup_name || item.rup_desc || '-'">
-                  {{ item.rup_nama_paket || item.rup_name || item.rup_desc || '-' }}
+                  {{ item.kode_paket || '-' }}
                 </td>
                 
                 <td class="py-3 px-4 text-center font-medium">
-                  {{ item.rup_code || '-' }}
+                  {{ item.kode_rup || '-' }}
                 </td>
                 
                 <td class="py-3 px-4 text-center">
-                  {{ item.funding_source || '-' }}
+                  {{ item.tahun_anggaran || '-' }}
                 </td>
                 
                 <td class="py-3 px-4 text-center">
-                  {{ item.flag_minikom || '-' }}
+                  {{ item.sumber_transaksi || '-' }}
+                </td>
+                
+                <td class="py-3 px-4 text-center">
+                  {{ item.sumber_dana || '-' }}
+                </td>
+                
+                <td class="py-3 px-4 max-w-[200px] truncate" :title="item.nama_penyedia || '-'">
+                  {{ item.nama_penyedia || '-' }}
+                </td>
+                
+                <td class="py-3 px-4 max-w-[200px] truncate" :title="item.nama_ppk || '-'">
+                  {{ item.nama_ppk || '-' }}
+                </td>
+                
+                <td class="py-3 px-4 text-center">
+                  {{ item.metode_pengadaan || '-' }}
+                </td>
+                
+                <td class="py-3 px-4 text-center">
+                  {{ item.jenis_pengadaan || '-' }}
+                </td>
+                
+                <td class="py-3 px-4 max-w-[250px] truncate font-medium text-[color:hsl(var(--maz-primary))]" :title="item.nama_paket || '-'">
+                  {{ item.nama_paket || '-' }}
+                </td>
+                
+                <td class="py-3 px-4 text-center">
+                  <span class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md text-xs">{{ item.status_paket || '-' }}</span>
+                </td>
+                
+                <td class="py-3 px-4 text-center">
+                  {{ item.tahapan_pengadaan || '-' }}
                 </td>
                 
                 <td class="py-3 px-4 text-right font-bold text-[color:hsl(var(--maz-foreground))]">
-                  {{ formatRupiah(item.total) }}
+                  {{ formatRupiah(item.total_nilai) }}
+                </td>
+                
+                <td class="py-3 px-4 text-right">
+                  {{ formatRupiah(item.nilai_pdn) }}
+                </td>
+                
+                <td class="py-3 px-4 text-right">
+                  {{ formatRupiah(item.nilai_umk) }}
                 </td>
               </tr>
             </template>
@@ -210,7 +262,7 @@
     <MazDialog v-model="exportModal" title="Export ke Excel (XLSX)">
       <div class="flex flex-col gap-4 py-2">
         <p class="text-sm text-[color:hsl(var(--maz-muted))]">
-          Pilih mode ekspor data E-Purchasing (Public) untuk Tahun Anggaran {{ selectedYear }}:
+          Pilih mode ekspor data Realisasi Pengadaan (Internal) untuk Tahun Anggaran {{ selectedYear }}:
         </p>
         
         <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] border border-[color:hsl(var(--maz-border))] p-4 rounded-lg">
@@ -219,7 +271,7 @@
               <input type="radio" v-model="exportMode" value="filtered" class="mt-1" />
               <div>
                 <div class="font-semibold text-sm">Sesuai Filter Saat Ini</div>
-                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor data yang tampil pada tabel saat ini berdasarkan pencarian yang aktif (estimasi: {{ totalAllItems }} data).</div>
+                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor data yang tampil pada tabel saat ini berdasarkan pencarian dan filter yang aktif (estimasi: {{ totalAllItems }} data).</div>
               </div>
             </label>
             <label class="flex items-start gap-3 cursor-pointer">
@@ -262,13 +314,18 @@ const error = ref(false);
 const items = ref([]);
 const totalAllItems = ref(0);
 const totalBelanja = ref(0);
-const rupMatched = ref(0);
-const umkmCount = ref(0);
+const totalPdn = ref(0);
+const totalUmk = ref(0);
 
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 const totalPages = ref(1);
 const searchQuery = ref('');
+
+const sumberOptions = ref([]);
+const selectedSumber = ref([]);
+const metodeOptions = ref([]);
+const selectedMetode = ref([]);
 
 const exportModal = ref(false);
 
@@ -283,14 +340,20 @@ const loadData = async () => {
       search: searchQuery.value,
     };
 
-    const res = await $fetch('/api/summary-table/epurchasing-public', { params });
+    if (selectedSumber.value.length > 0) params.sumberTransaksi = selectedSumber.value.join(',');
+    if (selectedMetode.value.length > 0) params.metodePengadaan = selectedMetode.value.join(',');
+
+    const res = await $fetch('/api/summary-table/realisasi-private', { params });
     if (res.success) {
       items.value = res.data;
       totalAllItems.value = res.meta.totalItems;
       totalPages.value = res.meta.totalPages;
-      totalBelanja.value = res.meta.totalBelanja || 0;
-      rupMatched.value = res.meta.rupMatched || 0;
-      umkmCount.value = res.meta.umkmCount || 0;
+      totalBelanja.value = res.meta.totalNilai || 0;
+      totalPdn.value = res.meta.totalPdn || 0;
+      totalUmk.value = res.meta.totalUmk || 0;
+
+      sumberOptions.value = (res.filterOptions?.sumberTransaksi || []).map(opt => ({ label: opt, value: opt }));
+      metodeOptions.value = (res.filterOptions?.metodePengadaan || []).map(opt => ({ label: opt, value: opt }));
     } else {
       error.value = true;
       items.value = [];
@@ -312,7 +375,7 @@ const debouncedLoadData = (() => {
   };
 })();
 
-watch([currentPage, itemsPerPage], () => { loadData(); });
+watch([currentPage, itemsPerPage, selectedSumber, selectedMetode], () => { loadData(); });
 watch(() => selectedYear.value, () => { currentPage.value = 1; loadData(); });
 
 const onSearch = () => { currentPage.value = 1; debouncedLoadData(); };
@@ -345,37 +408,46 @@ const executeExport = async () => {
 
     if (exportMode.value === 'filtered') {
       if (searchQuery.value) params.search = searchQuery.value;
+      if (selectedSumber.value.length > 0) params.sumberTransaksi = selectedSumber.value.join(',');
+      if (selectedMetode.value.length > 0) params.metodePengadaan = selectedMetode.value.join(',');
     }
 
-    const res = await $fetch('/api/summary-table/epurchasing-public', { params });
+    const res = await $fetch('/api/summary-table/realisasi-private', { params });
 
     if (res.success && res.data) {
       const flatData = res.data.map((row, i) => ({
         'No.': i + 1,
         'Nama Instansi': namaInstansi,
         'Nama Satuan Kerja': row.nama_satker || '-',
-        'Tahun Anggaran': row.fiscal_year || '-',
-        'Cara Pengadaan': 'E-Purchasing',
-        'Metode Pengadaan': row.rup_metode_pengadaan || 'E-Purchasing',
-        'Jenis Pengadaan': row.rup_jenis_pengadaan || '-',
-        'Nama Paket': row.rup_nama_paket || row.rup_name || row.rup_desc || '-',
-        'Kode RUP': row.rup_code || '-',
-        'Sumber Dana': row.funding_source || '-',
-        'Produk Dalam Negeri': row.flag_minikom || '-',
-        'Total Nilai (Rp)': row.total || 0
+        'Kode Paket': row.kode_paket || '-',
+        'Kode RUP': row.kode_rup || '-',
+        'Tahun Anggaran': row.tahun_anggaran || '-',
+        'Sumber Transaksi': row.sumber_transaksi || '-',
+        'Sumber Dana': row.sumber_dana || '-',
+        'Nama Penyedia': row.nama_penyedia || '-',
+        'Nama PPK': row.nama_ppk || '-',
+        'Metode Pengadaan': row.metode_pengadaan || '-',
+        'Jenis Pengadaan': row.jenis_pengadaan || '-',
+        'Nama Paket': row.nama_paket || '-',
+        'Status Paket': row.status_paket || '-',
+        'Tahapan Pengadaan': row.tahapan_pengadaan || '-',
+        'Total Nilai (Rp)': row.total_nilai || 0,
+        'Nilai PDN (Rp)': row.nilai_pdn || 0,
+        'Nilai UMK (Rp)': row.nilai_umk || 0
       }));
 
       const ws = utils.json_to_sheet(flatData);
       const wb = utils.book_new();
-      utils.book_append_sheet(wb, ws, "E-Purchasing");
+      utils.book_append_sheet(wb, ws, "Realisasi_Pengadaan");
 
       const wscols = [
-        {wch: 5}, {wch: 40}, {wch: 40}, {wch: 15}, {wch: 15}, {wch: 20},
-        {wch: 20}, {wch: 50}, {wch: 15}, {wch: 15}, {wch: 20}, {wch: 20}
+        {wch: 5}, {wch: 40}, {wch: 40}, {wch: 15}, {wch: 15}, {wch: 10},
+        {wch: 20}, {wch: 15}, {wch: 30}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 50},
+        {wch: 15}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}
       ];
       ws['!cols'] = wscols;
 
-      const filename = `EPurchasing_Public_${selectedYear.value}${exportMode.value === 'filtered' ? '_Filtered' : ''}.xlsx`;
+      const filename = `Realisasi_Pengadaan_Internal_${selectedYear.value}${exportMode.value === 'filtered' ? '_Filtered' : ''}.xlsx`;
       writeFile(wb, filename);
       exportModal.value = false;
     }

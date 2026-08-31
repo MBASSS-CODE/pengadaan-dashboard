@@ -101,44 +101,39 @@
         </div>
       </div>
 
-      <!-- E-Purchasing -->
+      <!-- Realisasi Pengadaan -->
       <div class="mb-12">
         <h2 class="text-xl font-bold mb-4 flex items-center gap-2 border-b border-[color:hsl(var(--maz-border))] pb-2 mt-12">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
           </svg>
-          E-Purchasing
+          Data dan Analisa Realisasi Pengadaan 
         </h2>
         
-        <div class="flex gap-4 mb-6 pb-2 border-b border-[hsl(var(--maz-border))]">
+        <div class="flex gap-4 mb-6 pb-2 border-b border-[color:hsl(var(--maz-border))]">
           <button 
-            class="pb-2 px-4 font-medium transition-colors duration-200 border-0 border-b-2 bg-transparent cursor-pointer focus:outline-none" 
-            :class="activeEpurchasingTab === 'analytics' ? 'border-[color:hsl(var(--maz-primary))] text-[color:hsl(var(--maz-primary))]' : 'border-transparent text-[color:hsl(var(--maz-muted))] hover:text-[color:hsl(var(--maz-foreground))]'"
-            @click="activeEpurchasingTab = 'analytics'"
+            @click="activeRealisasiTab = 'table'" 
+            class="pb-2 px-4 font-medium transition-colors duration-200 border-0 border-b-2 bg-transparent cursor-pointer focus:outline-none"
+            :class="activeRealisasiTab === 'table' ? 'border-[color:hsl(var(--maz-primary))] text-[color:hsl(var(--maz-primary))]' : 'border-transparent text-[color:hsl(var(--maz-muted))] hover:text-[color:hsl(var(--maz-foreground))]'"
           >
-            Analytics Dashboard
+            Data Tabel Realisasi
           </button>
           <button 
-            class="pb-2 px-4 font-medium transition-colors duration-200 border-0 border-b-2 bg-transparent cursor-pointer focus:outline-none" 
-            :class="activeEpurchasingTab === 'table' ? 'border-[color:hsl(var(--maz-primary))] text-[color:hsl(var(--maz-primary))]' : 'border-transparent text-[color:hsl(var(--maz-muted))] hover:text-[color:hsl(var(--maz-foreground))]'"
-            @click="activeEpurchasingTab = 'table'"
+            @click="activeRealisasiTab = 'analytics'" 
+            class="pb-2 px-4 font-medium transition-colors duration-200 border-0 border-b-2 bg-transparent cursor-pointer focus:outline-none"
+            :class="activeRealisasiTab === 'analytics' ? 'border-[color:hsl(var(--maz-primary))] text-[color:hsl(var(--maz-primary))]' : 'border-transparent text-[color:hsl(var(--maz-muted))] hover:text-[color:hsl(var(--maz-foreground))]'"
           >
-            Data Table
+            Analytics Realisasi
           </button>
         </div>
-
-        <Transition name="fade" mode="out-in">
-          <div :key="activeEpurchasingTab">
-            <EpurchasingPublicAnalytics 
-              v-if="activeEpurchasingTab === 'analytics'" 
-              :selected-year="selectedYear" 
-            />
-            <EpurchasingPublicTable 
-              v-else-if="activeEpurchasingTab === 'table'" 
-              :selected-year="selectedYear" 
-            />
-          </div>
-        </Transition>
+        
+        <div v-show="activeRealisasiTab === 'table'">
+          <RealisasiPublicTable :selectedYear="selectedYear" />
+        </div>
+        
+        <div v-show="activeRealisasiTab === 'analytics'">
+          <RealisasiPublicAnalytics :selectedYear="selectedYear" />
+        </div>
       </div>
 
     </div>
@@ -149,8 +144,8 @@
 import { ref, onMounted } from 'vue';
 import { useCookie } from '#imports';
 import DashboardRealisasi from '~/components/dashboard/DashboardRealisasi.vue';
-import EpurchasingPublicAnalytics from '~/components/summary-table/epurchasing-enriched/EpurchasingPublicAnalytics.vue';
-import EpurchasingPublicTable from '~/components/summary-table/epurchasing-enriched/EpurchasingPublicTable.vue';
+import RealisasiPublicTable from '~/components/summary-table/realisasi-publik/RealisasiPublicTable.vue';
+import RealisasiPublicAnalytics from '~/components/summary-table/realisasi-publik/RealisasiPublicAnalytics.vue';
 
 definePageMeta({
   layout: 'blank'
@@ -172,7 +167,7 @@ const toggleTheme = () => {
 
 const currentYear = new Date().getFullYear();
 const selectedYear = ref(currentYear.toString());
-const activeEpurchasingTab = ref('analytics');
+const activeRealisasiTab = ref('analytics');
 
 const dashboardLoading = ref(true);
 const dashboardError = ref(false);
