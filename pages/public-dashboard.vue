@@ -95,6 +95,11 @@
           </div>
         </div>
 
+        <h3 class="text-lg font-bold mb-4 mt-8">Grafik Perencanaan Pengadaan</h3>
+        <div class="bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] p-6 rounded-xl shadow-sm mb-8">
+          <DashboardPerencanaan :dashboardData="dashboardData" />
+        </div>
+
         <h3 class="text-lg font-bold mb-4 mt-8">Grafik Realisasi Pengadaan</h3>
         <div class="bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] p-6 rounded-xl shadow-sm">
           <DashboardRealisasi :dashboardData="dashboardData" />
@@ -141,9 +146,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useCookie } from '#imports';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import DashboardRealisasi from '~/components/dashboard/DashboardRealisasi.vue';
+import DashboardPerencanaan from '~/components/dashboard/DashboardPerencanaan.vue';
 import RealisasiPublicTable from '~/components/summary-table/realisasi-publik/RealisasiPublicTable.vue';
 import RealisasiPublicAnalytics from '~/components/summary-table/realisasi-publik/RealisasiPublicAnalytics.vue';
 
