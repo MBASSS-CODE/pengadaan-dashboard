@@ -22,11 +22,8 @@
         </div>
         <h3 class="text-xl font-bold text-[color:hsl(var(--maz-foreground))] mb-2">Belum Ada Data Analitik</h3>
         <p class="text-sm text-[color:hsl(var(--maz-muted))] max-w-md mx-auto mb-6">
-          Grafik dan ringkasan akan muncul di sini setelah Anda melakukan integrasi data (Merge E-Purchasing) pada menu Admin.
+          Grafik dan ringkasan akan muncul di sini setelah Anda melakukan integrasi data.
         </p>
-        <NuxtLink to="/admin/data-merge">
-          <MazBtn color="primary" outline>Pergi ke Kelola Merge Data</MazBtn>
-        </NuxtLink>
       </div>
 
       <div v-else class="space-y-6">
@@ -92,8 +89,8 @@
           </div>
         </div>
 
-        <!-- 2. UMKM dan RUP -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 2. Distribusi Kategori UMKM, Produk Lokal, Sumber Dana -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col">
             <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Distribusi Kategori UMKM</h3>
             <div class="flex-grow flex items-center justify-center min-h-[300px]">
@@ -101,41 +98,31 @@
             </div>
           </div>
           <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col">
-            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Konektivitas ke RUP</h3>
-            <div class="flex-grow flex items-center justify-center min-h-[300px]">
-              <Doughnut v-if="rupChartData" :data="rupChartData" :options="doughnutOptions" />
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. Top 10 Penyedia -->
-        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
-          <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6">Top 10 Penyedia (Berdasarkan Nilai Pesanan)</h3>
-          <div class="w-full min-h-[400px]">
-            <Bar v-if="topPenyediaChartData" :data="topPenyediaChartData" :options="horizontalBarOptions" />
-          </div>
-        </div>
-
-        <!-- 3b. Top 10 PPK -->
-        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
-          <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6">Top 10 PPK (Berdasarkan Nilai Pesanan)</h3>
-          <div class="w-full min-h-[400px]">
-            <Bar v-if="topPpkChartData" :data="topPpkChartData" :options="horizontalBarOptions" />
-          </div>
-        </div>
-
-        <!-- 4. Status Pesanan dan Minikom -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col">
-            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Status Transaksi</h3>
-            <div class="flex-grow flex items-center justify-center min-h-[300px]">
-              <Doughnut v-if="statusChartData" :data="statusChartData" :options="doughnutOptions" />
-            </div>
-          </div>
-          <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col">
-            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Penggunaan Produk Lokal (Minikom)</h3>
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Produk Dalam Negeri (Lokal)</h3>
             <div class="flex-grow flex items-center justify-center min-h-[300px]">
               <Doughnut v-if="minikomChartData" :data="minikomChartData" :options="doughnutOptions" />
+            </div>
+          </div>
+          <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col">
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Sumber Dana</h3>
+            <div class="flex-grow flex items-center justify-center min-h-[300px]">
+              <Doughnut v-if="sumberDanaChartData" :data="sumberDanaChartData" :options="doughnutOptions" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Metode dan Jenis Pengadaan -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col">
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Metode Pengadaan</h3>
+            <div class="flex-grow flex items-center justify-center min-h-[300px]">
+              <Doughnut v-if="metodeChartData" :data="metodeChartData" :options="doughnutOptions" />
+            </div>
+          </div>
+          <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col">
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Jenis Pengadaan</h3>
+            <div class="flex-grow flex items-center justify-center min-h-[300px]">
+              <Doughnut v-if="jenisChartData" :data="jenisChartData" :options="doughnutOptions" />
             </div>
           </div>
         </div>
@@ -166,10 +153,11 @@ const summary = ref({
   trend: [],
   umkm: [],
   rupConnection: [],
-  topPenyedia: [],
-  topPpk: [],
   orderStatus: [],
-  minikom: []
+  minikom: [],
+  metodePengadaan: [],
+  jenisPengadaan: [],
+  sumberDana: []
 });
 
 const umkmCount = computed(() => {
@@ -215,58 +203,6 @@ const umkmChartData = computed(() => {
   };
 });
 
-const rupChartData = computed(() => {
-  if (!summary.value.rupConnection.length) return null;
-  return {
-    labels: summary.value.rupConnection.map(i => i.label),
-    datasets: [{
-      data: summary.value.rupConnection.map(i => i.count),
-      backgroundColor: ['#14b8a6', '#ef4444'],
-      borderWidth: 1,
-      borderColor: '#ffffff'
-    }]
-  };
-});
-
-const topPenyediaChartData = computed(() => {
-  if (!summary.value.topPenyedia.length) return null;
-  return {
-    labels: summary.value.topPenyedia.map(i => i.label.length > 20 ? i.label.substring(0, 20) + '...' : i.label),
-    datasets: [{
-      label: 'Total Nilai (Rp)',
-      backgroundColor: '#8b5cf6',
-      borderRadius: 4,
-      data: summary.value.topPenyedia.map(i => i.total)
-    }]
-  };
-});
-
-const topPpkChartData = computed(() => {
-  if (!summary.value.topPpk || !summary.value.topPpk.length) return null;
-  return {
-    labels: summary.value.topPpk.map(i => i.label.length > 20 ? i.label.substring(0, 20) + '...' : i.label),
-    datasets: [{
-      label: 'Total Nilai (Rp)',
-      backgroundColor: '#f59e0b',
-      borderRadius: 4,
-      data: summary.value.topPpk.map(i => i.total)
-    }]
-  };
-});
-
-const statusChartData = computed(() => {
-  if (!summary.value.orderStatus.length) return null;
-  return {
-    labels: summary.value.orderStatus.map(i => i.label),
-    datasets: [{
-      data: summary.value.orderStatus.map(i => i.count),
-      backgroundColor: bgColors,
-      borderWidth: 1,
-      borderColor: '#ffffff'
-    }]
-  };
-});
-
 const minikomChartData = computed(() => {
   if (!summary.value.minikom.length) return null;
   return {
@@ -279,6 +215,46 @@ const minikomChartData = computed(() => {
     }]
   };
 });
+
+const metodeChartData = computed(() => {
+  if (!summary.value.metodePengadaan?.length) return null;
+  return {
+    labels: summary.value.metodePengadaan.map(i => i.label),
+    datasets: [{
+      data: summary.value.metodePengadaan.map(i => i.count),
+      backgroundColor: bgColors,
+      borderWidth: 1,
+      borderColor: '#ffffff'
+    }]
+  };
+});
+
+const jenisChartData = computed(() => {
+  if (!summary.value.jenisPengadaan?.length) return null;
+  return {
+    labels: summary.value.jenisPengadaan.map(i => i.label),
+    datasets: [{
+      data: summary.value.jenisPengadaan.map(i => i.count),
+      backgroundColor: bgColors,
+      borderWidth: 1,
+      borderColor: '#ffffff'
+    }]
+  };
+});
+
+const sumberDanaChartData = computed(() => {
+  if (!summary.value.sumberDana?.length) return null;
+  return {
+    labels: summary.value.sumberDana.map(i => i.label),
+    datasets: [{
+      data: summary.value.sumberDana.map(i => i.count),
+      backgroundColor: bgColors,
+      borderWidth: 1,
+      borderColor: '#ffffff'
+    }]
+  };
+});
+
 
 // Options
 const barOptions = {
@@ -294,25 +270,6 @@ const barOptions = {
   },
   scales: {
     y: {
-      ticks: { callback: (val) => formatRupiahSingkat(val) }
-    }
-  }
-};
-
-const horizontalBarOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  indexAxis: 'y',
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      callbacks: {
-        label: (context) => formatRupiahSingkat(context.raw)
-      }
-    }
-  },
-  scales: {
-    x: {
       ticks: { callback: (val) => formatRupiahSingkat(val) }
     }
   }
@@ -348,7 +305,7 @@ const loadAnalytics = async () => {
   try {
     const params = { tahun: props.selectedYear };
 
-    const res = await $fetch('/api/summary-table/epurchasing-analytics-summary', {
+    const res = await $fetch('/api/summary-table/epurchasing-analytics-summary-public', {
       params
     });
     

@@ -436,9 +436,13 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { utils, writeFile } from 'xlsx';
-const { selectedYear } = defineProps({ selectedYear: { type: String, required: true } });
+
+const props = defineProps({
+  selectedYear: { type: String, required: true }
+});
+const { selectedYear } = toRefs(props);
 
 const loading = ref(true);
 const error = ref(false);

@@ -17,12 +17,9 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    let filteredData = data;
-    const statusQuery = query.status as string;
-    if (statusQuery) {
-      const allowedStatus = statusQuery.split(',').filter(Boolean);
-      filteredData = data.filter((item: any) => allowedStatus.includes(item.status));
-    }
+    // Paksa filter hanya untuk COMPLETED dan ON_PROCESS
+    const allowedStatus = ['COMPLETED', 'ON_PROCESS'];
+    let filteredData = data.filter((item: any) => allowedStatus.includes(item.status));
 
     // Maps for aggregations
     const maps = {
@@ -32,13 +29,14 @@ export default defineEventHandler(async (event) => {
         'Terkoneksi RUP': { count: 0, total: 0 },
         'Tidak Terkoneksi': { count: 0, total: 0 }
       },
-      topPenyedia: {} as Record<string, { count: number; total: number }>,
-      topPpk: {} as Record<string, { count: number; total: number }>,
       orderStatus: {} as Record<string, { count: number; total: number }>,
       minikom: {
         'Produk Lokal': { count: 0, total: 0 },
         'Impor / Lainnya': { count: 0, total: 0 }
-      }
+      },
+      metodePengadaan: {} as Record<string, { count: number; total: number }>,
+      jenisPengadaan: {} as Record<string, { count: number; total: number }>,
+      sumberDana: {} as Record<string, { count: number; total: number }>
     };
 
     let totalNilai = 0;
@@ -83,31 +81,7 @@ export default defineEventHandler(async (event) => {
       rupEntry.count++;
       rupEntry.total += total;
 
-      // 4. Top Penyedia
-      const penyedia = item.penyedia_nama || 'Tidak Diketahui';
-      if (penyedia !== 'Tidak Diketahui') {
-        let penyediaEntry = maps.topPenyedia[penyedia];
-        if (!penyediaEntry) {
-          penyediaEntry = { count: 0, total: 0 };
-          maps.topPenyedia[penyedia] = penyediaEntry;
-        }
-        penyediaEntry.count++;
-        penyediaEntry.total += total;
-      }
-
-      // 4b. Top PPK
-      const ppk = item.ppk_nama_lengkap || item.rup_nama_ppk || 'Tidak Diketahui';
-      if (ppk !== 'Tidak Diketahui') {
-        let ppkEntry = maps.topPpk[ppk];
-        if (!ppkEntry) {
-          ppkEntry = { count: 0, total: 0 };
-          maps.topPpk[ppk] = ppkEntry;
-        }
-        ppkEntry.count++;
-        ppkEntry.total += total;
-      }
-
-      // 5. Order Status
+      // 4. Order Status
       const status = item.status || 'Tidak Diketahui';
       let statusEntry = maps.orderStatus[status];
       if (!statusEntry) {
@@ -117,12 +91,42 @@ export default defineEventHandler(async (event) => {
       statusEntry.count++;
       statusEntry.total += total;
 
-      // 6. Minikom (Produk Lokal)
+      // 5. Minikom (Produk Lokal)
       const minikomFlag = item.flag_minikom === true || String(item.flag_minikom).toLowerCase() === 'true';
       const minikomKey = minikomFlag ? 'Produk Lokal' : 'Impor / Lainnya';
       let minikomEntry = maps.minikom[minikomKey as keyof typeof maps.minikom];
       minikomEntry.count++;
       minikomEntry.total += total;
+
+      // 6. Metode Pengadaan
+      const metode = item.rup_metode_pengadaan || 'Tidak Diketahui';
+      let metodeEntry = maps.metodePengadaan[metode];
+      if (!metodeEntry) {
+        metodeEntry = { count: 0, total: 0 };
+        maps.metodePengadaan[metode] = metodeEntry;
+      }
+      metodeEntry.count++;
+      metodeEntry.total += total;
+
+      // 7. Jenis Pengadaan
+      const jenis = item.rup_jenis_pengadaan || 'Tidak Diketahui';
+      let jenisEntry = maps.jenisPengadaan[jenis];
+      if (!jenisEntry) {
+        jenisEntry = { count: 0, total: 0 };
+        maps.jenisPengadaan[jenis] = jenisEntry;
+      }
+      jenisEntry.count++;
+      jenisEntry.total += total;
+
+      // 8. Sumber Dana
+      const sumber = item.funding_source || 'Tidak Diketahui';
+      let sumberEntry = maps.sumberDana[sumber];
+      if (!sumberEntry) {
+        sumberEntry = { count: 0, total: 0 };
+        maps.sumberDana[sumber] = sumberEntry;
+      }
+      sumberEntry.count++;
+      sumberEntry.total += total;
     }
 
     // Format Maps into Sorted Arrays for frontend chart consumption
@@ -153,12 +157,6 @@ export default defineEventHandler(async (event) => {
       };
     }).filter(i => i.count > 0 || totalPesanan === 0);
 
-    // Top 10 Penyedia
-    const topPenyediaArray = formatToArray(maps.topPenyedia, 'total').slice(0, 10);
-    
-    // Top 10 PPK
-    const topPpkArray = formatToArray(maps.topPpk, 'total').slice(0, 10);
-
     return {
       success: true,
       message: 'Berhasil memuat analytics summary',
@@ -169,10 +167,11 @@ export default defineEventHandler(async (event) => {
         trend: trendArray,
         umkm: formatToArray(maps.umkm, 'total'),
         rupConnection: formatToArray(maps.rupConnection, 'none'),
-        topPenyedia: topPenyediaArray,
-        topPpk: topPpkArray,
         orderStatus: formatToArray(maps.orderStatus, 'total'),
-        minikom: formatToArray(maps.minikom, 'none')
+        minikom: formatToArray(maps.minikom, 'none'),
+        metodePengadaan: formatToArray(maps.metodePengadaan, 'total'),
+        jenisPengadaan: formatToArray(maps.jenisPengadaan, 'total'),
+        sumberDana: formatToArray(maps.sumberDana, 'total')
       }
     };
 

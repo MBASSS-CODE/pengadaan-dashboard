@@ -3,8 +3,16 @@ import jwt from 'jsonwebtoken';
 export default defineEventHandler((event) => {
   const url = getRequestURL(event);
   
-  // Lindungi semua rute API kecuali API login
-  if (url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/auth/login')) {
+  const publicApiPaths = [
+    '/api/auth/login',
+    '/api/dashboard',
+    '/api/summary-table/epurchasing-public',
+    '/api/summary-table/epurchasing-analytics-summary-public'
+  ];
+  const isPublicApi = publicApiPaths.some(p => url.pathname.startsWith(p));
+
+  // Lindungi semua rute API kecuali API login dan public
+  if (url.pathname.startsWith('/api/') && !isPublicApi) {
     const token = getCookie(event, 'auth_token');
     
     if (!token) {
