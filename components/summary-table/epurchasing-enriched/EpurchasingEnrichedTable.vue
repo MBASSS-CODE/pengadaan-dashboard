@@ -478,7 +478,7 @@ const loadData = async () => {
   error.value = false;
   try {
     const params = {
-      tahun: selectedYear,
+      tahun: selectedYear.value,
       page: currentPage.value,
       limit: itemsPerPage.value,
       search: searchQuery.value,
@@ -567,7 +567,7 @@ const executeExport = async () => {
   exportLoading.value = true;
   try {
     const params = {
-      tahun: selectedYear,
+      tahun: selectedYear.value,
       page: 1,
       limit: 100000 // limit besar untuk mengambil seluruh data
     };
