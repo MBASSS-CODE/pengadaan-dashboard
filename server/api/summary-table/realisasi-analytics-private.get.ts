@@ -14,13 +14,39 @@ export default defineEventHandler(async (event) => {
     const pctNontender = (await readJsonSafe(path.join(dir, `pencatatan-nontender-enriched_${tahun}.json`))) || [];
     const tender = (await readJsonSafe(path.join(dir, `tender_enriched_${tahun}.json`))) || [];
 
+    // Load additional raw files
+    const tenderDir = path.resolve(process.cwd(), 'server', 'data', 'tender');
+    const tenderRaw = (await readJsonSafe(path.join(tenderDir, `pengumuman_${tahun}.json`))) || [];
+    const pctSwakelolaRaw = (await readJsonSafe(path.join(tenderDir, `pencatatan-swakelola_${tahun}.json`))) || [];
+
+    // Global mapping for PPK (NIP masked to Uncensored Name)
+    const ppkNameMap = new Map<string, string>();
+    const extractPpkName = (item: any) => {
+      const nip = item.rup_nip_ppk || item.nip_ppk;
+      const uncensored = item.ppk_nama_lengkap;
+      if (nip && uncensored && !uncensored.includes('*') && uncensored !== 'Tidak Diketahui') {
+        ppkNameMap.set(nip, uncensored);
+      }
+    };
+    [...epurchasing, ...nontender, ...pctNontender, ...tender].forEach(extractPpkName);
+
+    const getPpkName = (item: any, fallback: string) => {
+      const nip = item.rup_nip_ppk || item.nip_ppk;
+      if (nip && ppkNameMap.has(nip)) {
+        return ppkNameMap.get(nip);
+      }
+      return fallback;
+    };
+
     // Maps for aggregations
     const maps = {
       trend: {} as Record<string, { count: number; total: number }>,
       sumberTransaksi: {} as Record<string, { count: number; total: number }>,
       metodePengadaan: {} as Record<string, { count: number; total: number }>,
       jenisPengadaan: {} as Record<string, { count: number; total: number }>,
-      sumberDana: {} as Record<string, { count: number; total: number }>
+      sumberDana: {} as Record<string, { count: number; total: number }>,
+      ppk: {} as Record<string, { count: number; total: number }>,
+      penyedia: {} as Record<string, { count: number; total: number }>
     };
 
     let totalNilai = 0;
@@ -38,7 +64,9 @@ export default defineEventHandler(async (event) => {
       sumberDana: string,
       nilai: number,
       isPdn: boolean,
-      isUmk: boolean
+      isUmk: boolean,
+      ppk: string,
+      penyedia: string
     ) => {
       totalPesanan++;
       totalNilai += nilai;
@@ -96,6 +124,28 @@ export default defineEventHandler(async (event) => {
       }
       sdEntry.count++;
       sdEntry.total += nilai;
+
+      // 6. PPK
+      if (ppk && ppk !== 'Tidak Diketahui' && ppk !== '-') {
+        let ppkEntry = maps.ppk[ppk];
+        if (!ppkEntry) {
+          ppkEntry = { count: 0, total: 0 };
+          maps.ppk[ppk] = ppkEntry;
+        }
+        ppkEntry.count++;
+        ppkEntry.total += nilai;
+      }
+
+      // 7. Penyedia
+      if (penyedia && penyedia !== 'Tidak Diketahui' && penyedia !== '-') {
+        let pyEntry = maps.penyedia[penyedia];
+        if (!pyEntry) {
+          pyEntry = { count: 0, total: 0 };
+          maps.penyedia[penyedia] = pyEntry;
+        }
+        pyEntry.count++;
+        pyEntry.total += nilai;
+      }
     };
 
     // Process Epurchasing
@@ -113,7 +163,9 @@ export default defineEventHandler(async (event) => {
         item.funding_source || 'Tidak Diketahui',
         nilai,
         isPdn,
-        isUmk
+        isUmk,
+        getPpkName(item, item.ppk_nama_lengkap || item.nama_ppk || '-'),
+        item.penyedia_nama || '-'
       );
     }
 
@@ -131,7 +183,9 @@ export default defineEventHandler(async (event) => {
         item.sumber_dana || item.anggaran_sumber_dana || 'Tidak Diketahui',
         nilai,
         isPdn,
-        isUmk
+        isUmk,
+        getPpkName(item, item.nama_ppk || item.ppk_nama_lengkap || '-'),
+        item.nama_penyedia || item.pemenang || '-'
       );
     }
 
@@ -140,6 +194,8 @@ export default defineEventHandler(async (event) => {
       const nilai = Number(item.total_realisasi) || Number(item.pagu) || 0;
       const isPdn = (item.nilai_pdn_pct > 0 || item.rup_status_pdn === 'PDN' || item.rup_status_pdn === 'Ya');
       const isUmk = (item.nilai_umk_pct > 0 || item.rup_status_ukm === 'UKM' || item.rup_status_ukm === 'Ya');
+      const realisasi = item.realisasi_list?.[0] || {};
+      const penyedia = realisasi.nama_penyedia || '-';
 
       processItem(
         item.tgl_buat_paket,
@@ -149,7 +205,9 @@ export default defineEventHandler(async (event) => {
         item.sumber_dana || 'Tidak Diketahui',
         nilai,
         isPdn,
-        isUmk
+        isUmk,
+        getPpkName(item, item.nama_ppk || '-'),
+        penyedia
       );
     }
 
@@ -167,7 +225,51 @@ export default defineEventHandler(async (event) => {
         item.sumber_dana || 'Tidak Diketahui',
         nilai,
         isPdn,
-        isUmk
+        isUmk,
+        getPpkName(item, item.nama_ppk || item.ppk_nama_lengkap || '-'),
+        item.nama_pemenang || '-'
+      );
+    }
+
+    // Process Tender Raw
+    if (tender.length === 0 && tenderRaw.length > 0) {
+      for (const item of tenderRaw) {
+        const nilai = Number(item.pagu) || Number(item.hps) || 0;
+        const isPdn = false;
+        const isUmk = false;
+
+        processItem(
+          item.tgl_buat_paket,
+          'Tender',
+          item.mtd_pemilihan || 'Tender',
+          item.jenis_pengadaan || 'Tidak Diketahui',
+          item.sumber_dana || 'Tidak Diketahui',
+          nilai,
+          isPdn,
+          isUmk,
+          getPpkName(item, item.nama_ppk || '-'),
+          '-'
+        );
+      }
+    }
+
+    // Process Pencatatan Swakelola Raw
+    for (const item of pctSwakelolaRaw) {
+      const nilai = Number(item.total_realisasi) || Number(item.pagu) || 0;
+      const isPdn = (item.nilai_pdn_pct > 0);
+      const isUmk = (item.nilai_umk_pct > 0);
+
+      processItem(
+        item.tgl_buat_paket,
+        'Pencatatan Swakelola',
+        'Swakelola',
+        'Swakelola',
+        item.sumber_dana || 'Tidak Diketahui',
+        nilai,
+        isPdn,
+        isUmk,
+        getPpkName(item, item.nama_ppk || '-'),
+        item.tipe_swakelola_nama || 'Swakelola'
       );
     }
 
@@ -211,7 +313,9 @@ export default defineEventHandler(async (event) => {
         sumberTransaksi: formatToArray(maps.sumberTransaksi, 'total'),
         metodePengadaan: formatToArray(maps.metodePengadaan, 'total'),
         jenisPengadaan: formatToArray(maps.jenisPengadaan, 'total'),
-        sumberDana: formatToArray(maps.sumberDana, 'total')
+        sumberDana: formatToArray(maps.sumberDana, 'total'),
+        topPpk: formatToArray(maps.ppk, 'total').slice(0, 10),
+        topPenyedia: formatToArray(maps.penyedia, 'total').slice(0, 10)
       }
     };
 

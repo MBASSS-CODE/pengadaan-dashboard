@@ -124,6 +124,43 @@
           </div>
         </div>
 
+        <!-- 4. Top 10 Pihak Terkait -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Top 10 PPK -->
+          <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6">Top 10 PPK (Berdasarkan Nilai)</h3>
+            <div class="space-y-4" v-if="summary.topPpk && summary.topPpk.length > 0">
+              <div v-for="(item, index) in summary.topPpk" :key="index" class="relative">
+                <div class="flex justify-between items-end mb-1 z-10 relative">
+                  <span class="text-xs font-semibold text-[color:hsl(var(--maz-foreground))] truncate max-w-[65%]" :title="item.label">{{ index + 1 }}. {{ item.label }}</span>
+                  <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">{{ formatRupiahSingkat(item.total) }}</span>
+                </div>
+                <div class="w-full bg-[color:hsl(var(--maz-foreground)_/_5%)] rounded-full h-2">
+                  <div class="bg-emerald-500 h-2 rounded-full" :style="`width: ${Math.max(1, (item.total / summary.topPpk[0].total) * 100)}%`"></div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-center text-[color:hsl(var(--maz-muted))] py-10 text-sm">Belum ada data PPK</div>
+          </div>
+          
+          <!-- Top 10 Penyedia -->
+          <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6">Top 10 Penyedia (Berdasarkan Nilai)</h3>
+            <div class="space-y-4" v-if="summary.topPenyedia && summary.topPenyedia.length > 0">
+              <div v-for="(item, index) in summary.topPenyedia" :key="index" class="relative">
+                <div class="flex justify-between items-end mb-1 z-10 relative">
+                  <span class="text-xs font-semibold text-[color:hsl(var(--maz-foreground))] truncate max-w-[65%]" :title="item.label">{{ index + 1 }}. {{ item.label }}</span>
+                  <span class="text-xs font-bold text-blue-600 dark:text-blue-400">{{ formatRupiahSingkat(item.total) }}</span>
+                </div>
+                <div class="w-full bg-[color:hsl(var(--maz-foreground)_/_5%)] rounded-full h-2">
+                  <div class="bg-blue-500 h-2 rounded-full" :style="`width: ${Math.max(1, (item.total / summary.topPenyedia[0].total) * 100)}%`"></div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-center text-[color:hsl(var(--maz-muted))] py-10 text-sm">Belum ada data Penyedia</div>
+          </div>
+        </div>
+
       </div>
     </div>
   </ClientOnly>
@@ -152,7 +189,9 @@ const summary = ref({
   sumberTransaksi: [],
   metodePengadaan: [],
   jenisPengadaan: [],
-  sumberDana: []
+  sumberDana: [],
+  topPpk: [],
+  topPenyedia: []
 });
 
 // Chart Colors

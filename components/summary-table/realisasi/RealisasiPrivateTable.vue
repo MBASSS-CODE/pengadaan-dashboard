@@ -110,120 +110,200 @@
         <MazBtn @click="loadData()" size="sm" outline class="mt-4">Coba Lagi</MazBtn>
       </div>
 
-      <!-- Data Table -->
-      <div class="overflow-x-auto w-full">
-        <table class="w-full text-left border-collapse whitespace-nowrap">
-          <thead>
-            <tr class="border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] text-xs font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">
-              <th class="py-3 px-4 text-center">No.</th>
-              <th class="py-3 px-4">Nama Instansi</th>
-              <th class="py-3 px-4">Nama Satuan Kerja</th>
-              <th class="py-3 px-4 text-center">Kode Paket</th>
-              <th class="py-3 px-4 text-center">Kode RUP</th>
-              <th class="py-3 px-4 text-center">T.A.</th>
-              <th class="py-3 px-4 text-center">Sumber Transaksi</th>
-              <th class="py-3 px-4 text-center">Sumber Dana</th>
-              <th class="py-3 px-4 min-w-[200px]">Nama Penyedia</th>
-              <th class="py-3 px-4 min-w-[200px]">Nama PPK</th>
-              <th class="py-3 px-4 text-center">Metode Pengadaan</th>
-              <th class="py-3 px-4 text-center">Jenis Pengadaan</th>
-              <th class="py-3 px-4 min-w-[250px]">Nama Paket</th>
-              <th class="py-3 px-4 text-center">Status Paket</th>
-              <th class="py-3 px-4 text-center">Tahapan Pengadaan</th>
-              <th class="py-3 px-4 text-right">Total Nilai (Rp)</th>
-              <th class="py-3 px-4 text-right">Nilai PDN (Rp)</th>
-              <th class="py-3 px-4 text-right">Nilai UMK (Rp)</th>
-            </tr>
-          </thead>
-          <tbody class="align-middle relative">
-            <tr v-if="loading && items.length === 0">
-              <td colspan="17" class="py-12 text-center">
-                <MazSpinner color="primary" class="mx-auto" />
-                <p class="text-[color:hsl(var(--maz-muted))] mt-3 text-sm">Memuat data Realisasi Pengadaan...</p>
-              </td>
-            </tr>
-            <tr v-else-if="items.length === 0 && !loading" class="border-b border-[color:hsl(var(--maz-border))]">
-              <td colspan="18" class="py-12 text-center text-[color:hsl(var(--maz-muted))]">
-                Tidak ada data yang cocok dengan filter pencarian.
-              </td>
-            </tr>
-            <template v-for="(item, index) in items" :key="index + '-' + item.kode_paket">
-              <tr class="border-b border-[color:hsl(var(--maz-border))] hover:bg-[color:hsl(var(--maz-foreground)_/_2%)] transition-colors group text-sm">
-                <td class="py-3 px-4 text-center font-medium text-[color:hsl(var(--maz-muted))]">
-                  {{ (currentPage - 1) * itemsPerPage + index + 1 }}
-                </td>
-                
-                <td class="py-3 px-4 max-w-[200px] truncate" :title="namaInstansi">
-                  {{ namaInstansi }}
-                </td>
-                
-                <td class="py-3 px-4 max-w-[200px] truncate" :title="item.nama_satker || '-'">
-                  {{ item.nama_satker || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 text-center">
-                  {{ item.kode_paket || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 text-center font-medium">
-                  {{ item.kode_rup || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 text-center">
-                  {{ item.tahun_anggaran || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 text-center">
-                  {{ item.sumber_transaksi || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 text-center">
-                  {{ item.sumber_dana || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 max-w-[200px] truncate" :title="item.nama_penyedia || '-'">
-                  {{ item.nama_penyedia || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 max-w-[200px] truncate" :title="item.nama_ppk || '-'">
-                  {{ item.nama_ppk || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 text-center">
-                  {{ item.metode_pengadaan || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 text-center">
-                  {{ item.jenis_pengadaan || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 max-w-[250px] truncate font-medium text-[color:hsl(var(--maz-primary))]" :title="item.nama_paket || '-'">
-                  {{ item.nama_paket || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 text-center">
-                  <span class="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md text-xs">{{ item.status_paket || '-' }}</span>
-                </td>
-                
-                <td class="py-3 px-4 text-center">
-                  {{ item.tahapan_pengadaan || '-' }}
-                </td>
-                
-                <td class="py-3 px-4 text-right font-bold text-[color:hsl(var(--maz-foreground))]">
-                  {{ formatRupiah(item.total_nilai) }}
-                </td>
-                
-                <td class="py-3 px-4 text-right">
-                  {{ formatRupiah(item.nilai_pdn) }}
-                </td>
-                
-                <td class="py-3 px-4 text-right">
-                  {{ formatRupiah(item.nilai_umk) }}
+      <!-- Data List (Rich Table) -->
+      <div class="w-full">
+        <!-- Desktop View -->
+        <div class="hidden md:block overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] text-xs font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">
+                <th class="py-4 px-4 w-12 text-center">No.</th>
+                <th class="py-4 px-4 min-w-[300px]">Informasi Paket</th>
+                <th class="py-4 px-4 min-w-[200px]">Pihak Terkait</th>
+                <th class="py-4 px-4 min-w-[200px]">Pelaksanaan</th>
+                <th class="py-4 px-4 min-w-[150px]">Status</th>
+                <th class="py-4 px-4 min-w-[200px] text-right">Nilai Transaksi</th>
+              </tr>
+            </thead>
+            <tbody class="align-top relative">
+              <tr v-if="loading && items.length === 0">
+                <td colspan="6" class="py-12 text-center">
+                  <MazSpinner color="primary" class="mx-auto" />
+                  <p class="text-[color:hsl(var(--maz-muted))] mt-3 text-sm">Memuat data Realisasi Pengadaan...</p>
                 </td>
               </tr>
-            </template>
-          </tbody>
-        </table>
+              <tr v-else-if="items.length === 0 && !loading" class="border-b border-[color:hsl(var(--maz-border))]">
+                <td colspan="6" class="py-12 text-center text-[color:hsl(var(--maz-muted))]">
+                  Tidak ada data yang cocok dengan filter pencarian.
+                </td>
+              </tr>
+              <template v-for="(item, index) in items" :key="index + '-' + item.kode_paket">
+                <tr class="border-b border-[color:hsl(var(--maz-border))] hover:bg-[color:hsl(var(--maz-foreground)_/_2%)] transition-colors group">
+                  <td class="py-4 px-4 text-center font-medium text-[color:hsl(var(--maz-muted))]">
+                    {{ (currentPage - 1) * itemsPerPage + index + 1 }}
+                  </td>
+                  
+                  <td class="py-4 px-4">
+                    <div class="font-bold text-[color:hsl(var(--maz-foreground))] mb-1 line-clamp-2" :title="item.nama_paket || '-'">
+                      {{ item.nama_paket || '-' }}
+                    </div>
+                    <div class="text-sm text-[color:hsl(var(--maz-muted))] mb-2 flex items-center gap-1" :title="item.nama_satker || '-'">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      <span class="truncate max-w-[250px]">{{ item.nama_satker || '-' }}</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2 text-[10px]">
+                      <span class="px-2 py-1 bg-[color:hsl(var(--maz-foreground)_/_5%)] border border-[color:hsl(var(--maz-border))] rounded text-[color:hsl(var(--maz-muted))] font-mono">
+                        PAKET: {{ item.kode_paket || '-' }}
+                      </span>
+                      <span class="px-2 py-1 bg-[color:hsl(var(--maz-foreground)_/_5%)] border border-[color:hsl(var(--maz-border))] rounded text-[color:hsl(var(--maz-muted))] font-mono">
+                        RUP: {{ item.kode_rup || '-' }}
+                      </span>
+                      <span class="px-2 py-1 bg-[color:hsl(var(--maz-foreground)_/_5%)] border border-[color:hsl(var(--maz-border))] rounded text-[color:hsl(var(--maz-muted))] font-mono">
+                        T.A: {{ item.tahun_anggaran || '-' }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td class="py-4 px-4">
+                    <div class="flex flex-col gap-2">
+                      <div>
+                        <div class="text-[10px] text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-0.5">Nama PPK</div>
+                        <div class="font-semibold text-emerald-600 dark:text-emerald-400 text-sm truncate max-w-[200px]" :title="item.nama_ppk || '-'">
+                          {{ item.nama_ppk || '-' }}
+                        </div>
+                      </div>
+                      <div>
+                        <div class="text-[10px] text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-0.5">Penyedia</div>
+                        <div class="font-semibold text-[color:hsl(var(--maz-primary))] text-sm truncate max-w-[200px]" :title="item.nama_penyedia || '-'">
+                          {{ item.nama_penyedia || '-' }}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  
+                  <td class="py-4 px-4">
+                    <div class="flex flex-wrap gap-1 text-[10px]">
+                      <span class="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        {{ item.sumber_transaksi || '-' }}
+                      </span>
+                      <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        {{ item.sumber_dana || '-' }}
+                      </span>
+                      <span class="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800" v-if="item.metode_pengadaan && item.metode_pengadaan !== '-'">
+                        {{ item.metode_pengadaan }}
+                      </span>
+                      <span class="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800" v-if="item.jenis_pengadaan && item.jenis_pengadaan !== '-'">
+                        {{ item.jenis_pengadaan }}
+                      </span>
+                    </div>
+                  </td>
+                  
+                  <td class="py-4 px-4">
+                    <div class="flex flex-col gap-2 items-start">
+                      <span class="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-md text-xs font-semibold whitespace-nowrap">
+                        {{ item.status_paket || '-' }}
+                      </span>
+                      <span class="text-xs font-medium text-[color:hsl(var(--maz-muted))] flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        {{ item.tahapan_pengadaan || '-' }}
+                      </span>
+                    </div>
+                  </td>
+                  
+                  <td class="py-4 px-4 text-right">
+                    <div class="font-black text-lg text-[color:hsl(var(--maz-foreground))] mb-1">
+                      {{ formatRupiah(item.total_nilai) }}
+                    </div>
+                    <div class="flex flex-col gap-1 text-[11px] font-medium text-[color:hsl(var(--maz-muted))]">
+                      <div class="flex justify-end items-center gap-1">
+                        <span>PDN:</span>
+                        <span :class="item.nilai_pdn > 0 ? 'text-teal-600 dark:text-teal-400 font-bold' : ''">{{ formatRupiah(item.nilai_pdn) }}</span>
+                      </div>
+                      <div class="flex justify-end items-center gap-1">
+                        <span>UMK:</span>
+                        <span :class="item.nilai_umk > 0 ? 'text-purple-600 dark:text-purple-400 font-bold' : ''">{{ formatRupiah(item.nilai_umk) }}</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Mobile View (Cards) -->
+        <div class="md:hidden flex flex-col gap-4 p-4">
+          <div v-if="loading && items.length === 0" class="py-12 text-center">
+            <MazSpinner color="primary" class="mx-auto" />
+            <p class="text-[color:hsl(var(--maz-muted))] mt-3 text-sm">Memuat data Realisasi Pengadaan...</p>
+          </div>
+          <div v-else-if="items.length === 0 && !loading" class="py-12 text-center text-[color:hsl(var(--maz-muted))] border border-[color:hsl(var(--maz-border))] rounded-xl">
+            Tidak ada data yang cocok dengan filter pencarian.
+          </div>
+          <template v-else v-for="(item, index) in items" :key="'mobile-' + index + '-' + item.kode_paket">
+            <div class="bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] rounded-xl p-4 shadow-sm flex flex-col gap-4">
+              <div class="flex justify-between items-start gap-2 border-b border-[color:hsl(var(--maz-border))] pb-3">
+                <div class="font-bold text-sm text-[color:hsl(var(--maz-foreground))]">{{ item.nama_paket || '-' }}</div>
+                <div class="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded text-[10px] font-bold whitespace-nowrap">
+                  {{ item.status_paket || '-' }}
+                </div>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-3 text-xs border-b border-[color:hsl(var(--maz-border))] pb-3">
+                <div class="flex flex-col gap-1">
+                  <span class="text-[color:hsl(var(--maz-muted))]">Nama PPK</span>
+                  <span class="font-semibold text-emerald-600 dark:text-emerald-400 truncate" :title="item.nama_ppk || '-'">{{ item.nama_ppk || '-' }}</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <span class="text-[color:hsl(var(--maz-muted))]">Penyedia</span>
+                  <span class="font-semibold text-[color:hsl(var(--maz-primary))] truncate" :title="item.nama_penyedia || '-'">{{ item.nama_penyedia || '-' }}</span>
+                </div>
+                <div class="flex flex-col gap-1 col-span-2">
+                  <span class="text-[color:hsl(var(--maz-muted))]">Satuan Kerja</span>
+                  <span class="font-medium text-[color:hsl(var(--maz-foreground))] truncate" :title="item.nama_satker || '-'">{{ item.nama_satker || '-' }}</span>
+                </div>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-3 text-xs">
+                <div class="flex flex-col gap-1">
+                  <span class="text-[color:hsl(var(--maz-muted))]">Kode Paket / RUP</span>
+                  <span class="font-mono text-[color:hsl(var(--maz-foreground))]">{{ item.kode_paket || '-' }} / {{ item.kode_rup || '-' }}</span>
+                </div>
+                <div class="flex flex-col gap-1 text-right">
+                  <span class="text-[color:hsl(var(--maz-muted))]">Tahun Anggaran</span>
+                  <span class="font-medium text-[color:hsl(var(--maz-foreground))]">{{ item.tahun_anggaran || '-' }}</span>
+                </div>
+              </div>
+              
+              <div class="flex flex-wrap gap-1 mt-1 text-[10px]">
+                <span class="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                  {{ item.sumber_transaksi || '-' }}
+                </span>
+                <span class="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800" v-if="item.metode_pengadaan && item.metode_pengadaan !== '-'">
+                  {{ item.metode_pengadaan }}
+                </span>
+                <span class="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800" v-if="item.jenis_pengadaan && item.jenis_pengadaan !== '-'">
+                  {{ item.jenis_pengadaan }}
+                </span>
+              </div>
+              
+              <div class="bg-[color:hsl(var(--maz-foreground)_/_3%)] p-3 rounded-lg border border-[color:hsl(var(--maz-border))] mt-2">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-xs font-bold text-[color:hsl(var(--maz-muted))]">TOTAL NILAI</span>
+                  <span class="text-lg font-black text-[color:hsl(var(--maz-foreground))]">{{ formatRupiah(item.total_nilai) }}</span>
+                </div>
+                <div class="flex justify-between items-center text-[10px] text-[color:hsl(var(--maz-muted))] font-medium">
+                  <div>PDN: <span :class="item.nilai_pdn > 0 ? 'text-teal-600 dark:text-teal-400 font-bold' : ''">{{ formatRupiah(item.nilai_pdn) }}</span></div>
+                  <div>UMK: <span :class="item.nilai_umk > 0 ? 'text-purple-600 dark:text-purple-400 font-bold' : ''">{{ formatRupiah(item.nilai_umk) }}</span></div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
       </div>
 
       <!-- Pagination -->
