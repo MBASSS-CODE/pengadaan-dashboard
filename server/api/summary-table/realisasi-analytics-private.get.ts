@@ -1,42 +1,11 @@
-import path from 'path';
-import { readJsonSafe } from '../../utils/mergeManager';
+import { getRealisasiData } from '../../utils/realisasiMergeManager';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const tahun = (query.tahun as string) || new Date().getFullYear().toString();
 
   try {
-    const dir = path.resolve(process.cwd(), 'server', 'data', 'merged');
-    
-    // Load all possible files
-    const epurchasing = (await readJsonSafe(path.join(dir, `epurchasing_enriched_${tahun}.json`))) || [];
-    const nontender = (await readJsonSafe(path.join(dir, `nontender_enriched_${tahun}.json`))) || [];
-    const pctNontender = (await readJsonSafe(path.join(dir, `pencatatan-nontender-enriched_${tahun}.json`))) || [];
-    const tender = (await readJsonSafe(path.join(dir, `tender_enriched_${tahun}.json`))) || [];
-
-    // Load additional raw files
-    const tenderDir = path.resolve(process.cwd(), 'server', 'data', 'tender');
-    const tenderRaw = (await readJsonSafe(path.join(tenderDir, `pengumuman_${tahun}.json`))) || [];
-    const pctSwakelolaRaw = (await readJsonSafe(path.join(tenderDir, `pencatatan-swakelola_${tahun}.json`))) || [];
-
-    // Global mapping for PPK (NIP masked to Uncensored Name)
-    const ppkNameMap = new Map<string, string>();
-    const extractPpkName = (item: any) => {
-      const nip = item.rup_nip_ppk || item.nip_ppk;
-      const uncensored = item.ppk_nama_lengkap;
-      if (nip && uncensored && !uncensored.includes('*') && uncensored !== 'Tidak Diketahui') {
-        ppkNameMap.set(nip, uncensored);
-      }
-    };
-    [...epurchasing, ...nontender, ...pctNontender, ...tender].forEach(extractPpkName);
-
-    const getPpkName = (item: any, fallback: string) => {
-      const nip = item.rup_nip_ppk || item.nip_ppk;
-      if (nip && ppkNameMap.has(nip)) {
-        return ppkNameMap.get(nip);
-      }
-      return fallback;
-    };
+    const data = await getRealisasiData(tahun, true);
 
     // Maps for aggregations
     const maps = {
@@ -56,18 +25,18 @@ export default defineEventHandler(async (event) => {
 
     const bulanNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
-    const processItem = (
-      dateStr: string,
-      sumberTrans: string,
-      metode: string,
-      jenis: string,
-      sumberDana: string,
-      nilai: number,
-      isPdn: boolean,
-      isUmk: boolean,
-      ppk: string,
-      penyedia: string
-    ) => {
+    for (const item of data) {
+      const nilai = item.total_nilai || 0;
+      const dateStr = item._sort_date;
+      const isPdn = item.nilai_pdn > 0;
+      const isUmk = item.nilai_umk > 0;
+      const sumberTrans = item.sumber_transaksi || 'Tidak Diketahui';
+      const metode = item.metode_pengadaan || 'Tidak Diketahui';
+      const jenis = item.jenis_pengadaan || 'Tidak Diketahui';
+      const sumberDana = item.sumber_dana || 'Tidak Diketahui';
+      const ppk = item.nama_ppk || 'Tidak Diketahui';
+      const penyedia = item.nama_penyedia || 'Tidak Diketahui';
+
       totalPesanan++;
       totalNilai += nilai;
       if (isPdn) totalPdn += nilai;
@@ -146,131 +115,6 @@ export default defineEventHandler(async (event) => {
         pyEntry.count++;
         pyEntry.total += nilai;
       }
-    };
-
-    // Process Epurchasing
-    for (const item of epurchasing) {
-      if (!['COMPLETED', 'ON_PROCESS'].includes(item.status)) continue;
-      const nilai = Number(item.total) || 0;
-      const isPdn = (item.flag_minikom === true || String(item.flag_minikom).toLowerCase() === 'true' || String(item.flag_minikom).toLowerCase() === 'ya');
-      const isUmk = (item.penyedia_status_umkk && item.penyedia_status_umkk !== 'Non-UMKM' && item.penyedia_status_umkk !== 'Tidak Diketahui');
-      
-      processItem(
-        item.order_date,
-        'E-Katalog',
-        item.rup_metode_pengadaan || 'E-Purchasing',
-        item.rup_jenis_pengadaan || 'Tidak Diketahui',
-        item.funding_source || 'Tidak Diketahui',
-        nilai,
-        isPdn,
-        isUmk,
-        getPpkName(item, item.ppk_nama_lengkap || item.nama_ppk || '-'),
-        item.penyedia_nama || '-'
-      );
-    }
-
-    // Process Nontender
-    for (const item of nontender) {
-      const nilai = Number(item.pagu) || Number(item.anggaran_total) || 0;
-      const isPdn = (item.rup_status_pdn === 'PDN' || item.rup_status_pdn === 'Ya');
-      const isUmk = (item.rup_status_ukm === 'UKM' || item.rup_status_ukm === 'Ya');
-
-      processItem(
-        item.tgl_buat_paket,
-        'Non Tender',
-        item.mtd_pemilihan || 'Tidak Diketahui',
-        item.jenis_pengadaan || item.rup_jenis_pengadaan || 'Tidak Diketahui',
-        item.sumber_dana || item.anggaran_sumber_dana || 'Tidak Diketahui',
-        nilai,
-        isPdn,
-        isUmk,
-        getPpkName(item, item.nama_ppk || item.ppk_nama_lengkap || '-'),
-        item.nama_penyedia || item.pemenang || '-'
-      );
-    }
-
-    // Process Pencatatan Nontender
-    for (const item of pctNontender) {
-      const nilai = Number(item.total_realisasi) || Number(item.pagu) || 0;
-      const isPdn = (item.nilai_pdn_pct > 0 || item.rup_status_pdn === 'PDN' || item.rup_status_pdn === 'Ya');
-      const isUmk = (item.nilai_umk_pct > 0 || item.rup_status_ukm === 'UKM' || item.rup_status_ukm === 'Ya');
-      const realisasi = item.realisasi_list?.[0] || {};
-      const penyedia = realisasi.nama_penyedia || '-';
-
-      processItem(
-        item.tgl_buat_paket,
-        'Pencatatan Non Tender',
-        item.mtd_pemilihan || 'Tidak Diketahui',
-        item.kategori_pengadaan || item.rup_jenis_pengadaan || 'Tidak Diketahui',
-        item.sumber_dana || 'Tidak Diketahui',
-        nilai,
-        isPdn,
-        isUmk,
-        getPpkName(item, item.nama_ppk || '-'),
-        penyedia
-      );
-    }
-
-    // Process Tender
-    for (const item of tender) {
-      const nilai = Number(item.harga_kontrak) || Number(item.pagu) || 0;
-      const isPdn = (item.rup_status_pdn === 'PDN' || item.rup_status_pdn === 'Ya');
-      const isUmk = (item.rup_status_ukm === 'UKM' || item.rup_status_ukm === 'Ya');
-
-      processItem(
-        item.tgl_buat_paket,
-        'Tender',
-        item.mtd_pemilihan || 'Tidak Diketahui',
-        item.jenis_pengadaan || item.rup_jenis_pengadaan || 'Tidak Diketahui',
-        item.sumber_dana || 'Tidak Diketahui',
-        nilai,
-        isPdn,
-        isUmk,
-        getPpkName(item, item.nama_ppk || item.ppk_nama_lengkap || '-'),
-        item.nama_pemenang || '-'
-      );
-    }
-
-    // Process Tender Raw
-    if (tender.length === 0 && tenderRaw.length > 0) {
-      for (const item of tenderRaw) {
-        const nilai = Number(item.pagu) || Number(item.hps) || 0;
-        const isPdn = false;
-        const isUmk = false;
-
-        processItem(
-          item.tgl_buat_paket,
-          'Tender',
-          item.mtd_pemilihan || 'Tender',
-          item.jenis_pengadaan || 'Tidak Diketahui',
-          item.sumber_dana || 'Tidak Diketahui',
-          nilai,
-          isPdn,
-          isUmk,
-          getPpkName(item, item.nama_ppk || '-'),
-          '-'
-        );
-      }
-    }
-
-    // Process Pencatatan Swakelola Raw
-    for (const item of pctSwakelolaRaw) {
-      const nilai = Number(item.total_realisasi) || Number(item.pagu) || 0;
-      const isPdn = (item.nilai_pdn_pct > 0);
-      const isUmk = (item.nilai_umk_pct > 0);
-
-      processItem(
-        item.tgl_buat_paket,
-        'Pencatatan Swakelola',
-        'Swakelola',
-        'Swakelola',
-        item.sumber_dana || 'Tidak Diketahui',
-        nilai,
-        isPdn,
-        isUmk,
-        getPpkName(item, item.nama_ppk || '-'),
-        item.tipe_swakelola_nama || 'Swakelola'
-      );
     }
 
     // Format Maps into Sorted Arrays

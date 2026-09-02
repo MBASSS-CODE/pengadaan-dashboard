@@ -147,11 +147,11 @@
                     <div class="font-bold text-[color:hsl(var(--maz-foreground))] mb-1 line-clamp-2" :title="item.nama_paket || '-'">
                       {{ item.nama_paket || '-' }}
                     </div>
-                    <div class="text-sm text-[color:hsl(var(--maz-muted))] mb-2 flex items-center gap-1" :title="item.nama_satker || '-'">
+                    <div class="text-sm text-[color:hsl(var(--maz-muted))] mb-2 flex items-center gap-1" :title="item.nama_satuan_kerja || '-'">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
-                      <span class="truncate max-w-[250px]">{{ item.nama_satker || '-' }}</span>
+                      <span class="truncate max-w-[250px]">{{ item.nama_satuan_kerja || '-' }}</span>
                     </div>
                     <div class="flex flex-wrap gap-2 text-[10px]">
                       <span class="px-2 py-1 bg-[color:hsl(var(--maz-foreground)_/_5%)] border border-[color:hsl(var(--maz-border))] rounded text-[color:hsl(var(--maz-muted))] font-mono">
@@ -264,7 +264,7 @@
                 </div>
                 <div class="flex flex-col gap-1 col-span-2">
                   <span class="text-[color:hsl(var(--maz-muted))]">Satuan Kerja</span>
-                  <span class="font-medium text-[color:hsl(var(--maz-foreground))] truncate" :title="item.nama_satker || '-'">{{ item.nama_satker || '-' }}</span>
+                  <span class="font-medium text-[color:hsl(var(--maz-foreground))] truncate" :title="item.nama_satuan_kerja || '-'">{{ item.nama_satuan_kerja || '-' }}</span>
                 </div>
               </div>
               
@@ -497,8 +497,8 @@ const executeExport = async () => {
     if (res.success && res.data) {
       const flatData = res.data.map((row, i) => ({
         'No.': i + 1,
-        'Nama Instansi': namaInstansi,
-        'Nama Satuan Kerja': row.nama_satker || '-',
+        'Nama Instansi': row.nama_instansi || namaInstansi,
+        'Nama Satuan Kerja': row.nama_satuan_kerja || '-',
         'Kode Paket': row.kode_paket || '-',
         'Kode RUP': row.kode_rup || '-',
         'Tahun Anggaran': row.tahun_anggaran || '-',
