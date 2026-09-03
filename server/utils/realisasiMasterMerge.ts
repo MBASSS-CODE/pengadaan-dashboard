@@ -273,6 +273,22 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
   return result;
 };
 
+export const getRealisasiMasterData = async (tahun: string): Promise<any[]> => {
+  const mergedFilePath = path.resolve(dataDir, 'merged', `realisasi_master_${tahun}.json`);
+  let data = await readJsonSafe(mergedFilePath);
+  
+  if (!data || data.length === 0) {
+    console.log(`[RealisasiMaster] Data missing for ${tahun}, auto-triggering merge...`);
+    try {
+      await executeRealisasiMasterMerge(tahun, 'auto');
+      data = await readJsonSafe(mergedFilePath);
+    } catch (e) {
+      console.error('Auto-merge failed', e);
+    }
+  }
+  return data;
+};
+
 
 export const getRealisasiMasterMergeStatus = async (tahun: string) => {
   const historyPath = path.resolve(dataDir, 'merge_history.json');

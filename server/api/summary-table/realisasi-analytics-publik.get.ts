@@ -1,5 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
+import { getRealisasiMasterData } from '../../utils/realisasiMasterMerge';
 
 export const readJsonSafe = async (filePath: string): Promise<any[]> => {
   try {
@@ -15,8 +16,7 @@ export default defineEventHandler(async (event) => {
   const tahun = (query.tahun as string) || new Date().getFullYear().toString();
 
   try {
-    const dir = path.resolve(process.cwd(), 'server', 'data', 'merged');
-    const unifiedData = await readJsonSafe(path.join(dir, `realisasi_master_${tahun}.json`));
+    const unifiedData = await getRealisasiMasterData(tahun);
     
     if (!unifiedData || unifiedData.length === 0) {
         return { 
