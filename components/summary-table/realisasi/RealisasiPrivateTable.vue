@@ -123,6 +123,7 @@
                 <th class="py-4 px-4 min-w-[200px]">Pelaksanaan</th>
                 <th class="py-4 px-4 min-w-[150px]">Status</th>
                 <th class="py-4 px-4 min-w-[200px] text-right">Nilai Transaksi</th>
+                <th class="py-4 px-4 w-24 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody class="align-top relative">
@@ -229,6 +230,9 @@
                       </div>
                     </div>
                   </td>
+                  <td class="py-4 px-4 text-center align-middle">
+                    <MazBtn size="xs" outline color="primary" @click="openDetail(item)">Detail</MazBtn>
+                  </td>
                 </tr>
               </template>
             </tbody>
@@ -301,6 +305,9 @@
                   <div>UMK: <span :class="item.nilai_umk > 0 ? 'text-purple-600 dark:text-purple-400 font-bold' : ''">{{ formatRupiah(item.nilai_umk) }}</span></div>
                 </div>
               </div>
+              <div class="mt-2 pt-2 border-t border-[color:hsl(var(--maz-border))]">
+                <MazBtn size="sm" outline block color="primary" @click="openDetail(item)">Lihat Detail Lengkap</MazBtn>
+              </div>
             </div>
           </template>
         </div>
@@ -372,6 +379,111 @@
       </template>
     </MazDialog>
 
+    <!-- Detail Modal -->
+    <MazDialog v-model="detailModal" title="Detail Realisasi Pengadaan" max-width="800px">
+      <div v-if="selectedItem" class="space-y-6 pr-1 text-sm max-h-[75vh] overflow-y-auto">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="p-3.5 rounded-lg border border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-foreground)_/_2%)] flex flex-col justify-between">
+            <span class="text-xs text-[color:hsl(var(--maz-muted))] font-medium">Total Nilai</span>
+            <span class="text-base font-bold text-[color:hsl(var(--maz-foreground))] mt-1">{{ formatRupiah(selectedItem.total_nilai) }}</span>
+          </div>
+          <div class="p-3.5 rounded-lg border border-teal-200 dark:border-teal-900/40 bg-teal-50/50 dark:bg-teal-900/10 flex flex-col justify-between">
+            <span class="text-xs text-teal-700 dark:text-teal-400 font-medium">Nilai PDN</span>
+            <span class="text-base font-bold text-teal-600 dark:text-teal-400 mt-1">{{ formatRupiah(selectedItem.nilai_pdn) }}</span>
+          </div>
+          <div class="p-3.5 rounded-lg border border-purple-200 dark:border-purple-900/40 bg-purple-50/50 dark:bg-purple-900/10 flex flex-col justify-between">
+            <span class="text-xs text-purple-700 dark:text-purple-400 font-medium">Nilai UMK</span>
+            <span class="text-base font-bold text-purple-600 dark:text-purple-400 mt-1">{{ formatRupiah(selectedItem.nilai_umk) }}</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] p-4 rounded-lg border border-[color:hsl(var(--maz-border))] space-y-3">
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-primary))] flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Informasi Paket
+            </h3>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Nama Paket:</span>
+                <span class="font-semibold text-right ml-4 text-[color:hsl(var(--maz-primary))]">{{ selectedItem.nama_paket || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Kode Paket:</span>
+                <span class="font-mono font-medium text-right ml-4">{{ selectedItem.kode_paket || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Kode RUP:</span>
+                <span class="font-mono font-medium text-right ml-4">{{ selectedItem.kode_rup || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Tahun Anggaran:</span>
+                <span class="font-medium text-right ml-4">{{ selectedItem.tahun_anggaran || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Metode Pengadaan:</span>
+                <span class="font-medium text-right ml-4">{{ selectedItem.metode_pengadaan || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Jenis Pengadaan:</span>
+                <span class="font-medium text-right ml-4">{{ selectedItem.jenis_pengadaan || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Sumber Transaksi:</span>
+                <span class="font-medium text-right ml-4">{{ selectedItem.sumber_transaksi || '-' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-[color:hsl(var(--maz-muted))]">Sumber Dana:</span>
+                <span class="font-medium text-right ml-4">{{ selectedItem.sumber_dana || '-' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] p-4 rounded-lg border border-[color:hsl(var(--maz-border))] space-y-3">
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-primary))] flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              Pihak & Pelaksanaan
+            </h3>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Nama Instansi:</span>
+                <span class="font-medium text-right ml-4">{{ selectedItem.nama_instansi || namaInstansi || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Satuan Kerja:</span>
+                <span class="font-medium text-right ml-4 truncate" :title="selectedItem.nama_satuan_kerja || '-'">{{ selectedItem.nama_satuan_kerja || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Nama PPK:</span>
+                <span class="font-semibold text-emerald-600 dark:text-emerald-400 text-right ml-4">{{ selectedItem.nama_ppk || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Penyedia:</span>
+                <span class="font-semibold text-[color:hsl(var(--maz-primary))] text-right ml-4">{{ selectedItem.nama_penyedia || '-' }}</span>
+              </div>
+              <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1">
+                <span class="text-[color:hsl(var(--maz-muted))]">Status Paket:</span>
+                <span class="font-medium text-amber-700 dark:text-amber-400 text-right ml-4">{{ selectedItem.status_paket || '-' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-[color:hsl(var(--maz-muted))]">Tahapan Pengadaan:</span>
+                <span class="font-medium text-right ml-4">{{ selectedItem.tahapan_pengadaan || '-' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="w-full flex justify-end">
+          <MazBtn @click="detailModal = false" color="primary" size="sm">Tutup</MazBtn>
+        </div>
+      </template>
+    </MazDialog>
+
     </div>
   </ClientOnly>
 </template>
@@ -408,6 +520,13 @@ const metodeOptions = ref([]);
 const selectedMetode = ref([]);
 
 const exportModal = ref(false);
+const detailModal = ref(false);
+const selectedItem = ref(null);
+
+const openDetail = (item) => {
+  selectedItem.value = item;
+  detailModal.value = true;
+};
 
 const loadData = async () => {
   loading.value = true;

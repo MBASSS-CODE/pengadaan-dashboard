@@ -1,174 +1,91 @@
-import { getRealisasiData } from '../../utils/realisasiMergeManager';
+import path from 'path';
+import fs from 'fs/promises';
+
+export const readJsonSafe = async (filePath: string): Promise<any[]> => {
+  try {
+    const raw = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(raw) || [];
+  } catch {
+    return [];
+  }
+};
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const tahun = (query.tahun as string) || new Date().getFullYear().toString();
 
   try {
-    const data = await getRealisasiData(tahun, true);
-
-    // Maps for aggregations
-    const maps = {
-      trend: {} as Record<string, { count: number; total: number }>,
-      sumberTransaksi: {} as Record<string, { count: number; total: number }>,
-      metodePengadaan: {} as Record<string, { count: number; total: number }>,
-      jenisPengadaan: {} as Record<string, { count: number; total: number }>,
-      sumberDana: {} as Record<string, { count: number; total: number }>,
-      ppk: {} as Record<string, { count: number; total: number }>,
-      penyedia: {} as Record<string, { count: number; total: number }>
-    };
-
-    let totalNilai = 0;
-    let totalPesanan = 0;
-    let totalPdn = 0;
-    let totalUmk = 0;
-
-    const bulanNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-
-    for (const item of data) {
-      const nilai = item.total_nilai || 0;
-      const dateStr = item._sort_date;
-      const isPdn = item.nilai_pdn > 0;
-      const isUmk = item.nilai_umk > 0;
-      const sumberTrans = item.sumber_transaksi || 'Tidak Diketahui';
-      const metode = item.metode_pengadaan || 'Tidak Diketahui';
-      const jenis = item.jenis_pengadaan || 'Tidak Diketahui';
-      const sumberDana = item.sumber_dana || 'Tidak Diketahui';
-      const ppk = item.nama_ppk || 'Tidak Diketahui';
-      const penyedia = item.nama_penyedia || 'Tidak Diketahui';
-
-      totalPesanan++;
-      totalNilai += nilai;
-      if (isPdn) totalPdn += nilai;
-      if (isUmk) totalUmk += nilai;
-
-      // 1. Trend per Bulan
-      let orderMonth = 'Tidak Diketahui';
-      if (dateStr) {
-        const dateObj = new Date(dateStr);
-        if (!isNaN(dateObj.getTime())) {
-          orderMonth = bulanNames[dateObj.getMonth()] || 'Tidak Diketahui';
-        }
-      }
-      let trendEntry = maps.trend[orderMonth];
-      if (!trendEntry) {
-        trendEntry = { count: 0, total: 0 };
-        maps.trend[orderMonth] = trendEntry;
-      }
-      trendEntry.count++;
-      trendEntry.total += nilai;
-
-      // 2. Sumber Transaksi
-      let stEntry = maps.sumberTransaksi[sumberTrans];
-      if (!stEntry) {
-        stEntry = { count: 0, total: 0 };
-        maps.sumberTransaksi[sumberTrans] = stEntry;
-      }
-      stEntry.count++;
-      stEntry.total += nilai;
-
-      // 3. Metode Pengadaan
-      let metodeEntry = maps.metodePengadaan[metode];
-      if (!metodeEntry) {
-        metodeEntry = { count: 0, total: 0 };
-        maps.metodePengadaan[metode] = metodeEntry;
-      }
-      metodeEntry.count++;
-      metodeEntry.total += nilai;
-
-      // 4. Jenis Pengadaan
-      let jenisEntry = maps.jenisPengadaan[jenis];
-      if (!jenisEntry) {
-        jenisEntry = { count: 0, total: 0 };
-        maps.jenisPengadaan[jenis] = jenisEntry;
-      }
-      jenisEntry.count++;
-      jenisEntry.total += nilai;
-
-      // 5. Sumber Dana
-      let sdEntry = maps.sumberDana[sumberDana];
-      if (!sdEntry) {
-        sdEntry = { count: 0, total: 0 };
-        maps.sumberDana[sumberDana] = sdEntry;
-      }
-      sdEntry.count++;
-      sdEntry.total += nilai;
-
-      // 6. PPK
-      if (ppk && ppk !== 'Tidak Diketahui' && ppk !== '-') {
-        let ppkEntry = maps.ppk[ppk];
-        if (!ppkEntry) {
-          ppkEntry = { count: 0, total: 0 };
-          maps.ppk[ppk] = ppkEntry;
-        }
-        ppkEntry.count++;
-        ppkEntry.total += nilai;
-      }
-
-      // 7. Penyedia
-      if (penyedia && penyedia !== 'Tidak Diketahui' && penyedia !== '-') {
-        let pyEntry = maps.penyedia[penyedia];
-        if (!pyEntry) {
-          pyEntry = { count: 0, total: 0 };
-          maps.penyedia[penyedia] = pyEntry;
-        }
-        pyEntry.count++;
-        pyEntry.total += nilai;
-      }
+    const dir = path.resolve(process.cwd(), 'server', 'data', 'merged');
+    const unifiedData = await readJsonSafe(path.join(dir, `realisasi_master_${tahun}.json`));
+    
+    if (!unifiedData || unifiedData.length === 0) {
+        return { success: true, trend: [], byMetode: [], bySumberDana: [] };
     }
 
-    // Format Maps into Sorted Arrays
-    const formatToArray = (mapObj: Record<string, {count: number, total: number}>, sortBy: 'total'|'count'|'none' = 'none') => {
-      let arr = Object.entries(mapObj).map(([label, val]) => ({
-        label,
-        count: val.count,
-        total: val.total,
-        persentase: totalNilai > 0 ? ((val.total / totalNilai) * 100).toFixed(2) + '%' : '0%'
-      }));
+    // Trend bulanan
+    const months = Array.from({ length: 12 }, (_, i) => i);
+    const trendMap = new Map();
+    
+    months.forEach(m => {
+      trendMap.set(m, { month: m, total_paket: 0, total_nilai: 0, nilai_pdn: 0, nilai_umk: 0 });
+    });
 
-      if (sortBy === 'total') {
-        arr.sort((a, b) => b.total - a.total);
-      } else if (sortBy === 'count') {
-        arr.sort((a, b) => b.count - a.count);
+    // Agregasi Metode dan Sumber Dana
+    const metodeMap = new Map();
+    const sumberDanaMap = new Map();
+
+    unifiedData.forEach(item => {
+      // Bulanan
+      if (item._sort_date) {
+        const d = new Date(item._sort_date);
+        if (!isNaN(d.getTime())) {
+          const m = d.getMonth();
+          if (trendMap.has(m)) {
+            const tm = trendMap.get(m);
+            tm.total_paket += 1;
+            tm.total_nilai += (Number(item.total_nilai) || 0);
+            tm.nilai_pdn += (Number(item.nilai_pdn) || 0);
+            tm.nilai_umk += (Number(item.nilai_umk) || 0);
+          }
+        }
       }
-      return arr;
-    };
 
-    // Special sorting for trend to keep month order
-    const trendArray = bulanNames.map(bulan => {
-      const val = maps.trend[bulan] || { count: 0, total: 0 };
-      return {
-        label: bulan,
-        count: val.count,
-        total: val.total,
-        persentase: totalNilai > 0 ? ((val.total / totalNilai) * 100).toFixed(2) + '%' : '0%'
-      };
-    }).filter(i => i.count > 0 || totalPesanan === 0);
+      // Metode Pengadaan
+      const metode = item.metode_pengadaan || 'Tidak Diketahui';
+      if (!metodeMap.has(metode)) {
+        metodeMap.set(metode, { label: metode, count: 0, total_nilai: 0 });
+      }
+      const mm = metodeMap.get(metode);
+      mm.count += 1;
+      mm.total_nilai += (Number(item.total_nilai) || 0);
+
+      // Sumber Dana
+      const sumber = item.sumber_dana || 'Tidak Diketahui';
+      if (!sumberDanaMap.has(sumber)) {
+        sumberDanaMap.set(sumber, { label: sumber, count: 0, total_nilai: 0 });
+      }
+      const sm = sumberDanaMap.get(sumber);
+      sm.count += 1;
+      sm.total_nilai += (Number(item.total_nilai) || 0);
+    });
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+    const trendResult = Array.from(trendMap.values()).map(t => ({
+      ...t,
+      month_name: monthNames[t.month]
+    }));
 
     return {
       success: true,
-      message: 'Berhasil memuat analytics summary',
-      summary: {
-        totalPesanan,
-        totalNilai,
-        totalPdn,
-        totalUmk,
-        trend: trendArray,
-        sumberTransaksi: formatToArray(maps.sumberTransaksi, 'total'),
-        metodePengadaan: formatToArray(maps.metodePengadaan, 'total'),
-        jenisPengadaan: formatToArray(maps.jenisPengadaan, 'total'),
-        sumberDana: formatToArray(maps.sumberDana, 'total'),
-        topPpk: formatToArray(maps.ppk, 'total').slice(0, 10),
-        topPenyedia: formatToArray(maps.penyedia, 'total').slice(0, 10)
-      }
+      trend: trendResult,
+      byMetode: Array.from(metodeMap.values()).sort((a, b) => b.total_nilai - a.total_nilai),
+      bySumberDana: Array.from(sumberDanaMap.values()).sort((a, b) => b.total_nilai - a.total_nilai)
     };
-
   } catch (error: any) {
-    console.error('[Realisasi Analytics API] Error:', error.message);
+    console.error('API analytics realisasi error:', error);
     return {
       success: false,
-      message: 'Terjadi kesalahan sistem saat memuat analytics summary.',
-      summary: null
+      message: error.message || 'Terjadi kesalahan'
     };
   }
 });

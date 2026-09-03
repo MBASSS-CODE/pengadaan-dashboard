@@ -121,7 +121,7 @@
                 <th class="py-4 px-4 min-w-[300px]">Informasi Paket</th>
                 <th class="py-4 px-4 min-w-[250px]">Pelaksanaan</th>
                 <th class="py-4 px-4 min-w-[150px]">Status</th>
-                <th class="py-4 px-4 min-w-[200px] text-right">Nilai Transaksi</th>
+                <th class="py-4 px-4 min-w-[200px] text-right">Nilai Transaksi</th>\n                <th class="py-4 px-4 w-24 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody class="align-top relative">
@@ -385,6 +385,12 @@ const metodeOptions = ref([]);
 const selectedMetode = ref([]);
 
 const exportModal = ref(false);
+const detailModal = ref(false);
+const selectedItem = ref(null);
+const openDetail = (item) => {
+  selectedItem.value = item;
+  detailModal.value = true;
+};
 
 const loadData = async () => {
   loading.value = true;

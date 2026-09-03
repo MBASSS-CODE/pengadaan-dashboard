@@ -1,82 +1,117 @@
-import { getRealisasiData } from '../../utils/realisasiMergeManager';
+import path from 'path';
+import fs from 'fs/promises';
+
+export const readJsonSafe = async (filePath: string): Promise<any[]> => {
+  try {
+    const raw = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(raw) || [];
+  } catch {
+    return [];
+  }
+};
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const tahun = (query.tahun as string) || new Date().getFullYear().toString();
   const page = parseInt(query.page as string) || 1;
   const limit = parseInt(query.limit as string) || 50;
-  const forceRefresh = query.refresh === 'true';
 
   try {
-    let unifiedData = await getRealisasiData(tahun, forceRefresh);
+    const dir = path.resolve(process.cwd(), 'server', 'data', 'merged');
+    const unifiedData = await readJsonSafe(path.join(dir, `realisasi_master_${tahun}.json`));
 
-    // Filter Global Search
-    const search = query.search as string;
-    if (search) {
-      const s = search.toLowerCase();
-      unifiedData = unifiedData.filter((item: any) => 
-        (String(item.kode_paket).toLowerCase().includes(s)) ||
-        (String(item.kode_rup).includes(s)) ||
-        (String(item.nama_paket).toLowerCase().includes(s)) ||
-        (String(item.nama_penyedia).toLowerCase().includes(s)) ||
-        (String(item.nama_ppk).toLowerCase().includes(s))
+    if (!unifiedData || unifiedData.length === 0) {
+      return {
+        success: true,
+        data: [],
+        meta: {
+          totalItems: 0,
+          totalPages: 0,
+          currentPage: page,
+          totalNilai: 0,
+          totalPdn: 0,
+          totalUmk: 0
+        },
+        filterOptions: {
+          sumberTransaksi: [],
+          metodePengadaan: []
+        }
+      };
+    }
+
+    let filteredData = [...unifiedData];
+
+    if (query.search) {
+      const search = (query.search as string).toLowerCase();
+      filteredData = filteredData.filter(item => 
+        (item.nama_paket && item.nama_paket.toLowerCase().includes(search)) ||
+        (item.nama_penyedia && item.nama_penyedia.toLowerCase().includes(search)) ||
+        (item.kode_rup && String(item.kode_rup).includes(search)) ||
+        (item.kode_paket && String(item.kode_paket).includes(search))
       );
     }
-
-    // Filter by Sumber Transaksi
-    const filterSumber = query.sumberTransaksi as string;
-    if (filterSumber) {
-      const arr = filterSumber.split(',').filter(Boolean);
-      unifiedData = unifiedData.filter((item: any) => arr.includes(item.sumber_transaksi));
+    
+    if (query.sumberTransaksi) {
+      const sources = (query.sumberTransaksi as string).split(',');
+      filteredData = filteredData.filter(item => sources.includes(item.sumber_transaksi));
     }
 
-    // Filter by Metode Pengadaan
-    const filterMetode = query.metodePengadaan as string;
-    if (filterMetode) {
-      const arr = filterMetode.split(',').filter(Boolean);
-      unifiedData = unifiedData.filter((item: any) => arr.includes(item.metode_pengadaan));
+    if (query.metodePengadaan) {
+      const metode = (query.metodePengadaan as string).split(',');
+      filteredData = filteredData.filter(item => metode.includes(item.metode_pengadaan));
     }
 
-    // Extract unique filter options
-    const uniqueSumber = [...new Set(unifiedData.map((item: any) => item.sumber_transaksi).filter(Boolean))].sort();
-    const uniqueMetode = [...new Set(unifiedData.map((item: any) => item.metode_pengadaan).filter(Boolean))].sort();
+    filteredData.sort((a, b) => (b._sort_date || 0) - (a._sort_date || 0));
 
-    // Kalkulasi agregasi
+    const sumberSet = new Set<string>();
+    const metodeSet = new Set<string>();
+    
     let totalNilai = 0;
     let totalPdn = 0;
     let totalUmk = 0;
 
-    for (const item of unifiedData) {
-      totalNilai += item.total_nilai;
-      totalPdn += item.nilai_pdn;
-      totalUmk += item.nilai_umk;
+    for (const item of filteredData) {
+      if (item.sumber_transaksi) sumberSet.add(item.sumber_transaksi);
+      if (item.metode_pengadaan && item.metode_pengadaan !== '-') metodeSet.add(item.metode_pengadaan);
+      
+      totalNilai += Number(item.total_nilai) || 0;
+      totalPdn += Number(item.nilai_pdn) || 0;
+      totalUmk += Number(item.nilai_umk) || 0;
     }
 
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const paginated = unifiedData.slice(startIndex, endIndex);
+    const filterOptions = {
+      sumberTransaksi: Array.from(sumberSet).sort(),
+      metodePengadaan: Array.from(metodeSet).sort()
+    };
+
+    const totalItems = filteredData.length;
+    const totalPages = Math.ceil(totalItems / limit);
+    
+    let paginatedData = filteredData;
+    if (limit < 100000) {
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      paginatedData = filteredData.slice(startIndex, endIndex);
+    }
 
     return {
       success: true,
-      data: paginated,
+      data: paginatedData,
       meta: {
-        totalItems: unifiedData.length,
+        totalItems,
+        totalPages,
         currentPage: page,
-        itemsPerPage: limit,
-        totalPages: Math.ceil(unifiedData.length / limit),
         totalNilai,
         totalPdn,
         totalUmk
       },
-      filterOptions: {
-        sumberTransaksi: uniqueSumber,
-        metodePengadaan: uniqueMetode
-      }
+      filterOptions
     };
   } catch (error: any) {
+    console.error('API realisasi private error:', error);
     return {
       success: false,
-      message: 'Gagal memuat data: ' + error.message
+      message: error.message || 'Terjadi kesalahan'
     };
   }
 });
