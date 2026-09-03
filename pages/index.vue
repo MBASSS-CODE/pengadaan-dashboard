@@ -76,6 +76,13 @@
             <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
           </svg>
         </MazBtn>
+        <MazBtn @click="navigateTo('/public-dashboard')" outline color="primary" size="lg" class="px-8 font-bold bg-[color:hsl(var(--maz-background)_/_50%)] backdrop-blur-sm">
+          Lihat Dashboard Publik
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        </MazBtn>
       </div>
 
       <!-- Dashboard Image -->
@@ -227,6 +234,7 @@
         <div class="space-y-3">
           <h4 class="text-white font-semibold text-sm tracking-wider">Tautan Terkait</h4>
           <ul class="space-y-2 text-sm text-slate-400 list-none p-0 m-0">
+            <li><NuxtLink to="/public-dashboard" class="text-slate-400 hover:text-white transition-colors no-underline font-medium text-blue-400">Dashboard Publik</NuxtLink></li>
             <li><a href="https://inaproc.lkpp.go.id" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white transition-colors no-underline">INAPROC LKPP</a></li>
             <li><a href="https://data.inaproc.id/" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white transition-colors no-underline">INAPROC DATA</a></li>
           </ul>

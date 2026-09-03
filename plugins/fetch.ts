@@ -6,9 +6,14 @@ export default defineNuxtPlugin((nuxtApp) => {
         const isLoggedIn = useCookie('is_logged_in');
         isLoggedIn.value = null; // Hapus cookie secara global
         
-        // Redirect ke halaman login jika di sisi klien
+        // Redirect ke halaman login jika di sisi klien dan bukan di halaman publik
         if (process.client) {
-          window.location.href = '/login';
+          const publicRoutes = ['/', '/login', '/public-dashboard'];
+          const currentPath = window.location.pathname;
+          
+          if (!publicRoutes.includes(currentPath)) {
+            window.location.href = '/login';
+          }
         }
       }
     }

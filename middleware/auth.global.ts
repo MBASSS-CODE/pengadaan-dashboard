@@ -2,8 +2,8 @@ export default defineNuxtRouteMiddleware((to, from) => {
   const isLoggedIn = useCookie('is_logged_in');
   const userRole = useCookie('user_role');
 
-  // Jika tidak ada token (indikator login) dan bukan di halaman login atau root (landing), arahkan ke login
-  if (!isLoggedIn.value && to.path !== '/login' && to.path !== '/') {
+  // Jika tidak ada token (indikator login) dan bukan di halaman login, root (landing), atau public-dashboard, arahkan ke login
+  if (!isLoggedIn.value && to.path !== '/login' && to.path !== '/' && to.path !== '/public-dashboard') {
     return navigateTo('/login');
   }
 

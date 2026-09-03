@@ -23,6 +23,13 @@ export default defineEventHandler(async (event) => {
       };
     }
 
+    let filteredData = data;
+    const statusQuery = query.status as string;
+    if (statusQuery) {
+      const allowedStatus = statusQuery.split(',').filter(Boolean);
+      filteredData = data.filter((item: any) => allowedStatus.includes(item.status));
+    }
+
     // Maps for aggregations
     const maps = {
       trend: {} as Record<string, { count: number; total: number }>,
@@ -41,11 +48,11 @@ export default defineEventHandler(async (event) => {
     };
 
     let totalNilai = 0;
-    let totalPesanan = data.length;
+    let totalPesanan = filteredData.length;
 
     const bulanNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
-    for (const item of data) {
+    for (const item of filteredData) {
       const total = Number(item.total) || 0;
       totalNilai += total;
       

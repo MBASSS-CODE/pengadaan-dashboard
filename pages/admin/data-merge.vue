@@ -15,6 +15,13 @@
     <!-- Tabs -->
     <div class="flex gap-4 mb-6 pb-2 border-b border-[color:hsl(var(--maz-border))] overflow-x-auto">
       <button 
+        class="tab-btn whitespace-nowrap font-bold" 
+        :class="{ active: activeTab === 'realisasi-master' }"
+        @click="activeTab = 'realisasi-master'"
+      >
+        Realisasi Master
+      </button>
+      <button 
         class="tab-btn whitespace-nowrap" 
         :class="{ active: activeTab === 'rup-penyedia' }"
         @click="activeTab = 'rup-penyedia'"
@@ -61,7 +68,8 @@
     <!-- Tab Content -->
     <div class="tab-content relative min-h-[400px]">
       <Transition name="fade" mode="out-in">
-        <MergeRupPenyedia v-if="activeTab === 'rup-penyedia'" />
+        <MergeRealisasiMaster v-if="activeTab === 'realisasi-master'" />
+        <MergeRupPenyedia v-else-if="activeTab === 'rup-penyedia'" />
         <MergeNonTender v-else-if="activeTab === 'non-tender'" />
         <MergePencatatanNonTender v-else-if="activeTab === 'pencatatan-nontender'" />
         <MergePencatatanSwakelola v-else-if="activeTab === 'pencatatan-swakelola'" />
@@ -80,8 +88,9 @@ import MergePencatatanNonTender from '~/components/admin/MergePencatatanNonTende
 import MergePencatatanSwakelola from '~/components/admin/MergePencatatanSwakelola.vue';
 import MergeRupSwakelola from '~/components/admin/MergeRupSwakelola.vue';
 import MergeEPurchasing from '~/components/admin/MergeEPurchasing.vue';
+import MergeRealisasiMaster from '~/components/admin/MergeRealisasiMaster.vue';
 
-const activeTab = ref('rup-penyedia');
+const activeTab = ref('realisasi-master');
 </script>
 
 <style scoped>
