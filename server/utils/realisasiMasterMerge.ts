@@ -24,6 +24,8 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
 
   // 3. Load all raw files
   const ekatalog = await readJsonSafe(path.join(dataDir, 'ekatalog', `paket-e-purchasing_${tahun}.json`));
+  const ekatalogV5Raw = await readJsonSafe(path.join(dataDir, 'ekatalog-archive', `paket-e-purchasing_${tahun}.json`));
+  const ekatalogV5 = ekatalogV5Raw && ekatalogV5Raw.data ? ekatalogV5Raw.data : (Array.isArray(ekatalogV5Raw) ? ekatalogV5Raw : []);
   const pctNonTender = await readJsonSafe(path.join(dataDir, 'tender', `pencatatan-non-tender_${tahun}.json`));
   const pctNonTenderReal = await readJsonSafe(path.join(dataDir, 'tender', `pencatatan-non-tender-realisasi_${tahun}.json`));
   const nonTenderPengumuman = await readJsonSafe(path.join(dataDir, 'tender', `non-tender-pengumuman_${tahun}.json`));
@@ -129,8 +131,45 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
     });
   });
 
+  // E-Katalog V5
+  ekatalogV5.forEach((item: any) => {
+    const rup = rupPenyediaMap.get(String(item.kd_rup)) || {};
+    const penyedia = getPenyediaDetails(item.kd_penyedia, '', '');
+    let isUmk = false;
+    if (penyedia.status_umkk && penyedia.status_umkk !== 'Non-UMKM' && penyedia.status_umkk !== 'Tidak Diketahui') isUmk = true;
+
+    let status = 'ON PROCESS';
+    if (item.paket_status_str === 'Paket Selesai' || item.status_paket === 'selesai' || item.paket_status_str?.includes('Selesai')) {
+      status = 'COMPLETED';
+    }
+
+    unifiedData.push({
+      nama_instansi: 'KEMENTERIAN PENDAYAGUNAAN APARATUR NEGARA DAN REFORMASI BIROKRASI',
+      nama_satuan_kerja: getSatkerName(item.satker_id || '', item.nama_satker || 'MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA - 427950'),
+      kode_paket: item.kd_paket || item.no_paket,
+      kode_rup: item.kd_rup,
+      tahun_anggaran: item.tahun_anggaran || tahun,
+      sumber_transaksi: 'E-Katalog Versi 5.0',
+      sumber_dana: item.nama_sumber_dana || '-',
+      nama_penyedia: penyedia.nama_penyedia || '-',
+      nama_ppk: getPpkName(item.ppk_nip, '', item.jabatan_ppk || '-'),
+      metode_pengadaan: rup.metode_pengadaan || 'E-Purchasing',
+      jenis_pengadaan: rup.jenis_pengadaan || '-',
+      nama_paket: item.nama_paket || rup.nama_paket || '-',
+      status_paket: status,
+      tahapan_pengadaan: status === 'COMPLETED' ? 'Serah Terima' : 'Kontrak',
+      total_nilai: Number(item.total_harga) || 0,
+      nilai_pdn: Number(item.total_harga) || 0, // Assumption
+      nilai_umk: isUmk ? (Number(item.total_harga) || 0) : 0,
+      _sort_date: item.tanggal_buat_paket ? new Date(item.tanggal_buat_paket).getTime() : 0
+    });
+  });
+
   // Pencatatan Non Tender
   pctNonTender.forEach(item => {
+    const statusPaket = (item.status_nontender_pct_ket || item.status_nontender_pct || '-').toUpperCase();
+    if (statusPaket.includes('BATAL')) return;
+
     const rup = rupPenyediaMap.get(String(item.kd_rup)) || {};
     const reals = pctNonTenderRealMap.get(String(item.kd_nontender_pct)) || [];
     
@@ -231,7 +270,36 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
     });
   });
 
-  // Pencatatan Swakelola excluded to match CSV
+  // Pencatatan Swakelola
+  pctSwakelola.forEach(item => {
+    const statusPaket = (item.status_swakelola_pct_ket || item.status_swakelola_pct || '-').toUpperCase();
+    if (statusPaket.includes('BATAL')) return;
+
+    const rup = rupSwakelolaMap.get(String(item.kd_rup)) || {};
+    const realisasiNilai = Number(item.total_realisasi) || 0;
+    const isPdn = (item.nilai_pdn_pct > 0 || rup.status_pdn === 'PDN' || rup.status_pdn === 'Ya');
+
+    unifiedData.push({
+      nama_instansi: 'KEMENTERIAN PENDAYAGUNAAN APARATUR NEGARA DAN REFORMASI BIROKRASI',
+      nama_satuan_kerja: getSatkerName(item.kd_satker, item.nama_satker || 'MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA - 427950'),
+      kode_paket: item.kd_swakelola_pct,
+      kode_rup: item.kd_rup,
+      tahun_anggaran: item.tahun_anggaran,
+      sumber_transaksi: 'Pencatatan Swakelola',
+      sumber_dana: item.sumber_dana || '-',
+      nama_penyedia: 'SWAKELOLA',
+      nama_ppk: getPpkName(item.nip_ppk, item.nama_ppk, item.nama_ppk || '-'),
+      metode_pengadaan: 'Swakelola',
+      jenis_pengadaan: item.tipe_swakelola || rup.tipe_swakelola || 'Swakelola',
+      nama_paket: item.nama_paket || '-',
+      status_paket: statusPaket,
+      tahapan_pengadaan: statusPaket,
+      total_nilai: realisasiNilai || Number(item.pagu) || 0,
+      nilai_pdn: isPdn ? (realisasiNilai || Number(item.pagu) || 0) : 0,
+      nilai_umk: 0,
+      _sort_date: item.tgl_buat_paket ? new Date(item.tgl_buat_paket).getTime() : 0
+    });
+  });
 
   // Sort descending by date
   unifiedData.sort((a, b) => b._sort_date - a._sort_date);
