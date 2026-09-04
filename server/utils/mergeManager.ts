@@ -28,7 +28,8 @@ export const MERGE_SOURCE_ENDPOINTS = [
   { group: 'tender', endpoint: 'pencatatan-non-tender-realisasi', label: 'Realisasi Pencatatan', required: false },
   { group: 'tender', endpoint: 'pencatatan-swakelola', label: 'Pencatatan Swakelola', required: false },
   { group: 'tender', endpoint: 'pencatatan-swakelola-realisasi', label: 'Realisasi Swakelola', required: false },
-  { group: 'ekatalog', endpoint: 'paket-e-purchasing', label: 'E-Purchasing', required: false }
+  { group: 'ekatalog', endpoint: 'paket-e-purchasing', label: 'E-Purchasing', required: false },
+  { group: 'ekatalog-archive', endpoint: 'paket-e-purchasing', label: 'E-Purchasing Archive V5', required: false }
 ];
 
 // ─── Helper: Read JSON safely ───────────────────────────────────────────────

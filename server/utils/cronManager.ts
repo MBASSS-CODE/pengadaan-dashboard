@@ -20,6 +20,9 @@ export const endpointRegistry: Record<string, { endpoint: string; label: string;
   ekatalog: [
     { endpoint: 'paket-e-purchasing', label: 'Paket E-Purchasing', description: 'Paket e-Purchasing e-Katalog' },
   ],
+  'ekatalog-archive': [
+    { endpoint: 'paket-e-purchasing', label: 'Paket E-Purchasing (Archive V5)', description: 'Arsip e-Katalog Versi 5' },
+  ],
   rup: [
     { endpoint: 'history-kaji-ulang', label: 'History Kaji Ulang', description: 'Riwayat kaji ulang paket RUP' },
     { endpoint: 'master-satker', label: 'Master Satker', description: 'Daftar satuan kerja' },

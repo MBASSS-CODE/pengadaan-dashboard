@@ -154,6 +154,9 @@ export const getRealisasiData = async (tahun: string, forceRefresh: boolean = fa
 
   // Pencatatan Non Tender
   pctNonTender.forEach(item => {
+    const statusPaket = (item.status_nontender_pct_ket || item.status_nontender_pct || '-').toUpperCase();
+    if (statusPaket.includes('BATAL')) return;
+
     const rup = rupPenyediaMap.get(String(item.kd_rup)) || {};
     const reals = pctNonTenderRealMap.get(String(item.kd_nontender_pct)) || [];
     
