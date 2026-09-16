@@ -76,10 +76,12 @@
       </div>
 
       <!-- Tab Content -->
-      <Transition name="fade" mode="out-in">
-        <DashboardRealisasi v-if="activeTab === 'realisasi'" :dashboardData="dashboardData" />
-        <DashboardPerencanaan v-else-if="activeTab === 'perencanaan'" :dashboardData="dashboardData" />
-      </Transition>
+      <ClientOnly>
+        <Transition name="fade" mode="out-in">
+          <DashboardRealisasi v-if="activeTab === 'realisasi'" :dashboardData="dashboardData" />
+          <DashboardPerencanaan v-else-if="activeTab === 'perencanaan'" :dashboardData="dashboardData" />
+        </Transition>
+      </ClientOnly>
     </div>
   </div>
 </template>

@@ -35,12 +35,14 @@
     </div>
 
     <!-- Tab Content -->
-    <Transition name="fade" mode="out-in">
-      <div :key="activeTab">
-        <RupSwakelolaEnrichedAnalytics v-if="activeTab === 'analytics'" :year="selectedYear" />
-        <RupSwakelolaEnrichedTable v-else-if="activeTab === 'table'" :year="selectedYear" />
-      </div>
-    </Transition>
+    <ClientOnly>
+      <Transition name="fade" mode="out-in">
+        <div :key="activeTab">
+          <RupSwakelolaEnrichedAnalytics v-if="activeTab === 'analytics'" :year="selectedYear" />
+          <RupSwakelolaEnrichedTable v-else-if="activeTab === 'table'" :year="selectedYear" />
+        </div>
+      </Transition>
+    </ClientOnly>
   </div>
 </template>
 

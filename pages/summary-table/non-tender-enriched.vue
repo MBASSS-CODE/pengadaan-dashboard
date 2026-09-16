@@ -36,12 +36,14 @@
     </div>
 
     <!-- Tab Content -->
-    <Transition name="fade" mode="out-in">
-      <div :key="activeTab">
-        <NonTenderEnrichedAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" />
-        <NonTenderEnrichedTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" />
-      </div>
-    </Transition>
+    <ClientOnly>
+      <Transition name="fade" mode="out-in">
+        <div :key="activeTab">
+          <NonTenderEnrichedAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" />
+          <NonTenderEnrichedTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" />
+        </div>
+      </Transition>
+    </ClientOnly>
   </div>
 </template>
 

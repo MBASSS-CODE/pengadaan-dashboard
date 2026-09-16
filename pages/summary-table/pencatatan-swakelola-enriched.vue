@@ -37,12 +37,14 @@
     </div>
 
     <!-- Tab Content -->
-    <Transition name="fade" mode="out-in">
-      <div :key="activeTab">
-        <PencatatanSwakelolaEnrichedAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" />
-        <PencatatanSwakelolaEnrichedTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" />
-      </div>
-    </Transition>
+    <ClientOnly>
+      <Transition name="fade" mode="out-in">
+        <div :key="activeTab">
+          <PencatatanSwakelolaEnrichedAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" />
+          <PencatatanSwakelolaEnrichedTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" />
+        </div>
+      </Transition>
+    </ClientOnly>
   </div>
 </template>
 
