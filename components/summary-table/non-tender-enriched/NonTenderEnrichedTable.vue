@@ -743,7 +743,7 @@ const executeExport = async () => {
       if (filterPpkComplete.value !== 'ALL') params.ppkComplete = filterPpkComplete.value;
     }
 
-    const res = await $fetch('/api/summary-table/non-tender-enriched', { params });
+    const res = await $fetch('/api/data/merged/nontender-enriched', { params });
 
     if (res.success && res.data) {
       const flatData = res.data.map((row, i) => ({
