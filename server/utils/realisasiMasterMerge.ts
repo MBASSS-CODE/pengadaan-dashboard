@@ -9,7 +9,7 @@ const cacheDir = path.resolve(dataDir, 'cache');
 // In-memory cache
 let realisasiCache: Record<string, any[]> = {};
 
-export const readJsonSafe = async (filePath: string): Promise<any[]> => {
+export const readJsonSafe = async (filePath: string): Promise<any> => {
   try {
     const raw = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(raw) || [];
@@ -42,35 +42,35 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
 
   // 4. Build lookup maps
   const rupPenyediaMap = new Map();
-  rupPenyedia.forEach(r => rupPenyediaMap.set(String(r.kd_rup), r));
+  rupPenyedia.forEach((r: any) => rupPenyediaMap.set(String(r.kd_rup), r));
 
   const rupSwakelolaMap = new Map();
-  rupSwakelola.forEach(r => rupSwakelolaMap.set(String(r.kd_rup), r));
+  rupSwakelola.forEach((r: any) => rupSwakelolaMap.set(String(r.kd_rup), r));
 
   const satkerMap = new Map();
-  masterSatker.forEach(s => satkerMap.set(String(s.kd_satker), s));
+  masterSatker.forEach((s: any) => satkerMap.set(String(s.kd_satker), s));
 
   const ppkMap = new Map();
-  ppkMaster.forEach(p => {
+  ppkMaster.forEach((p: any) => {
     if (p.nip_nama_masked) ppkMap.set(p.nip_nama_masked, p);
     if (p.nip_asli) ppkMap.set(p.nip_asli, p);
   });
 
   const penyediaMap = new Map();
-  penyediaMaster.forEach(p => {
+  penyediaMaster.forEach((p: any) => {
     if (p.kode_penyedia) penyediaMap.set(String(p.kode_penyedia), p);
     if (p.npwp) penyediaMap.set(String(p.npwp).replace(/[^a-zA-Z0-9]/g, ''), p);
   });
 
   const pctNonTenderRealMap = new Map();
-  pctNonTenderReal.forEach(r => {
+  pctNonTenderReal.forEach((r: any) => {
     const key = String(r.kd_nontender_pct);
     if (!pctNonTenderRealMap.has(key)) pctNonTenderRealMap.set(key, []);
     pctNonTenderRealMap.get(key).push(r);
   });
 
   const pctSwakelolaRealMap = new Map();
-  pctSwakelolaReal.forEach(r => {
+  pctSwakelolaReal.forEach((r: any) => {
     const key = String(r.kd_swakelola_pct);
     if (!pctSwakelolaRealMap.has(key)) pctSwakelolaRealMap.set(key, []);
     pctSwakelolaRealMap.get(key).push(r);
@@ -99,7 +99,7 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
   const unifiedData: any[] = [];
 
   // E-Katalog
-  ekatalog.forEach(item => {
+  ekatalog.forEach((item: any) => {
     if (!['COMPLETED', 'ON_PROCESS', 'PAYMENT_OUTSIDE_SYSTEM'].includes(item.status)) return;
     
     const rup = rupPenyediaMap.get(String(item.rup_code)) || {};
@@ -166,7 +166,7 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
   });
 
   // Pencatatan Non Tender
-  pctNonTender.forEach(item => {
+  pctNonTender.forEach((item: any) => {
     const statusPaket = (item.status_nontender_pct_ket || item.status_nontender_pct || '-').toUpperCase();
     if (statusPaket.includes('BATAL')) return;
 
@@ -211,7 +211,7 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
   });
 
   // Non Tender Pengumuman
-  nonTenderPengumuman.forEach(item => {
+  nonTenderPengumuman.forEach((item: any) => {
     if (item.status_nontender !== 'Selesai') return;
     const rup = rupPenyediaMap.get(String(item.kd_rup)) || {};
     const nilai = Number(item.pagu) || Number(item.anggaran_total) || 0;
@@ -241,7 +241,7 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
   });
 
   // Pengumuman (Tender)
-  pengumuman.forEach(item => {
+  pengumuman.forEach((item: any) => {
     if (item.status_tender !== 'Selesai') return;
     const rup = rupPenyediaMap.get(String(item.kd_rup)) || {};
     const nilai = Number(item.pagu) || Number(item.hps) || 0;
@@ -271,7 +271,7 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
   });
 
   // Pencatatan Swakelola
-  pctSwakelola.forEach(item => {
+  pctSwakelola.forEach((item: any) => {
     const statusPaket = (item.status_swakelola_pct_ket || item.status_swakelola_pct || '-').toUpperCase();
     if (statusPaket.includes('BATAL')) return;
 

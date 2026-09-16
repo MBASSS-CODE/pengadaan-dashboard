@@ -47,12 +47,14 @@
     </div>
 
     <!-- Tab Content -->
-    <Transition name="fade" mode="out-in">
-      <div :key="activeTab">
-        <EpurchasingEnrichedAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" :selected-satker="selectedSatker" />
-        <EpurchasingEnrichedTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" :selected-satker="selectedSatker" />
-      </div>
-    </Transition>
+    <ClientOnly>
+      <Transition name="fade" mode="out-in">
+        <div :key="activeTab">
+          <EpurchasingEnrichedAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" />
+          <EpurchasingEnrichedTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" />
+        </div>
+      </Transition>
+    </ClientOnly>
   </div>
 </template>
 
