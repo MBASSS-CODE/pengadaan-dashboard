@@ -887,7 +887,9 @@ export const executePencatatanSwakelolaMerge = async (tahun: string, trigger: st
     
     // Load data sources
     const pencatatanData: any[] = (await readJsonSafe(path.resolve(dataDir, `tender/pencatatan-swakelola_${tahun}.json`))) || [];
-    if (pencatatanData.length === 0) return null; // No data to merge
+    if (pencatatanData.length === 0) {
+      return { status: 'error', error: `Tidak ada data Pencatatan Swakelola untuk tahun ${tahun}` };
+    }
 
     const realisasiData: any[] = (await readJsonSafe(path.resolve(dataDir, `tender/pencatatan-swakelola-realisasi_${tahun}.json`))) || [];
     const paketSwakelolaData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-swakelola_${tahun}.json`))) || [];

@@ -369,8 +369,8 @@
           <div v-if="selectedRow._has_pelaksanaan" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
             <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Kode Pencatatan:</span> <span class="font-medium">{{ selectedRow.pelaksanaan_kd_pct || '-' }}</span></div>
             <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Status Pelaksanaan:</span> <span class="font-medium">{{ selectedRow.pelaksanaan_status || '-' }}</span></div>
-            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Tgl Mulai:</span> <span class="font-medium">{{ selectedRow.pelaksanaan_tgl_mulai || '-' }}</span></div>
-            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Tgl Selesai:</span> <span class="font-medium">{{ selectedRow.pelaksanaan_tgl_selesai || '-' }}</span></div>
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Tgl Mulai:</span> <span class="font-medium">{{ formatDate(selectedRow.pelaksanaan_tgl_mulai) }}</span></div>
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Tgl Selesai:</span> <span class="font-medium">{{ formatDate(selectedRow.pelaksanaan_tgl_selesai) }}</span></div>
           </div>
           <p v-else class="text-sm text-[color:hsl(var(--maz-muted))] italic">Tidak ada data pencatatan/pelaksanaan untuk paket swakelola ini.</p>
         </div>
@@ -382,7 +382,7 @@
             <span class="px-2 py-0.5 text-[10px] rounded bg-amber-100 text-amber-700">{{ selectedRow.kaji_ulang_count }}x Kaji Ulang</span>
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
-            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Kaji Ulang Terakhir:</span> <span class="font-medium">{{ selectedRow.kaji_ulang_terakhir || '-' }}</span></div>
+            <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Kaji Ulang Terakhir:</span> <span class="font-medium">{{ formatDate(selectedRow.kaji_ulang_terakhir) }}</span></div>
             <div class="flex justify-between border-b border-[color:hsl(var(--maz-border))] pb-1"><span class="text-[color:hsl(var(--maz-muted))]">Jenis Revisi:</span> <span class="font-medium">{{ selectedRow.kaji_ulang_jenis_revisi || '-' }}</span></div>
             <div class="flex flex-col gap-1 md:col-span-2 pt-1">
               <span class="text-[color:hsl(var(--maz-muted))]">Alasan Terakhir:</span> 
@@ -442,6 +442,20 @@ const totalItems = ref(0);
 const totalPagu = ref(0);
 const realisasiCount = ref(0);
 const ppkCount = ref(0);
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-';
+  const str = dateString.substring(0, 10);
+  if (str.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const [year, month, day] = str.split('-');
+    return `${day}-${month}-${year}`;
+  }
+  if (str.match(/^\d{4}-\d{2}$/)) {
+    const [year, month] = str.split('-');
+    return `${month}-${year}`;
+  }
+  return str;
+};
 
 const tercatatPercentage = computed(() => {
   if (!totalItems.value) return '0%';
