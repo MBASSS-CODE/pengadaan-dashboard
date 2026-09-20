@@ -273,129 +273,7 @@
     </div>
 
     <!-- Modal Detail -->
-    <MazDialog v-model="detailModal" :title="`Detail E-Purchasing: ${selectedItem?.order_id}`" width="900px" scrollable>
-      <div v-if="selectedItem" class="flex flex-col gap-6 text-[color:hsl(var(--maz-foreground))]">
-        <!-- Banner RUP Match -->
-        <div v-if="selectedItem._rup_matched" class="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-xl p-4 flex gap-4">
-          <div class="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-600 flex items-center justify-center shrink-0">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div>
-            <h3 class="font-bold text-teal-800 dark:text-teal-300">Terkoneksi dengan Master RUP Penyedia</h3>
-            <p class="text-xs text-teal-600/80 dark:text-teal-400/80 mt-1">Order ini berhasil di-merge dengan Paket RUP {{ selectedItem.rup_code }}.</p>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Info Transaksi -->
-          <div class="rounded-xl border border-[color:hsl(var(--maz-border))] p-5 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-            <h3 class="font-bold text-sm text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-4 flex items-center gap-2">
-              Informasi Pesanan
-            </h3>
-            
-            <div class="grid grid-cols-2 gap-y-4 gap-x-4">
-              <div>
-                <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">Order ID</p>
-                <p class="text-sm font-bold">{{ selectedItem.order_id }}</p>
-              </div>
-              <div>
-                <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">Tanggal Pesanan</p>
-                <p class="text-sm font-medium">{{ formatDate(selectedItem.order_date) }}</p>
-              </div>
-              <div>
-                <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">Status Transaksi</p>
-                <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-[color:hsl(var(--maz-foreground)_/_5%)] border border-[color:hsl(var(--maz-border))]">
-                  {{ selectedItem.status }}
-                </span>
-              </div>
-              <div>
-                <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">Status Pengiriman</p>
-                <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-[color:hsl(var(--maz-foreground)_/_5%)] border border-[color:hsl(var(--maz-border))]">
-                  {{ selectedItem.shipment_status }}
-                </span>
-              </div>
-              <div>
-                <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">Produk Lokal</p>
-                <p class="text-sm font-medium">{{ selectedItem.flag_minikom }}</p>
-              </div>
-            </div>
-            
-            <div class="mt-4 pt-4 border-t border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))]">
-              <div class="flex justify-between items-center">
-                <p class="text-xs uppercase text-[color:hsl(var(--maz-muted))] font-bold">Total Pembelian</p>
-                <p class="text-lg font-black text-[color:hsl(var(--maz-primary))]">{{ formatRupiah(selectedItem.total) }}</p>
-              </div>
-              <div class="flex justify-between items-center mt-1">
-                <p class="text-[10px] text-[color:hsl(var(--maz-muted))]">Ongkos Kirim</p>
-                <p class="text-xs font-medium">{{ formatRupiah(selectedItem.shipping_fee || 0) }}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Info Penyedia -->
-          <div class="rounded-xl border border-[color:hsl(var(--maz-border))] p-5 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
-            <h3 class="font-bold text-sm text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-4 flex items-center gap-2">
-              Profil Penyedia
-            </h3>
-            
-            <div class="flex flex-col gap-4">
-              <div>
-                <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">Nama Perusahaan / Penyedia</p>
-                <p class="text-base font-bold text-purple-600 dark:text-purple-400">{{ selectedItem.penyedia_nama || 'Tidak diketahui' }}</p>
-                <p class="text-xs font-mono text-[color:hsl(var(--maz-muted))] mt-1">ID: {{ selectedItem.kode_penyedia }}</p>
-              </div>
-              
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">NPWP</p>
-                  <p class="text-sm font-medium">{{ selectedItem.penyedia_npwp || '-' }}</p>
-                </div>
-                <div>
-                  <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">Status UMKM</p>
-                  <p class="text-sm font-medium">{{ selectedItem.penyedia_status_umkk || '-' }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Info PPK -->
-        <div v-if="selectedItem.ppk_nama_lengkap || selectedItem.rup_nama_ppk" class="rounded-xl border border-[color:hsl(var(--maz-border))] p-5 relative overflow-hidden mt-2">
-          <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-          <h3 class="font-bold text-sm text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-4 flex items-center gap-2">
-            Informasi PPK
-          </h3>
-          
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">Nama PPK</p>
-              <p class="text-sm font-bold text-[color:hsl(var(--maz-foreground))]">{{ selectedItem.ppk_nama_lengkap || selectedItem.rup_nama_ppk }}</p>
-            </div>
-            <div>
-              <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">NIP</p>
-              <p class="text-sm font-medium font-mono">{{ selectedItem.ppk_nip_asli || selectedItem.rup_nip_ppk || '-' }}</p>
-            </div>
-            <div>
-              <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">Jabatan</p>
-              <p class="text-sm font-medium">{{ selectedItem.ppk_jabatan || '-' }}</p>
-            </div>
-            <div>
-              <p class="text-[10px] uppercase text-[color:hsl(var(--maz-muted))] mb-1 font-semibold">Kontak</p>
-              <p class="text-xs text-[color:hsl(var(--maz-muted))]">{{ selectedItem.ppk_telepon || '-' }} / {{ selectedItem.ppk_email || '-' }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <template #footer>
-        <div class="w-full flex justify-end">
-          <MazBtn @click="detailModal = false" color="transparent">Tutup</MazBtn>
-        </div>
-      </template>
-    </MazDialog>
+    <EpurchasingEnrichedDetailDialog v-model="detailModal" :selected-item="selectedItem" />
 
     <!-- Modal Export -->
     <MazDialog v-model="exportModal" title="Export ke Excel (XLSX)">
@@ -438,6 +316,7 @@
 <script setup>
 import { ref, watch, onMounted, computed, toRefs } from 'vue';
 import { utils, writeFile } from 'xlsx';
+import EpurchasingEnrichedDetailDialog from './EpurchasingEnrichedDetailDialog.vue';
 
 const props = defineProps({
   selectedYear: { type: String, required: true }
