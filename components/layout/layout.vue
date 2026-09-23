@@ -10,7 +10,7 @@
                     <img src="https://upload.wikimedia.org/wikipedia/commons/9/90/National_emblem_of_Indonesia_Garuda_Pancasila.svg" alt="Garuda Logo" class="w-7 h-7 object-contain drop-shadow-sm" />
                 </div>
                 <h1 class="text-lg font-extrabold tracking-tight text-slate-800 dark:text-slate-100 ml-3.5 mt-0.5" style="font-family: 'Inter', sans-serif;">
-                    PRISMA <span class="text-blue-600 dark:text-blue-400">MENPAN</span>
+                    RADAR <span class="text-blue-600 dark:text-blue-400">MENPAN</span>
                 </h1>
             </div>
             
