@@ -138,7 +138,12 @@
             </thead>
             <tbody class="divide-y divide-[color:hsl(var(--maz-border))]">
               <tr v-for="(item, idx) in metodeTableData" :key="idx" class="hover:bg-[color:hsl(var(--maz-foreground)_/_3%)]">
-                <td class="py-3 px-2">{{ item.label }}</td>
+                <td class="py-3 px-2">
+                  <span class="inline-flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: getChartColor('metode', idx) }"></span>
+                    {{ item.label }}
+                  </span>
+                </td>
                 <td class="py-3 px-2 text-right">{{ item.count.toLocaleString('id-ID') }}</td>
                 <td class="py-3 px-2 text-right font-medium text-[color:hsl(var(--maz-primary))]">{{ item.persentase }}</td>
                 <td class="py-3 px-2 text-right">{{ formatRupiah(item.realisasi) }}</td>
@@ -170,7 +175,12 @@
             </thead>
             <tbody class="divide-y divide-[color:hsl(var(--maz-border))]">
               <tr v-for="(item, idx) in kategoriTableData" :key="idx" class="hover:bg-[color:hsl(var(--maz-foreground)_/_3%)]">
-                <td class="py-3 px-2">{{ item.label }}</td>
+                <td class="py-3 px-2">
+                  <span class="inline-flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: getChartColor('kategori', idx) }"></span>
+                    {{ item.label }}
+                  </span>
+                </td>
                 <td class="py-3 px-2 text-right">{{ item.count.toLocaleString('id-ID') }}</td>
                 <td class="py-3 px-2 text-right font-medium text-[color:hsl(var(--maz-primary))]">{{ item.persentase }}</td>
                 <td class="py-3 px-2 text-right">{{ formatRupiah(item.realisasi) }}</td>
@@ -202,7 +212,12 @@
             </thead>
             <tbody class="divide-y divide-[color:hsl(var(--maz-border))]">
               <tr v-for="(item, idx) in buktiBayarTableData" :key="idx" class="hover:bg-[color:hsl(var(--maz-foreground)_/_3%)]">
-                <td class="py-3 px-2">{{ item.label }}</td>
+                <td class="py-3 px-2">
+                  <span class="inline-flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: getChartColor('buktiBayar', idx) }"></span>
+                    {{ item.label }}
+                  </span>
+                </td>
                 <td class="py-3 px-2 text-right">{{ item.count.toLocaleString('id-ID') }}</td>
                 <td class="py-3 px-2 text-right font-medium text-[color:hsl(var(--maz-primary))]">{{ item.persentase }}</td>
                 <td class="py-3 px-2 text-right">{{ formatRupiah(item.realisasi) }}</td>
@@ -234,7 +249,12 @@
             </thead>
             <tbody class="divide-y divide-[color:hsl(var(--maz-border))]">
               <tr v-for="(item, idx) in sumberDanaTableData" :key="idx" class="hover:bg-[color:hsl(var(--maz-foreground)_/_3%)]">
-                <td class="py-3 px-2">{{ item.label }}</td>
+                <td class="py-3 px-2">
+                  <span class="inline-flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: getChartColor('sumberDana', idx) }"></span>
+                    {{ item.label }}
+                  </span>
+                </td>
                 <td class="py-3 px-2 text-right">{{ item.count.toLocaleString('id-ID') }}</td>
                 <td class="py-3 px-2 text-right font-medium text-[color:hsl(var(--maz-primary))]">{{ item.persentase }}</td>
                 <td class="py-3 px-2 text-right">{{ formatRupiah(item.realisasi) }}</td>
@@ -412,6 +432,19 @@ const satkerTableData = ref([]);
 const ppkTableData = ref([]);
 const penyediaUmkkTableData = ref([]);
 
+const chartColors = {
+  metode: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b', '#ec4899', '#14b8a6'],
+  kategori: ['#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#3b82f6', '#64748b', '#10b981'],
+  buktiBayar: ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'],
+  sumberDana: ['#6366f1', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6']
+};
+
+const getChartColor = (type, index) => {
+  const colors = chartColors[type];
+  if (!colors) return '#64748b';
+  return colors[index % colors.length];
+};
+
 const doughnutOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -501,7 +534,12 @@ const loadStatsAndAnalytics = async () => {
         labels: deviasiTableData.value.map(i => i.label),
         datasets: [{
           data: deviasiTableData.value.map(i => i.count),
-          backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+          backgroundColor: deviasiTableData.value.map(i => {
+            if (i.label.includes('Sesuai')) return '#10b981';
+            if (i.label.includes('Overbudget')) return '#ef4444';
+            if (i.label.includes('Underbudget')) return '#f59e0b';
+            return '#64748b';
+          }),
           borderWidth: 0
         }]
       };
@@ -512,7 +550,12 @@ const loadStatsAndAnalytics = async () => {
         labels: statusTableData.value.map(i => i.label),
         datasets: [{
           data: statusTableData.value.map(i => i.count),
-          backgroundColor: ['#8cc63f', '#fbbd08', '#17a2b8', '#64748b', '#ef4444'],
+          backgroundColor: statusTableData.value.map((i, idx) => {
+            if (i.label === 'Paket Selesai') return '#10b981';
+            if (i.label === 'Aktif') return '#3b82f6';
+            const fallbacks = ['#64748b', '#94a3b8', '#cbd5e1'];
+            return fallbacks[idx % fallbacks.length];
+          }),
           borderWidth: 0
         }]
       };
@@ -523,7 +566,7 @@ const loadStatsAndAnalytics = async () => {
         labels: metodeTableData.value.map(i => i.label),
         datasets: [{
           data: metodeTableData.value.map(i => i.count),
-          backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b', '#ec4899', '#14b8a6'],
+          backgroundColor: metodeTableData.value.map((_, idx) => getChartColor('metode', idx)),
           borderWidth: 0
         }]
       };
@@ -534,7 +577,7 @@ const loadStatsAndAnalytics = async () => {
         labels: kategoriTableData.value.map(i => i.label),
         datasets: [{
           data: kategoriTableData.value.map(i => i.count),
-          backgroundColor: ['#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#3b82f6', '#64748b', '#10b981'],
+          backgroundColor: kategoriTableData.value.map((_, idx) => getChartColor('kategori', idx)),
           borderWidth: 0
         }]
       };
@@ -545,7 +588,7 @@ const loadStatsAndAnalytics = async () => {
         labels: buktiBayarTableData.value.map(i => i.label),
         datasets: [{
           data: buktiBayarTableData.value.map(i => i.count),
-          backgroundColor: ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'],
+          backgroundColor: buktiBayarTableData.value.map((_, idx) => getChartColor('buktiBayar', idx)),
           borderWidth: 0
         }]
       };
@@ -556,7 +599,7 @@ const loadStatsAndAnalytics = async () => {
         labels: sumberDanaTableData.value.map(i => i.label),
         datasets: [{
           data: sumberDanaTableData.value.map(i => i.count),
-          backgroundColor: ['#6366f1', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6'],
+          backgroundColor: sumberDanaTableData.value.map((_, idx) => getChartColor('sumberDana', idx)),
           borderWidth: 0
         }]
       };
@@ -571,7 +614,11 @@ const loadStatsAndAnalytics = async () => {
         labels: penyediaUmkkTableData.value.map(i => i.label),
         datasets: [{
           data: penyediaUmkkTableData.value.map(i => i.count),
-          backgroundColor: ['#3b82f6', '#cbd5e1', '#f59e0b'],
+          backgroundColor: penyediaUmkkTableData.value.map(i => {
+            if (i.label === 'Usaha Mikro/Kecil') return '#3b82f6';
+            if (i.label === 'Non-UMKK') return '#f59e0b';
+            return '#94a3b8';
+          }),
           borderWidth: 0
         }]
       };
