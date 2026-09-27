@@ -343,15 +343,64 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
 
 export const getRealisasiMasterData = async (tahun: string): Promise<any[]> => {
   const mergedFilePath = path.resolve(dataDir, 'merged', `realisasi_master_${tahun}.json`);
+  
+  const sourceFiles = [
+    path.join(dataDir, 'ekatalog', `paket-e-purchasing_${tahun}.json`),
+    path.join(dataDir, 'ekatalog-archive', `paket-e-purchasing_${tahun}.json`),
+    path.join(dataDir, 'tender', `pencatatan-non-tender_${tahun}.json`),
+    path.join(dataDir, 'tender', `pencatatan-non-tender-realisasi_${tahun}.json`),
+    path.join(dataDir, 'tender', `non-tender-pengumuman_${tahun}.json`),
+    path.join(dataDir, 'tender', `pengumuman_${tahun}.json`),
+    path.join(dataDir, 'tender', `pencatatan-swakelola_${tahun}.json`),
+    path.join(dataDir, 'tender', `pencatatan-swakelola-realisasi_${tahun}.json`),
+    path.join(dataDir, 'rup', `paket-penyedia_${tahun}.json`),
+    path.join(dataDir, 'rup', `paket-swakelola_${tahun}.json`),
+    path.join(dataDir, 'rup', `master-satker_${tahun}.json`)
+  ];
+
+  let needsMerge = false;
+
+  try {
+    const mergedStat = await fs.stat(mergedFilePath);
+    const mergedTime = mergedStat.mtimeMs;
+    
+    for (const file of sourceFiles) {
+      try {
+        const stat = await fs.stat(file);
+        if (stat.mtimeMs > mergedTime) {
+          needsMerge = true;
+          console.log(`[RealisasiMaster] Source file ${file} is newer than merged file. Triggering re-merge.`);
+          break;
+        }
+      } catch (err) {
+        // Source file doesn't exist, ignore
+      }
+    }
+  } catch (err) {
+    // Merged file doesn't exist
+    needsMerge = true;
+  }
+
+  if (needsMerge) {
+    console.log(`[RealisasiMaster] Data missing or outdated for ${tahun}, auto-triggering merge...`);
+    try {
+      await executeRealisasiMasterMerge(tahun, 'auto');
+    } catch (e) {
+      console.error('Auto-merge failed', e);
+    }
+  }
+
   let data = await readJsonSafe(mergedFilePath);
   
   if (!data || data.length === 0) {
-    console.log(`[RealisasiMaster] Data missing for ${tahun}, auto-triggering merge...`);
-    try {
-      await executeRealisasiMasterMerge(tahun, 'auto');
-      data = await readJsonSafe(mergedFilePath);
-    } catch (e) {
-      console.error('Auto-merge failed', e);
+    if (!needsMerge) {
+      console.log(`[RealisasiMaster] Data empty for ${tahun}, auto-triggering merge...`);
+      try {
+        await executeRealisasiMasterMerge(tahun, 'auto');
+        data = await readJsonSafe(mergedFilePath);
+      } catch (e) {
+        console.error('Auto-merge failed', e);
+      }
     }
   }
   return data;
