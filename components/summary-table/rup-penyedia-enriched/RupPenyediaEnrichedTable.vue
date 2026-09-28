@@ -40,6 +40,8 @@
             <MazInput 
               v-model="searchQuery" 
               placeholder="Cari RUP, Satker, Nama Paket, PPK..." 
+              block
+              class="w-full"
               size="sm"
               @update:model-value="onSearch"
               clearable

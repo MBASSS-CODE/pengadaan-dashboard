@@ -32,6 +32,8 @@
           <MazInput 
             v-model="searchQuery" 
             placeholder="Cari paket, satker, PPK..." 
+            block
+            class="w-full"
             size="sm"
             @update:model-value="onSearchDebounced"
           >
