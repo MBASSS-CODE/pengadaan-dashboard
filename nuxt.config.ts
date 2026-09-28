@@ -13,6 +13,7 @@ export default defineNuxtConfig({
       ]
     }
   },
+  css: ['~/assets/css/main.css'],
   modules: [
     '@maz-ui/nuxt',
     '@nuxtjs/tailwindcss'

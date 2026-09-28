@@ -63,8 +63,8 @@
         </div>
 
         <!-- Filters Row -->
-        <div class="flex flex-col sm:flex-row gap-4 items-end">
-          <div class="w-full sm:w-1/3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
+          <div class="w-full">
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Sumber Transaksi</label>
             <MazSelect 
               v-model="selectedSumber" 
@@ -72,10 +72,11 @@
               size="sm" 
               multiple 
               clearable 
+              search
               placeholder="Semua Sumber"
             />
           </div>
-          <div class="w-full sm:w-1/3">
+          <div class="w-full">
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Metode Pengadaan</label>
             <MazSelect 
               v-model="selectedMetode" 
@@ -83,11 +84,87 @@
               size="sm" 
               multiple 
               clearable 
+              search
               placeholder="Semua Metode"
             />
           </div>
-          <div class="w-full sm:w-1/3 text-right text-xs text-[color:hsl(var(--maz-muted))]">
+          <div class="w-full">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Jenis Pengadaan</label>
+            <MazSelect 
+              v-model="selectedJenisPengadaan" 
+              :options="jenisPengadaanOptions" 
+              size="sm" 
+              multiple 
+              clearable 
+              search
+              placeholder="Semua Jenis"
+            />
+          </div>
+          <div class="w-full">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Sumber Dana</label>
+            <MazSelect 
+              v-model="selectedSumberDana" 
+              :options="sumberDanaOptions" 
+              size="sm" 
+              multiple 
+              clearable 
+              search
+              placeholder="Semua Sumber Dana"
+            />
+          </div>
+          <div class="w-full">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Nama PPK</label>
+            <MazSelect 
+              v-model="selectedPPK" 
+              :options="ppkOptions" 
+              size="sm" 
+              multiple 
+              clearable 
+              search
+              placeholder="Semua PPK"
+            />
+          </div>
+          <div class="w-full">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Penyedia</label>
+            <MazSelect 
+              v-model="selectedPenyedia" 
+              :options="penyediaOptions" 
+              size="sm" 
+              multiple 
+              clearable 
+              search
+              placeholder="Semua Penyedia"
+            />
+          </div>
+          <div class="w-full">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Status Paket</label>
+            <MazSelect 
+              v-model="selectedStatusPaket" 
+              :options="statusPaketOptions" 
+              size="sm" 
+              multiple 
+              clearable 
+              search
+              placeholder="Semua Status"
+            />
+          </div>
+          <div class="w-full">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Tahapan Pengadaan</label>
+            <MazSelect 
+              v-model="selectedTahapanPengadaan" 
+              :options="tahapanPengadaanOptions" 
+              size="sm" 
+              multiple 
+              clearable 
+              search
+              placeholder="Semua Tahapan"
+            />
+          </div>
+          <div class="w-full lg:col-span-3 xl:col-span-4 flex items-center justify-between pb-1 text-xs text-[color:hsl(var(--maz-muted))]">
             <span>Total: <strong class="text-[color:hsl(var(--maz-foreground))]">{{ totalAllItems }}</strong> data</span>
+            <MazBtn v-if="hasActiveFilters" @click="resetFilters" color="danger" size="sm" outline class="h-[32px]">
+              Reset Filter
+            </MazBtn>
           </div>
         </div>
       </div>
@@ -437,6 +514,44 @@ const sumberOptions = ref([]);
 const selectedSumber = ref([]);
 const metodeOptions = ref([]);
 const selectedMetode = ref([]);
+const jenisPengadaanOptions = ref([]);
+const selectedJenisPengadaan = ref([]);
+const sumberDanaOptions = ref([]);
+const selectedSumberDana = ref([]);
+const ppkOptions = ref([]);
+const selectedPPK = ref([]);
+const penyediaOptions = ref([]);
+const selectedPenyedia = ref([]);
+const statusPaketOptions = ref([]);
+const selectedStatusPaket = ref([]);
+const tahapanPengadaanOptions = ref([]);
+const selectedTahapanPengadaan = ref([]);
+
+const hasActiveFilters = computed(() => {
+  return searchQuery.value !== '' || 
+    (selectedSumber.value && selectedSumber.value.length > 0) ||
+    (selectedMetode.value && selectedMetode.value.length > 0) ||
+    (selectedJenisPengadaan.value && selectedJenisPengadaan.value.length > 0) ||
+    (selectedSumberDana.value && selectedSumberDana.value.length > 0) ||
+    (selectedPPK.value && selectedPPK.value.length > 0) ||
+    (selectedPenyedia.value && selectedPenyedia.value.length > 0) ||
+    (selectedStatusPaket.value && selectedStatusPaket.value.length > 0) ||
+    (selectedTahapanPengadaan.value && selectedTahapanPengadaan.value.length > 0);
+});
+
+const resetFilters = () => {
+  searchQuery.value = '';
+  selectedSumber.value = [];
+  selectedMetode.value = [];
+  selectedJenisPengadaan.value = [];
+  selectedSumberDana.value = [];
+  selectedPPK.value = [];
+  selectedPenyedia.value = [];
+  selectedStatusPaket.value = [];
+  selectedTahapanPengadaan.value = [];
+  currentPage.value = 1;
+  loadData();
+};
 
 const exportModal = ref(false);
 const detailModal = ref(false);
@@ -464,6 +579,12 @@ const loadData = async () => {
 
     if (selectedSumber.value.length > 0) params.sumberTransaksi = selectedSumber.value.join(',');
     if (selectedMetode.value.length > 0) params.metodePengadaan = selectedMetode.value.join(',');
+    if (selectedJenisPengadaan.value.length > 0) params.jenisPengadaan = selectedJenisPengadaan.value.join(',');
+    if (selectedSumberDana.value.length > 0) params.sumberDana = selectedSumberDana.value.join(',');
+    if (selectedPPK.value.length > 0) params.ppk = selectedPPK.value.join(',');
+    if (selectedPenyedia.value.length > 0) params.penyedia = selectedPenyedia.value.join(',');
+    if (selectedStatusPaket.value.length > 0) params.statusPaket = selectedStatusPaket.value.join(',');
+    if (selectedTahapanPengadaan.value.length > 0) params.tahapanPengadaan = selectedTahapanPengadaan.value.join(',');
 
     const res = await $fetch('/api/summary-table/realisasi-private', { params });
     if (res.success) {
@@ -476,6 +597,12 @@ const loadData = async () => {
 
       sumberOptions.value = (res.filterOptions?.sumberTransaksi || []).map(opt => ({ label: opt, value: opt }));
       metodeOptions.value = (res.filterOptions?.metodePengadaan || []).map(opt => ({ label: opt, value: opt }));
+      jenisPengadaanOptions.value = (res.filterOptions?.jenisPengadaan || []).map(opt => ({ label: opt, value: opt }));
+      sumberDanaOptions.value = (res.filterOptions?.sumberDana || []).map(opt => ({ label: opt, value: opt }));
+      ppkOptions.value = (res.filterOptions?.ppk || []).map(opt => ({ label: opt, value: opt }));
+      penyediaOptions.value = (res.filterOptions?.penyedia || []).map(opt => ({ label: opt, value: opt }));
+      statusPaketOptions.value = (res.filterOptions?.statusPaket || []).map(opt => ({ label: opt, value: opt }));
+      tahapanPengadaanOptions.value = (res.filterOptions?.tahapanPengadaan || []).map(opt => ({ label: opt, value: opt }));
     } else {
       error.value = true;
       items.value = [];
@@ -497,7 +624,7 @@ const debouncedLoadData = (() => {
   };
 })();
 
-watch([currentPage, itemsPerPage, selectedSumber, selectedMetode], () => { loadData(); });
+watch([currentPage, itemsPerPage, selectedSumber, selectedMetode, selectedJenisPengadaan, selectedSumberDana, selectedPPK, selectedPenyedia, selectedStatusPaket, selectedTahapanPengadaan], () => { loadData(); });
 watch([selectedYear, filterType, startDate, endDate, selectedQuarter], () => { currentPage.value = 1; loadData(); });
 
 const onSearch = () => { currentPage.value = 1; debouncedLoadData(); };
@@ -542,6 +669,12 @@ const executeExport = async () => {
       if (searchQuery.value) params.search = searchQuery.value;
       if (selectedSumber.value.length > 0) params.sumberTransaksi = selectedSumber.value.join(',');
       if (selectedMetode.value.length > 0) params.metodePengadaan = selectedMetode.value.join(',');
+      if (selectedJenisPengadaan.value.length > 0) params.jenisPengadaan = selectedJenisPengadaan.value.join(',');
+      if (selectedSumberDana.value.length > 0) params.sumberDana = selectedSumberDana.value.join(',');
+      if (selectedPPK.value.length > 0) params.ppk = selectedPPK.value.join(',');
+      if (selectedPenyedia.value.length > 0) params.penyedia = selectedPenyedia.value.join(',');
+      if (selectedStatusPaket.value.length > 0) params.statusPaket = selectedStatusPaket.value.join(',');
+      if (selectedTahapanPengadaan.value.length > 0) params.tahapanPengadaan = selectedTahapanPengadaan.value.join(',');
     }
 
     const res = await $fetch('/api/summary-table/realisasi-private', { params });
