@@ -39,6 +39,8 @@
             <MazInput 
               v-model="searchQuery" 
               placeholder="Cari Order ID, RUP, atau Nama Penyedia..." 
+              block
+              class="w-full"
               size="sm"
               @update:model-value="onSearch"
               clearable

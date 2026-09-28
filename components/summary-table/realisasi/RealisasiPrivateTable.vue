@@ -40,6 +40,8 @@
               v-model="searchQuery" 
               placeholder="Cari Kode Paket, Nama Paket, Kode RUP, atau Penyedia..." 
               size="sm"
+              block
+              class="w-full"
               @update:model-value="onSearch"
               clearable
             >
