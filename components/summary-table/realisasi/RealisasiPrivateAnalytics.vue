@@ -174,7 +174,11 @@ import { Bar, Doughnut, Line } from 'vue-chartjs';
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, PointElement, LineElement);
 
 const props = defineProps({
-  selectedYear: { type: String, required: true }
+  selectedYear: { type: String, required: true },
+  filterType: { type: String, default: 'semua' },
+  startDate: { type: String, default: '' },
+  endDate: { type: String, default: '' },
+  selectedQuarter: { type: String, default: 'TW 1' }
 });
 
 const loading = ref(true);
@@ -317,7 +321,13 @@ const loadAnalytics = async () => {
   isEmpty.value = false;
   
   try {
-    const params = { tahun: props.selectedYear };
+    const params = { 
+      tahun: props.selectedYear,
+      filterType: props.filterType,
+      startDate: props.startDate,
+      endDate: props.endDate,
+      selectedQuarter: props.selectedQuarter
+    };
 
     const res = await $fetch('/api/summary-table/realisasi-analytics-private', {
       params
@@ -335,7 +345,7 @@ const loadAnalytics = async () => {
   }
 };
 
-watch(() => props.selectedYear, () => {
+watch([() => props.selectedYear, () => props.filterType, () => props.startDate, () => props.endDate, () => props.selectedQuarter], () => {
   loadAnalytics();
 });
 

@@ -212,6 +212,12 @@
                         </svg>
                         {{ item.tahapan_pengadaan || '-' }}
                       </span>
+                      <span v-if="item._sort_date" class="text-[11px] font-medium text-[color:hsl(var(--maz-muted))] flex items-center gap-1 mt-1 border-t border-[color:hsl(var(--maz-border))] pt-2 w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        {{ formatDate(item._sort_date) }}
+                      </span>
                     </div>
                   </td>
                   
@@ -251,7 +257,15 @@
           <template v-else v-for="(item, index) in items" :key="'mobile-' + index + '-' + item.kode_paket">
             <div class="bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] rounded-xl p-4 shadow-sm flex flex-col gap-4">
               <div class="flex justify-between items-start gap-2 border-b border-[color:hsl(var(--maz-border))] pb-3">
-                <div class="font-bold text-sm text-[color:hsl(var(--maz-foreground))]">{{ item.nama_paket || '-' }}</div>
+                <div class="flex flex-col gap-1">
+                  <div class="font-bold text-sm text-[color:hsl(var(--maz-foreground))]">{{ item.nama_paket || '-' }}</div>
+                  <div v-if="item._sort_date" class="text-[10px] text-[color:hsl(var(--maz-muted))] flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {{ formatDate(item._sort_date) }}
+                  </div>
+                </div>
                 <div class="px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded text-[10px] font-bold whitespace-nowrap">
                   {{ item.status_paket || '-' }}
                 </div>
@@ -393,9 +407,13 @@ import { useRuntimeConfig } from '#imports';
 import RealisasiPrivateDetailDialog from './RealisasiPrivateDetailDialog.vue';
 
 const props = defineProps({
-  selectedYear: { type: String, required: true }
+  selectedYear: { type: String, required: true },
+  filterType: { type: String, default: 'semua' },
+  startDate: { type: String, default: '' },
+  endDate: { type: String, default: '' },
+  selectedQuarter: { type: String, default: 'TW 1' }
 });
-const { selectedYear } = toRefs(props);
+const { selectedYear, filterType, startDate, endDate, selectedQuarter } = toRefs(props);
 
 const config = useRuntimeConfig();
 const namaInstansi = config.public.namaInstansi || 'KEMENTERIAN PENDAYAGUNAAN APARATUR NEGARA DAN REFORMASI BIROKRASI';
@@ -433,6 +451,10 @@ const loadData = async () => {
   try {
     const params = {
       tahun: selectedYear.value,
+      filterType: filterType.value,
+      startDate: startDate.value,
+      endDate: endDate.value,
+      selectedQuarter: selectedQuarter.value,
       page: currentPage.value,
       limit: itemsPerPage.value,
       search: searchQuery.value,
@@ -474,13 +496,19 @@ const debouncedLoadData = (() => {
 })();
 
 watch([currentPage, itemsPerPage, selectedSumber, selectedMetode], () => { loadData(); });
-watch(() => selectedYear.value, () => { currentPage.value = 1; loadData(); });
+watch([selectedYear, filterType, startDate, endDate, selectedQuarter], () => { currentPage.value = 1; loadData(); });
 
 const onSearch = () => { currentPage.value = 1; debouncedLoadData(); };
 
 const formatRupiah = (angka) => {
   if (!angka && angka !== 0) return '-';
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
+};
+
+const formatDate = (timestamp) => {
+  if (!timestamp) return '-';
+  const d = new Date(timestamp);
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
 const visiblePages = computed(() => {
@@ -500,6 +528,10 @@ const executeExport = async () => {
   try {
     const params = {
       tahun: selectedYear.value,
+      filterType: filterType.value,
+      startDate: startDate.value,
+      endDate: endDate.value,
+      selectedQuarter: selectedQuarter.value,
       page: 1,
       limit: 100000
     };

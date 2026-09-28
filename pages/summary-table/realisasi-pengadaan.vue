@@ -6,14 +6,53 @@
         <p class="text-sm text-[color:hsl(var(--maz-muted))] mt-1">Data Realisasi Pengadaan (Internal) yang mencakup E-Katalog, Non Tender, dan Tender</p>
       </div>
 
-      <div class="flex items-center gap-3 bg-[color:hsl(var(--maz-background))] p-2 rounded-lg border border-[color:hsl(var(--maz-border))] shadow-sm">
-        <span class="text-sm font-medium text-[color:hsl(var(--maz-muted))] whitespace-nowrap pl-2">Tahun Anggaran:</span>
-        <MazSelect
-          v-model="selectedYear"
-          :options="availableYears"
-          size="sm"
-          class="w-32"
-        />
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2 bg-[color:hsl(var(--maz-background))] p-2 rounded-lg border border-[color:hsl(var(--maz-border))] shadow-sm">
+          <span class="text-sm font-medium text-[color:hsl(var(--maz-muted))] whitespace-nowrap pl-2">Periode:</span>
+          <MazSelect
+            v-model="filterType"
+            :options="filterOptions"
+            size="sm"
+            class="w-44"
+          />
+          
+          <template v-if="filterType === 'tanggal'">
+            <ClientOnly>
+              <MazDatePicker
+                v-model="dateRange"
+                label="Pilih Rentang Waktu"
+                range
+                double
+                auto-close
+                color="primary"
+                size="sm"
+                class="w-64"
+              />
+              <template #fallback>
+                <div class="h-8 w-64 bg-[color:hsl(var(--maz-border))] animate-pulse rounded"></div>
+              </template>
+            </ClientOnly>
+          </template>
+          
+          <template v-if="filterType === 'triwulan'">
+            <MazSelect
+              v-model="selectedQuarter"
+              :options="quarterOptions"
+              size="sm"
+              class="w-40"
+            />
+          </template>
+        </div>
+
+        <div class="flex items-center gap-2 bg-[color:hsl(var(--maz-background))] p-2 rounded-lg border border-[color:hsl(var(--maz-border))] shadow-sm">
+          <span class="text-sm font-medium text-[color:hsl(var(--maz-muted))] whitespace-nowrap pl-2">Tahun Anggaran:</span>
+          <MazSelect
+            v-model="selectedYear"
+            :options="availableYears"
+            size="sm"
+            class="w-32"
+          />
+        </div>
       </div>
     </div>
 
@@ -39,8 +78,8 @@
     <ClientOnly>
       <Transition name="fade" mode="out-in">
         <div :key="activeTab">
-          <RealisasiPrivateAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" />
-          <RealisasiPrivateTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" />
+          <RealisasiPrivateAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" :filter-type="filterType" :start-date="dateRange.start" :end-date="dateRange.end" :selected-quarter="selectedQuarter" />
+          <RealisasiPrivateTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" :filter-type="filterType" :start-date="dateRange.start" :end-date="dateRange.end" :selected-quarter="selectedQuarter" />
         </div>
       </Transition>
     </ClientOnly>
@@ -61,6 +100,25 @@ const availableYears = [
 ].map(y => ({ label: y, value: y }));
 
 const selectedYear = ref(currentYear.toString());
+
+const filterType = ref('semua');
+const filterOptions = [
+  { label: 'Sepanjang Tahun', value: 'semua' },
+  { label: 'Tanggal', value: 'tanggal' },
+  { label: 'Triwulan', value: 'triwulan' }
+];
+
+const dateRange = ref({
+  start: `${currentYear}-01-01`,
+  end: new Date().toISOString().split('T')[0]
+});
+const selectedQuarter = ref('TW 1');
+const quarterOptions = [
+  { label: 'TW 1 (Jan-Mar)', value: 'TW 1' },
+  { label: 'TW 2 (Apr-Jun)', value: 'TW 2' },
+  { label: 'TW 3 (Jul-Sep)', value: 'TW 3' },
+  { label: 'TW 4 (Okt-Des)', value: 'TW 4' }
+];
 </script>
 
 <style scoped>

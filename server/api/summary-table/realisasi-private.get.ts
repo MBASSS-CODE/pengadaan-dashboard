@@ -41,6 +41,37 @@ export default defineEventHandler(async (event) => {
 
     let filteredData = [...unifiedData];
 
+    if (query.filterType === 'tanggal' && query.startDate && query.endDate) {
+      const start = new Date(query.startDate as string);
+      start.setHours(0, 0, 0, 0);
+      const startMs = start.getTime();
+      
+      const end = new Date(query.endDate as string);
+      end.setHours(23, 59, 59, 999);
+      const endMs = end.getTime();
+
+      filteredData = filteredData.filter(item => {
+        if (!item._sort_date) return false;
+        return item._sort_date >= startMs && item._sort_date <= endMs;
+      });
+    } else if (query.filterType === 'triwulan' && query.selectedQuarter) {
+      const q = query.selectedQuarter as string;
+      const quarterMap: Record<string, number[]> = {
+        'TW 1': [0, 1, 2],
+        'TW 2': [3, 4, 5],
+        'TW 3': [6, 7, 8],
+        'TW 4': [9, 10, 11]
+      };
+      const validMonths = quarterMap[q] || [];
+      if (validMonths.length > 0) {
+        filteredData = filteredData.filter(item => {
+          if (!item._sort_date) return false;
+          const d = new Date(item._sort_date);
+          return validMonths.includes(d.getMonth());
+        });
+      }
+    }
+
     if (query.search) {
       const search = (query.search as string).toLowerCase();
       filteredData = filteredData.filter(item => 

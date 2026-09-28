@@ -17,12 +17,18 @@ export default defineNuxtConfig({
     '@maz-ui/nuxt',
     '@nuxtjs/tailwindcss'
   ],
+  alias: {
+    'dayjs': 'dayjs/esm/'
+  },
   mazUi: {
     theme: {
       preset: customTheme,
       strategy: 'hybrid',
       darkModeStrategy: 'class',
     }
+  },
+  build: {
+    transpile: ['dayjs', 'maz-ui']
   },
   runtimeConfig: {
     apiDataToken: process.env.API_DATA_TOKEN,
