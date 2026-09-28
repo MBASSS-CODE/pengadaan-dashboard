@@ -1,0 +1,19 @@
+/* MazSelect Dark Mode Overrides */
+html.dark .m-select-list-item,
+html.dark .m-select-list-item span {
+  color: hsl(var(--maz-foreground)) !important;
+}
+
+html.dark .m-select-list__search-input .m-input-input {
+  color: hsl(var(--maz-foreground)) !important;
+}
+
+html.dark .m-select-list-item:hover,
+html.dark .m-select-list-item:focus,
+html.dark .m-select-list-item.is-keyboard-selected {
+  background-color: hsl(var(--maz-foreground) / 10%) !important;
+}
+
+html.dark .m-checkbox > span > svg {
+  color: hsl(var(--maz-background)) !important;
+}
