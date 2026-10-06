@@ -123,7 +123,10 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
       const response: any = await fetchWithRetry(`/${group}/${endpoint}`, {
         baseURL: BASE_URL,
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7'
         },
         params: {
           tahun,
@@ -167,11 +170,14 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
     // Tambahkan tahun ke nama file agar tidak bentrok
     const filePath = path.resolve(dirPath, `${endpoint}_${tahun}.json`);
     
-    await fs.mkdir(dirPath, { recursive: true });
-    
-    // Write to JSON file
-    await fs.writeFile(filePath, JSON.stringify(allData, null, 2), 'utf-8');
-    console.log(`[${new Date().toLocaleString('id-ID')}] Successfully synced ${allData.length} records to ${filePath}`);
+    try {
+      await fs.mkdir(dirPath, { recursive: true });
+      // Write to JSON file
+      await fs.writeFile(filePath, JSON.stringify(allData, null, 2), 'utf-8');
+      console.log(`[${new Date().toLocaleString('id-ID')}] Successfully synced ${allData.length} records to ${filePath}`);
+    } catch (fsError) {
+      console.warn(`[${new Date().toLocaleString('id-ID')}] Could not write cache to file in production:`, fsError);
+    }
 
     // Save to memory cache
     const cacheKey = `${group}_${endpoint}_${tahun}`;
@@ -239,8 +245,8 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
 /**
  * Get precomputed dashboard data
  */
-export const getDashboardPrecomputed = async (tahun: string, instansi: string, jenis?: string, view?: string) => {
-  const cacheKey = `dashboard_precomputed_${tahun}_${instansi}_${jenis}_${view}`;
+export const getDashboardPrecomputed = async (tahun: string, instansi: string, jenis?: string, view?: string, eselon?: string, satker?: string) => {
+  const cacheKey = `dashboard_precomputed_${tahun}_${instansi}_${jenis}_${view}_${eselon}_${satker}`;
   
   if (memoryCache[cacheKey]) {
     console.log(`[${new Date().toLocaleString('id-ID')}] [Cache Hit - RAM] Dashboard Precomputed ${tahun} ${instansi}`);
@@ -266,18 +272,33 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
   // Fetch from API
   console.log(`[${new Date().toLocaleString('id-ID')}] Fetching dashboard precomputed data for ${tahun} - ${instansi}...`);
   try {
-    const response: any = await fetchWithRetry('https://data.inaproc.id/dashboard-api/profil-pengadaan/precomputed', {
-      params: { tahun, instansi, jenis, view }
+    const config = useRuntimeConfig();
+    const token = config.apiDataToken;
+
+    const response: any = await fetchWithRetry('https://data.inaproc.id/api/v1/dashboard/profil/precomputed', {
+      params: { tahun, instansi, jenis, view, eselon, satker },
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Referer': 'https://data.inaproc.id/',
+        'Origin': 'https://data.inaproc.id'
+      }
     }, 'dashboard-precomputed');
     
-    await fs.mkdir(dirPath, { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(response, null, 2), 'utf-8');
+    try {
+      await fs.mkdir(dirPath, { recursive: true });
+      await fs.writeFile(filePath, JSON.stringify(response, null, 2), 'utf-8');
+    } catch (fsError) {
+      console.warn(`[${new Date().toLocaleString('id-ID')}] Could not write dashboard cache to file in production:`, fsError);
+    }
     
     memoryCache[cacheKey] = response;
     return response;
   } catch (error: any) {
     console.error(`[${new Date().toLocaleString('id-ID')}] Error fetching dashboard precomputed:`, error);
-    throw createError({ statusCode: 500, statusMessage: 'Failed to fetch dashboard data' });
+    throw createError({ statusCode: 500, statusMessage: `Failed to fetch dashboard data: ${error.message || 'Unknown error'}` });
   }
 };
 
