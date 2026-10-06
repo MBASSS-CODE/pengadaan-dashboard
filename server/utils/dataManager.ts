@@ -167,11 +167,14 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
     // Tambahkan tahun ke nama file agar tidak bentrok
     const filePath = path.resolve(dirPath, `${endpoint}_${tahun}.json`);
     
-    await fs.mkdir(dirPath, { recursive: true });
-    
-    // Write to JSON file
-    await fs.writeFile(filePath, JSON.stringify(allData, null, 2), 'utf-8');
-    console.log(`[${new Date().toLocaleString('id-ID')}] Successfully synced ${allData.length} records to ${filePath}`);
+    try {
+      await fs.mkdir(dirPath, { recursive: true });
+      // Write to JSON file
+      await fs.writeFile(filePath, JSON.stringify(allData, null, 2), 'utf-8');
+      console.log(`[${new Date().toLocaleString('id-ID')}] Successfully synced ${allData.length} records to ${filePath}`);
+    } catch (fsError) {
+      console.warn(`[${new Date().toLocaleString('id-ID')}] Could not write cache to file in production:`, fsError);
+    }
 
     // Save to memory cache
     const cacheKey = `${group}_${endpoint}_${tahun}`;
@@ -270,14 +273,18 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
       params: { tahun, instansi, jenis, view }
     }, 'dashboard-precomputed');
     
-    await fs.mkdir(dirPath, { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(response, null, 2), 'utf-8');
+    try {
+      await fs.mkdir(dirPath, { recursive: true });
+      await fs.writeFile(filePath, JSON.stringify(response, null, 2), 'utf-8');
+    } catch (fsError) {
+      console.warn(`[${new Date().toLocaleString('id-ID')}] Could not write dashboard cache to file in production:`, fsError);
+    }
     
     memoryCache[cacheKey] = response;
     return response;
   } catch (error: any) {
     console.error(`[${new Date().toLocaleString('id-ID')}] Error fetching dashboard precomputed:`, error);
-    throw createError({ statusCode: 500, statusMessage: 'Failed to fetch dashboard data' });
+    throw createError({ statusCode: 500, statusMessage: `Failed to fetch dashboard data: ${error.message || 'Unknown error'}` });
   }
 };
 
