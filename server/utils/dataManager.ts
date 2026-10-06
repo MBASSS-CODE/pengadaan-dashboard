@@ -245,8 +245,8 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
 /**
  * Get precomputed dashboard data
  */
-export const getDashboardPrecomputed = async (tahun: string, instansi: string, jenis?: string, view?: string) => {
-  const cacheKey = `dashboard_precomputed_${tahun}_${instansi}_${jenis}_${view}`;
+export const getDashboardPrecomputed = async (tahun: string, instansi: string, jenis?: string, view?: string, eselon?: string, satker?: string) => {
+  const cacheKey = `dashboard_precomputed_${tahun}_${instansi}_${jenis}_${view}_${eselon}_${satker}`;
   
   if (memoryCache[cacheKey]) {
     console.log(`[${new Date().toLocaleString('id-ID')}] [Cache Hit - RAM] Dashboard Precomputed ${tahun} ${instansi}`);
@@ -272,9 +272,13 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
   // Fetch from API
   console.log(`[${new Date().toLocaleString('id-ID')}] Fetching dashboard precomputed data for ${tahun} - ${instansi}...`);
   try {
-    const response: any = await fetchWithRetry('https://data.inaproc.id/dashboard-api/profil-pengadaan/precomputed', {
-      params: { tahun, instansi, jenis, view },
+    const config = useRuntimeConfig();
+    const token = config.apiDataToken;
+
+    const response: any = await fetchWithRetry('https://data.inaproc.id/api/v1/dashboard/profil/precomputed', {
+      params: { tahun, instansi, jenis, view, eselon, satker },
       headers: {
+        'Authorization': `Bearer ${token}`,
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',

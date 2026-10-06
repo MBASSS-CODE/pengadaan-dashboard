@@ -109,7 +109,8 @@ const loadData = async () => {
         tahun: selectedYear.value,
         jenis: '1',
         instansi: 'K22',
-        view: 'Nilai'
+        eselon: '00',
+        satker: '427950'
       }
     });
     
