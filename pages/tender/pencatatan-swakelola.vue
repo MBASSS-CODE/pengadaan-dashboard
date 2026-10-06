@@ -13,6 +13,13 @@
           <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
         </select>
         
+        
+        <MazBtn @click="exportModal = true" color="success" class="mr-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Export Excel
+        </MazBtn>
         <MazBtn @click="loadData(true)" :loading="loading" color="primary">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -155,9 +162,43 @@
       </div>
     </div>
   </div>
-</template>
 
+    <!-- Modal Export -->
+    <MazDialog v-model="exportModal" title="Export ke Excel (XLSX)">
+      <div class="flex flex-col gap-4 py-2">
+        <p class="text-sm text-[color:hsl(var(--maz-muted))]">
+          Pilih mode ekspor data untuk Tahun Anggaran {{ typeof selectedYear !== 'undefined' ? selectedYear : new Date().getFullYear() }}:
+        </p>
+        
+        <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] border border-[color:hsl(var(--maz-border))] p-4 rounded-lg">
+          <div class="flex flex-col gap-3">
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="radio" v-model="exportMode" value="filtered" class="mt-1" />
+              <div>
+                <div class="font-semibold text-sm">Sesuai Filter Saat Ini</div>
+                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor data yang tampil pada tabel saat ini berdasarkan pencarian dan filter yang aktif.</div>
+              </div>
+            </label>
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="radio" v-model="exportMode" value="all" class="mt-1" />
+              <div>
+                <div class="font-semibold text-sm">Seluruh Data (Satu Tahun)</div>
+                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor seluruh data untuk tahun anggaran yang dipilih tanpa filter apapun.</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <MazBtn @click="exportModal = false" color="transparent" size="sm">Batal</MazBtn>
+          <MazBtn @click="executeExport" :loading="exportLoading" color="success" size="sm">Download Excel</MazBtn>
+        </div>
+      </template>
+    </MazDialog>
+</template>
 <script setup>
+import { utils, writeFile } from 'xlsx';
 import { ref, onMounted } from 'vue';
 
 const loading = ref(true);
@@ -258,6 +299,67 @@ const onSearchDebounced = () => {
 onMounted(() => {
   loadData(false);
 });
+
+// Export Excel state & functions
+const exportModal = ref(false);
+const exportMode = ref('filtered');
+const exportLoading = ref(false);
+
+const executeExport = async () => {
+  exportLoading.value = true;
+  try {
+    let params = {
+      tahun: typeof selectedYear !== 'undefined' ? selectedYear.value : new Date().getFullYear(),
+      page: 1,
+      limit: 100000
+    };
+
+    if (exportMode.value === 'filtered') {
+      const filterParams = {
+         
+        tahun: selectedYear.value,
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+        search: searchQuery.value || undefined,
+        filterSatker: selectedSatker.value !== 'ALL' ? selectedSatker.value : undefined,
+        forceRefresh: undefined
+      
+      };
+      params = { ...params, ...filterParams, page: 1, limit: 100000 };
+      delete params.forceRefresh;
+    }
+
+    const endpoint = '/api/data/tender/pencatatan-swakelola' || (window.location.pathname.replace('/tender', '/api/data/tender'));
+    const response = await $fetch(endpoint, { params });
+    
+    if (response.data) {
+      const flatData = response.data.map((row, i) => {
+        const cleanRow = { 'No.': i + 1 };
+        for (const key in row) {
+          if (!key.startsWith('_')) {
+             cleanRow[key] = row[key];
+          }
+        }
+        return cleanRow;
+      });
+
+      const ws = utils.json_to_sheet(flatData);
+      const wb = utils.book_new();
+      utils.book_append_sheet(wb, ws, "Data_Export");
+
+      const filename = "Data_Export_" + (typeof selectedYear !== 'undefined' ? selectedYear.value : new Date().getFullYear()) + (exportMode.value === 'filtered' ? '_Filtered' : '') + ".xlsx";
+      writeFile(wb, filename);
+      exportModal.value = false;
+    } else {
+      alert('Tidak ada data untuk diekspor');
+    }
+  } catch (err) {
+    console.error('Failed to export:', err);
+    alert('Gagal melakukan ekspor data. Silakan coba lagi.');
+  } finally {
+    exportLoading.value = false;
+  }
+};
 </script>
 
 <style scoped>
