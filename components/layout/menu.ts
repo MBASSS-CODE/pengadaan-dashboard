@@ -8,6 +8,8 @@ export interface MenuItem {
 
 export interface MenuGroup {
   label: string;
+  section?: string;
+  divider?: boolean;
   items: MenuItem[];
 }
 
@@ -30,7 +32,8 @@ export const standaloneMenuItems: MenuItem[] = [
 
 export const menuGroups: MenuGroup[] = [
   {
-    label: 'RUP',
+    label: 'Rencana Umum Pengadaan',
+    section: 'Rekapitulasi',
     items: [
       {
         name: 'Paket Penyedia',
@@ -88,8 +91,11 @@ export const menuGroups: MenuGroup[] = [
       }
     ]
   },
+
+  // DATA API
   {
     label: 'Data API RUP',
+    section: 'Data API',
     items: [
       {
         name: 'Program Master',
@@ -233,6 +239,7 @@ export const menuGroups: MenuGroup[] = [
   },
   {
     label: 'Admin',
+    section: 'Administrasi',
     items: [
       {
         name: 'Sistem & Cache',

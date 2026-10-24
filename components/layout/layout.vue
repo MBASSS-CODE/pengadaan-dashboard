@@ -31,40 +31,49 @@
                 </template>
 
                 <!-- Kelompok menu collapsible -->
-                <div v-for="group in menuGroups" :key="group.label" class="mb-1">
-                    <div 
-                        class="nav-label mt-2" 
-                        @click="toggleGroup(group.label)"
-                    >
-                        <span>{{ group.label }}</span>
-                        <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            class="collapse-icon" 
-                            :class="{ 'is-collapsed': isGroupCollapsed(group.label) }"
-                            fill="none" 
-                            viewBox="0 0 24 24" 
-                            stroke="currentColor"
+                <template v-for="group in menuGroups" :key="group.label">
+                    <div v-if="isGroupVisible(group)" class="mb-1">
+                        <!-- Pembatas / Section Divider -->
+                        <div v-if="group.section || group.divider" class="menu-section-divider">
+                            <span v-if="group.section" class="divider-text">{{ group.section }}</span>
+                            <div class="divider-line"></div>
+                        </div>
+
+                        <div 
+                            class="nav-label" 
+                            :class="{ 'mt-2': !group.section && !group.divider, 'mt-1': group.section || group.divider }"
+                            @click="toggleGroup(group.label)"
                         >
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
-                    
-                    <div v-show="!isGroupCollapsed(group.label)" class="nav-group-items">
-                        <template v-for="item in group.items" :key="item.path">
-                            <NuxtLink 
-                                v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
-                                :to="item.path" 
-                                class="nav-item" 
-                                @click="closeSidebar"
+                            <span>{{ group.label }}</span>
+                            <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                class="collapse-icon" 
+                                :class="{ 'is-collapsed': isGroupCollapsed(group.label) }"
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path v-for="(path, idx) in item.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
-                                </svg>
-                                {{ item.name }}
-                            </NuxtLink>
-                        </template>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                        
+                        <div v-show="!isGroupCollapsed(group.label)" class="nav-group-items">
+                            <template v-for="item in group.items" :key="item.path">
+                                <NuxtLink 
+                                    v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
+                                    :to="item.path" 
+                                    class="nav-item" 
+                                    @click="closeSidebar"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path v-for="(path, idx) in item.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
+                                    </svg>
+                                    {{ item.name }}
+                                </NuxtLink>
+                            </template>
+                        </div>
                     </div>
-                </div>
+                </template>
             </nav>
 
             <div class="sidebar-footer">
@@ -186,6 +195,14 @@ const isEndpointActive = (endpoint) => {
         }
     }
     return false;
+};
+
+const isGroupVisible = (group) => {
+    if (!group.items || group.items.length === 0) return true;
+    return group.items.some(item => 
+        (!item.adminOnly || userRole.value === 'admin') && 
+        (!item.endpointActive || isEndpointActive(item.endpointActive))
+    );
 };
 
 const checkMobile = () => {
@@ -327,6 +344,31 @@ const handleLogout = async () => {
   gap: 0.25rem;
   flex: 1;
   overflow-y: auto;
+}
+
+/* Menu Section Divider */
+.menu-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0 0.5rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.divider-text {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: hsl(var(--maz-muted) / 80%);
+  white-space: nowrap;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background-color: hsl(var(--maz-border));
 }
 
 .nav-label {
