@@ -15,18 +15,25 @@
     <!-- Tabs -->
     <div class="flex gap-4 mb-6 pb-2 border-b border-[color:hsl(var(--maz-border))] overflow-x-auto">
       <button 
-        class="tab-btn whitespace-nowrap font-bold" 
-        :class="{ active: activeTab === 'realisasi-master' }"
-        @click="activeTab = 'realisasi-master'"
-      >
-        Realisasi Master
-      </button>
-      <button 
         class="tab-btn whitespace-nowrap" 
         :class="{ active: activeTab === 'rup-penyedia' }"
         @click="activeTab = 'rup-penyedia'"
       >
-        RUP Penyedia Master
+        RUP Paket Penyedia
+      </button>
+      <button 
+        class="tab-btn whitespace-nowrap" 
+        :class="{ active: activeTab === 'rup-swakelola' }"
+        @click="activeTab = 'rup-swakelola'"
+      >
+        RUP Paket Swakelola
+      </button>
+      <button 
+        class="tab-btn whitespace-nowrap font-bold" 
+        :class="{ active: activeTab === 'realisasi-master' }"
+        @click="activeTab = 'realisasi-master'"
+      >
+        Realisasi Pengadaan
       </button>
       <button 
         class="tab-btn whitespace-nowrap" 
@@ -48,13 +55,6 @@
         @click="activeTab = 'pencatatan-swakelola'"
       >
         Pencatatan Swakelola
-      </button>
-      <button 
-        class="tab-btn whitespace-nowrap" 
-        :class="{ active: activeTab === 'rup-swakelola' }"
-        @click="activeTab = 'rup-swakelola'"
-      >
-        RUP Swakelola
       </button>
       <button 
         class="tab-btn whitespace-nowrap" 
