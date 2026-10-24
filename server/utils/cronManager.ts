@@ -112,6 +112,9 @@ export const getCronConfig = async () => {
 };
 
 export const saveCronConfig = async (newConfig: { schedule?: string, enablePenyedia?: boolean, enableMainCron?: boolean }) => {
+  if (newConfig.schedule && !cron.validate(newConfig.schedule)) {
+    throw new Error(`Format cron '${newConfig.schedule}' tidak valid.`);
+  }
   const currentConfig = await getCronConfig();
   const config = { ...currentConfig, ...newConfig };
   const dir = path.dirname(configPath);
@@ -211,8 +214,10 @@ export const reloadCronJob = async () => {
           }
         }
       }
+    }, {
+      timezone: 'Asia/Jakarta'
     });
-    console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Diperbarui dengan jadwal:`, currentScheduleStr, '(Status: Aktif)');
+    console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Diperbarui dengan jadwal:`, currentScheduleStr, '(Status: Aktif, Timezone: Asia/Jakarta)');
   } else {
     console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Sinkronisasi otomatis (Main) dimatikan.`);
   }
@@ -232,6 +237,8 @@ export const reloadCronJob = async () => {
     } catch (error) {
       console.error(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Gagal menjalankan queue penyedia:`, error);
     }
+  }, {
+    timezone: 'Asia/Jakarta'
   });
-  console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Penyedia queue diset jadwal: */15 * * * * (Status: ${isPenyediaEnabled ? 'Aktif' : 'Mati'})`);
+  console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Penyedia queue diset jadwal: */15 * * * * (Status: ${isPenyediaEnabled ? 'Aktif' : 'Mati'}, Timezone: Asia/Jakarta)`);
 };

@@ -1,3 +1,4 @@
+import cron from 'node-cron';
 import { saveCronConfig } from '../../utils/cronManager';
 
 export default defineEventHandler(async (event) => {
@@ -9,7 +10,13 @@ export default defineEventHandler(async (event) => {
     }
 
     const newConfig: any = {};
-    if (body.schedule !== undefined) newConfig.schedule = body.schedule;
+    if (body.schedule !== undefined) {
+      const trimmedSchedule = String(body.schedule).trim();
+      if (!cron.validate(trimmedSchedule)) {
+        throw new Error(`Format cron '${trimmedSchedule}' tidak valid. Gunakan format standar 5 kolom (contoh: 0 6,12 * * *).`);
+      }
+      newConfig.schedule = trimmedSchedule;
+    }
     if (body.enableMainCron !== undefined) newConfig.enableMainCron = body.enableMainCron;
 
     if (Object.keys(newConfig).length === 0) {

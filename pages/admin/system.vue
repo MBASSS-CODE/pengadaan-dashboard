@@ -149,43 +149,110 @@
       
       <!-- Pengaturan Cron Job -->
       <div class="lg:col-span-1">
-        <div class="bg-[color:hsl(var(--maz-background))] p-6 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-[color:hsl(var(--maz-foreground))] flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-[color:hsl(var(--maz-primary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Jadwal Sinkronisasi
-            </h2>
-            <div class="flex items-center gap-2">
-              <MazSwitch v-model="isMainCronEnabled" @update:model-value="toggleMainCron" size="sm" color="success" />
-              <span class="text-xs font-medium" :class="isMainCronEnabled ? 'text-green-600' : 'text-red-500'">
-                {{ isMainCronEnabled ? 'Aktif' : 'Mati' }}
-              </span>
+        <div class="bg-[color:hsl(var(--maz-background))] p-6 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-bold text-[color:hsl(var(--maz-foreground))] flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-[color:hsl(var(--maz-primary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Jadwal Sinkronisasi
+              </h2>
+              <div class="flex items-center gap-2">
+                <MazSwitch v-model="isMainCronEnabled" @update:model-value="toggleMainCron" size="sm" color="success" />
+                <span class="text-xs font-medium" :class="isMainCronEnabled ? 'text-green-600' : 'text-red-500'">
+                  {{ isMainCronEnabled ? 'Aktif' : 'Mati' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Pilihan Frekuensi Ramah Pengguna -->
+            <div class="mb-4">
+              <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-2">Frekuensi Sinkronisasi</label>
+              <MazSelect 
+                v-model="scheduleMode" 
+                :options="frequencyOptions"
+                size="sm"
+                block
+                :disabled="savingCron"
+              />
+            </div>
+
+            <!-- Sub Opsi Berdasarkan Frekuensi -->
+            <div v-if="scheduleMode === 'twice_daily'" class="mb-4">
+              <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-2">Pilihan Jam Eksekusi (WIB)</label>
+              <MazSelect 
+                v-model="selectedTwiceTime" 
+                :options="twiceTimeOptions"
+                size="sm"
+                block
+                :disabled="savingCron"
+              />
+            </div>
+
+            <div v-else-if="scheduleMode === 'once_daily'" class="mb-4">
+              <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-2">Pilih Jam Eksekusi (WIB)</label>
+              <MazSelect 
+                v-model="selectedOnceTime" 
+                :options="onceTimeOptions"
+                size="sm"
+                block
+                :disabled="savingCron"
+              />
+            </div>
+
+            <div v-else-if="scheduleMode === 'interval'" class="mb-4">
+              <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-2">Pilih Interval Waktu</label>
+              <MazSelect 
+                v-model="selectedInterval" 
+                :options="intervalOptions"
+                size="sm"
+                block
+                :disabled="savingCron"
+              />
+            </div>
+
+            <div v-else-if="scheduleMode === 'custom'" class="mb-4">
+              <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-2">Ekspresi Cron Kustom</label>
+              <MazInput 
+                v-model="customCronExpression" 
+                placeholder="0 6,12 * * *" 
+                size="sm"
+                :disabled="savingCron"
+              />
+              <p class="text-[11px] text-[color:hsl(var(--maz-muted))] mt-1">
+                Format 5 kolom: <code class="bg-[color:hsl(var(--maz-foreground)_/_10%)] px-1 py-0.5 rounded">Menit Jam * * *</code>
+              </p>
+            </div>
+
+            <!-- Kotak Penjelasan Waktu Eksekusi (Bahasa Manusia) -->
+            <div class="mb-5 p-3 rounded-xl bg-[color:hsl(var(--maz-primary)_/_8%)] border border-[color:hsl(var(--maz-primary)_/_20%)] text-xs">
+              <div class="font-semibold text-[color:hsl(var(--maz-primary))] flex items-center gap-1.5 mb-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Ringkasan Jadwal:
+              </div>
+              <p class="text-[color:hsl(var(--maz-foreground))] leading-relaxed mb-2 font-medium">
+                {{ humanReadableSchedule }}
+              </p>
+              <div class="flex items-center justify-between text-[11px] text-[color:hsl(var(--maz-muted))] border-t border-[color:hsl(var(--maz-primary)_/_15%)] pt-1.5 mt-1.5">
+                <span>Zona Waktu: <strong>WIB (Asia/Jakarta)</strong></span>
+                <span class="font-mono bg-[color:hsl(var(--maz-foreground)_/_5%)] px-1.5 py-0.5 rounded">
+                  {{ computedCronSchedule }}
+                </span>
+              </div>
             </div>
           </div>
           
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-[color:hsl(var(--maz-muted))] mb-2">Format Cron (Menit Jam * * *)</label>
-            <MazInput 
-              v-model="cronSchedule" 
-              placeholder="0 6,12 * * *" 
-              :disabled="savingCron"
-            />
-            <p class="text-xs text-[color:hsl(var(--maz-muted))] mt-2">
-              Contoh: <br/>
-              <code class="bg-[color:hsl(var(--maz-foreground)_/_10%)] px-1 py-0.5 rounded">0 6,12 * * *</code> (Setiap jam 06:00 dan 12:00)<br/>
-              <code class="bg-[color:hsl(var(--maz-foreground)_/_10%)] px-1 py-0.5 rounded">0 */4 * * *</code> (Setiap 4 jam)<br/>
-              <code class="bg-[color:hsl(var(--maz-foreground)_/_10%)] px-1 py-0.5 rounded">30 8 * * *</code> (Setiap jam 08:30 pagi)
-            </p>
-          </div>
-          
-          <MazBtn @click="saveCron" :loading="savingCron" color="primary" block>
-            Simpan Jadwal
-          </MazBtn>
-          
-          <div v-if="saveMessage" class="mt-4 p-3 rounded-lg text-sm bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800">
-            {{ saveMessage }}
+          <div>
+            <MazBtn @click="saveCron" :loading="savingCron" color="primary" block>
+              Simpan Jadwal
+            </MazBtn>
+            
+            <div v-if="saveMessage" class="mt-4 p-3 rounded-lg text-sm bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800">
+              {{ saveMessage }}
+            </div>
           </div>
         </div>
 
@@ -324,6 +391,125 @@ const isMainCronEnabled = ref(true);
 
 const cronSchedule = ref('0 6,12 * * *');
 const logs = ref([]);
+
+// ─── Cron Schedule Presets & State ──────────────────────────────────────────
+const scheduleMode = ref('twice_daily'); // 'twice_daily' | 'once_daily' | 'interval' | 'custom'
+const selectedTwiceTime = ref('06_12'); // '06_12' | '06_18' | '08_16'
+const selectedOnceTime = ref('06'); // '06' | '08' | '12' | '18' | '23'
+const selectedInterval = ref('4'); // '2' | '4' | '6' | '12'
+const customCronExpression = ref('0 6,12 * * *');
+
+const frequencyOptions = [
+  { label: '2 Kali Sehari (Rekomendasi)', value: 'twice_daily' },
+  { label: '1 Kali Sehari', value: 'once_daily' },
+  { label: 'Setiap Beberapa Jam (Interval)', value: 'interval' },
+  { label: 'Kustom Manual (Mode Mahir)', value: 'custom' }
+];
+
+const twiceTimeOptions = [
+  { label: 'Pukul 06:00 & 12:00 WIB (Pagi & Siang)', value: '06_12' },
+  { label: 'Pukul 06:00 & 18:00 WIB (Pagi & Sore)', value: '06_18' },
+  { label: 'Pukul 08:00 & 16:00 WIB (Jam Kerja)', value: '08_16' }
+];
+
+const onceTimeOptions = [
+  { label: 'Pukul 06:00 WIB (Pagi Hari)', value: '06' },
+  { label: 'Pukul 08:00 WIB (Awal Jam Kerja)', value: '08' },
+  { label: 'Pukul 12:00 WIB (Siang Hari)', value: '12' },
+  { label: 'Pukul 18:00 WIB (Sore / Pulang Kerja)', value: '18' },
+  { label: 'Pukul 23:00 WIB (Malam Hari)', value: '23' }
+];
+
+const intervalOptions = [
+  { label: 'Setiap 2 Jam Sekali', value: '2' },
+  { label: 'Setiap 4 Jam Sekali', value: '4' },
+  { label: 'Setiap 6 Jam Sekali', value: '6' },
+  { label: 'Setiap 12 Jam Sekali', value: '12' }
+];
+
+const computedCronSchedule = computed(() => {
+  if (scheduleMode.value === 'custom') {
+    return customCronExpression.value ? customCronExpression.value.trim() : '0 6,12 * * *';
+  }
+  if (scheduleMode.value === 'twice_daily') {
+    if (selectedTwiceTime.value === '06_18') return '0 6,18 * * *';
+    if (selectedTwiceTime.value === '08_16') return '0 8,16 * * *';
+    return '0 6,12 * * *';
+  }
+  if (scheduleMode.value === 'once_daily') {
+    return `0 ${selectedOnceTime.value} * * *`;
+  }
+  if (scheduleMode.value === 'interval') {
+    return `0 */${selectedInterval.value} * * *`;
+  }
+  return '0 6,12 * * *';
+});
+
+const humanReadableSchedule = computed(() => {
+  if (!isMainCronEnabled.value) {
+    return 'Sinkronisasi otomatis saat ini dalam keadaan NONAKTIF (Mati).';
+  }
+  const cron = computedCronSchedule.value;
+  if (cron === '0 6,12 * * *') {
+    return 'Setiap hari pada pukul 06:00 WIB dan 12:00 WIB.';
+  }
+  if (cron === '0 6,18 * * *') {
+    return 'Setiap hari pada pukul 06:00 WIB dan 18:00 WIB.';
+  }
+  if (cron === '0 8,16 * * *') {
+    return 'Setiap hari pada pukul 08:00 WIB dan 16:00 WIB (jam kerja).';
+  }
+  if (cron.startsWith('0 ') && cron.endsWith(' * * *')) {
+    const parts = cron.split(' ');
+    const hourPart = parts[1];
+    if (hourPart && hourPart.startsWith('*/')) {
+      const h = hourPart.replace('*/', '');
+      return `Setiap ${h} jam sekali pada menit ke-00.`;
+    }
+    if (hourPart && !hourPart.includes(',')) {
+      return `Setiap hari tepat pada pukul ${hourPart.padStart(2, '0')}:00 WIB.`;
+    }
+  }
+  return `Berjalan berdasarkan format cron '${cron}' (Zona Waktu: Asia/Jakarta - WIB).`;
+});
+
+const parseScheduleToUi = (scheduleStr) => {
+  if (!scheduleStr) {
+    scheduleMode.value = 'twice_daily';
+    selectedTwiceTime.value = '06_12';
+    return;
+  }
+  const trimmed = scheduleStr.trim();
+  if (trimmed === '0 6,12 * * *') {
+    scheduleMode.value = 'twice_daily';
+    selectedTwiceTime.value = '06_12';
+  } else if (trimmed === '0 6,18 * * *') {
+    scheduleMode.value = 'twice_daily';
+    selectedTwiceTime.value = '06_18';
+  } else if (trimmed === '0 8,16 * * *') {
+    scheduleMode.value = 'twice_daily';
+    selectedTwiceTime.value = '08_16';
+  } else if (trimmed === '0 */2 * * *') {
+    scheduleMode.value = 'interval';
+    selectedInterval.value = '2';
+  } else if (trimmed === '0 */4 * * *') {
+    scheduleMode.value = 'interval';
+    selectedInterval.value = '4';
+  } else if (trimmed === '0 */6 * * *') {
+    scheduleMode.value = 'interval';
+    selectedInterval.value = '6';
+  } else if (trimmed === '0 */12 * * *') {
+    scheduleMode.value = 'interval';
+    selectedInterval.value = '12';
+  } else if (/^0 (\d{1,2}) \* \* \*$/.test(trimmed)) {
+    const match = trimmed.match(/^0 (\d{1,2}) \* \* \*$/);
+    scheduleMode.value = 'once_daily';
+    selectedOnceTime.value = match[1];
+  } else {
+    scheduleMode.value = 'custom';
+    customCronExpression.value = trimmed;
+  }
+};
 
 const stats = ref({
   totalFiles: 0,
@@ -489,7 +675,10 @@ const fetchCronInfo = async () => {
   try {
     const res = await $fetch('/api/admin/cron');
     if (res.success) {
-      if (res.data.config?.schedule) cronSchedule.value = res.data.config.schedule;
+      if (res.data.config?.schedule) {
+        cronSchedule.value = res.data.config.schedule;
+        parseScheduleToUi(res.data.config.schedule);
+      }
       isMainCronEnabled.value = res.data.config?.enableMainCron !== false;
       if (res.data.logs) {
         // Urutkan dari yang terbaru
@@ -529,18 +718,20 @@ const saveCron = async () => {
   savingCron.value = true;
   saveMessage.value = '';
   try {
+    const finalSchedule = computedCronSchedule.value;
     const res = await $fetch('/api/admin/cron', {
       method: 'POST',
-      body: { schedule: cronSchedule.value }
+      body: { schedule: finalSchedule }
     });
     if (res.success) {
+      cronSchedule.value = finalSchedule;
       saveMessage.value = res.message;
       setTimeout(() => { saveMessage.value = '' }, 3000);
     } else {
       alert('Gagal: ' + res.message);
     }
   } catch (error) {
-    alert('Terjadi kesalahan saat menyimpan jadwal');
+    alert(error.response?._data?.message || error.message || 'Terjadi kesalahan saat menyimpan jadwal');
   } finally {
     savingCron.value = false;
   }
