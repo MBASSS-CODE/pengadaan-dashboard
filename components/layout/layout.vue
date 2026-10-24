@@ -41,10 +41,19 @@
 
                         <div 
                             class="nav-label" 
-                            :class="{ 'mt-2': !group.section && !group.divider, 'mt-1': group.section || group.divider }"
+                            :class="{ 
+                                'mt-2': !group.section && !group.divider, 
+                                'mt-1': group.section || group.divider,
+                                'is-active-group': hasActiveChild(group)
+                            }"
                             @click="toggleGroup(group.label)"
                         >
-                            <span>{{ group.label }}</span>
+                            <div class="nav-label-left">
+                                <svg v-if="group.iconPaths && group.iconPaths.length" xmlns="http://www.w3.org/2000/svg" class="group-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path v-for="(path, idx) in group.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
+                                </svg>
+                                <span class="group-label-text">{{ group.label }}</span>
+                            </div>
                             <svg 
                                 xmlns="http://www.w3.org/2000/svg" 
                                 class="collapse-icon" 
@@ -68,7 +77,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path v-for="(path, idx) in item.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
                                     </svg>
-                                    {{ item.name }}
+                                    <span class="nav-item-text">{{ item.name }}</span>
                                 </NuxtLink>
                             </template>
                         </div>
@@ -205,6 +214,10 @@ const isGroupVisible = (group) => {
     );
 };
 
+const hasActiveChild = (group) => {
+    return group.items?.some(item => item.path === route.path);
+};
+
 const checkMobile = () => {
     isMobile.value = window.innerWidth < 768;
     if (isMobile.value) {
@@ -338,12 +351,64 @@ const handleLogout = async () => {
 }
 
 .sidebar-nav {
-  padding: 1.5rem 1rem;
+  padding: 1.25rem 0.85rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   flex: 1;
   overflow-y: auto;
+}
+
+/* Standalone menu item (Dashboard, etc.) */
+.sidebar-nav > .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--maz-border-radius, 0.75rem);
+  color: hsl(var(--maz-foreground) / 80%);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-nav > .nav-item .nav-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-nav > .nav-item:hover {
+  color: hsl(var(--maz-foreground));
+  background-color: hsl(var(--maz-foreground) / 5%);
+}
+
+.sidebar-nav > .nav-item:hover .nav-icon {
+  transform: scale(1.08);
+  color: hsl(var(--maz-primary));
+}
+
+.sidebar-nav > .nav-item.router-link-active {
+  background-color: hsl(var(--maz-primary) / 10%);
+  color: hsl(var(--maz-primary));
+}
+
+.sidebar-nav > .nav-item.router-link-active .nav-icon {
+  color: hsl(var(--maz-primary));
+}
+
+.sidebar-nav > .nav-item.router-link-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  bottom: 15%;
+  width: 4px;
+  background-color: hsl(var(--maz-primary));
+  border-radius: 0 4px 4px 0;
 }
 
 /* Menu Section Divider */
@@ -357,11 +422,11 @@ const handleLogout = async () => {
 }
 
 .divider-text {
-  font-size: 0.6875rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: hsl(var(--maz-muted) / 80%);
+  color: hsl(var(--maz-muted) / 70%);
   white-space: nowrap;
 }
 
@@ -371,21 +436,45 @@ const handleLogout = async () => {
   background-color: hsl(var(--maz-border));
 }
 
+/* Parent Group Accordion Label */
 .nav-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  font-weight: 700;
-  color: hsl(var(--maz-muted));
-  letter-spacing: 1px;
-  margin-bottom: 0.25rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: hsl(var(--maz-foreground) / 80%);
+  margin-bottom: 0.15rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--maz-border-radius, 0.75rem);
   cursor: pointer;
   user-select: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  gap: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-label-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.group-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  color: hsl(var(--maz-muted));
+  flex-shrink: 0;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.group-label-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .nav-label:hover {
@@ -393,71 +482,104 @@ const handleLogout = async () => {
   color: hsl(var(--maz-foreground));
 }
 
+.nav-label:hover .group-icon {
+  color: hsl(var(--maz-primary));
+}
+
+.nav-label.is-active-group {
+  color: hsl(var(--maz-primary));
+}
+
+.nav-label.is-active-group .group-icon {
+  color: hsl(var(--maz-primary));
+}
+
 .collapse-icon {
-  width: 1rem;
-  height: 1rem;
-  transition: transform 0.2s ease;
+  width: 0.95rem;
+  height: 0.95rem;
+  color: hsl(var(--maz-muted));
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .collapse-icon.is-collapsed {
   transform: rotate(-90deg);
 }
 
+.nav-label:hover .collapse-icon,
+.nav-label.is-active-group .collapse-icon {
+  color: hsl(var(--maz-foreground));
+}
+
+/* Sub-menu Items (Indented with guide line) */
 .nav-group-items {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
+  margin-left: 1.45rem;
+  padding-left: 0.75rem;
+  border-left: 1.5px solid hsl(var(--maz-border));
+  margin-top: 0.15rem;
+  margin-bottom: 0.45rem;
 }
 
-.nav-item {
+.nav-group-items .nav-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.85rem 1rem;
-  border-radius: var(--maz-border-radius, 0.75rem);
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--maz-border-radius, 0.55rem);
   color: hsl(var(--maz-muted));
   text-decoration: none;
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 0.825rem;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
 
-.nav-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  transition: transform 0.2s ease;
+.nav-group-items .nav-item .nav-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
-.nav-item:hover {
+.nav-group-items .nav-item-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-group-items .nav-item:hover {
   color: hsl(var(--maz-foreground));
   background-color: hsl(var(--maz-foreground) / 5%);
 }
 
-.nav-item:hover .nav-icon {
-  transform: scale(1.1);
+.nav-group-items .nav-item:hover .nav-icon {
+  transform: scale(1.08);
   color: hsl(var(--maz-primary));
 }
 
-.nav-item.router-link-active {
+.nav-group-items .nav-item.router-link-active {
   background-color: hsl(var(--maz-primary) / 10%);
   color: hsl(var(--maz-primary));
+  font-weight: 600;
 }
 
-.nav-item.router-link-active .nav-icon {
+.nav-group-items .nav-item.router-link-active .nav-icon {
   color: hsl(var(--maz-primary));
 }
 
-.nav-item.router-link-active::before {
+.nav-group-items .nav-item.router-link-active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 10%;
-  bottom: 10%;
-  width: 4px;
+  top: 15%;
+  bottom: 15%;
+  width: 3px;
   background-color: hsl(var(--maz-primary));
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 3px 3px 0;
 }
 
 /* Sidebar Footer */
