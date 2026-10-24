@@ -1,12 +1,15 @@
 import fs from 'fs/promises';
 import path from 'path';
 import * as cron from 'node-cron';
-import { syncEndpointData } from './dataManager';
+import { syncEndpointData, syncDashboardPrecomputed } from './dataManager';
 import { processPenyediaQueue } from './penyediaManager';
 
 // ─── Master Registry: Daftar SEMUA endpoint yang tersedia ─────────────────────
 // Ini adalah "katalog" lengkap. Admin bisa mengaktifkan/menonaktifkan masing-masing.
 export const endpointRegistry: Record<string, { endpoint: string; label: string; description: string }[]> = {
+  dashboard: [
+    { endpoint: 'profil-precomputed', label: 'Dashboard Precomputed Realisasi & RUP', description: 'Data agregasi realisasi dan perencanaan pengadaan' },
+  ],
   tender: [
     { endpoint: 'pengumuman', label: 'Pengumuman Tender', description: 'Pengumuman paket tender' },
     { endpoint: 'peserta-tender', label: 'Peserta Tender', description: 'Daftar peserta dan pemenang tender' },
@@ -50,6 +53,19 @@ export const loadEndpointsConfig = async (): Promise<Record<string, string[]>> =
   try {
     const data = await fs.readFile(endpointsConfigPath, 'utf-8');
     activeEndpoints = JSON.parse(data);
+
+    // Pastikan grup baru dari endpointRegistry masuk ke activeEndpoints jika belum ada
+    let hasNewEndpoints = false;
+    for (const [group, items] of Object.entries(endpointRegistry)) {
+      if (!activeEndpoints[group]) {
+        activeEndpoints[group] = items.map(i => i.endpoint);
+        hasNewEndpoints = true;
+      }
+    }
+    if (hasNewEndpoints) {
+      await saveEndpointsConfig(activeEndpoints);
+    }
+
     return activeEndpoints;
   } catch (e) {
     // File doesn't exist yet — default: semua endpoint di registry aktif
@@ -143,8 +159,13 @@ export const triggerSyncAll = async () => {
         if (!endpoints) continue;
         for (const endpoint of endpoints) {
           try {
-            const data = await syncEndpointData(group, endpoint, year);
-            await logEndpointActivity(group, endpoint, `Success`, data.length, year);
+            if (group === 'dashboard' && endpoint === 'profil-precomputed') {
+              const res = await syncDashboardPrecomputed(year);
+              await logEndpointActivity(group, endpoint, `Success`, res.count, year);
+            } else {
+              const data = await syncEndpointData(group, endpoint, year);
+              await logEndpointActivity(group, endpoint, `Success`, data.length, year);
+            }
           } catch (error) {
             console.error(`[${new Date().toLocaleString('id-ID')}] [Manual Sync] Gagal melakukan sinkronisasi ${group}/${endpoint} tahun ${year}:`, error);
             await logEndpointActivity(group, endpoint, `Error`, 0, year);
@@ -176,8 +197,13 @@ export const reloadCronJob = async () => {
           if (!endpoints) continue;
           for (const endpoint of endpoints) {
             try {
-              const data = await syncEndpointData(group, endpoint, year);
-              await logEndpointActivity(group, endpoint, `Success`, data.length, year);
+              if (group === 'dashboard' && endpoint === 'profil-precomputed') {
+                const res = await syncDashboardPrecomputed(year);
+                await logEndpointActivity(group, endpoint, `Success`, res.count, year);
+              } else {
+                const data = await syncEndpointData(group, endpoint, year);
+                await logEndpointActivity(group, endpoint, `Success`, data.length, year);
+              }
             } catch (error) {
               console.error(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Gagal melakukan sinkronisasi ${group}/${endpoint} tahun ${year}:`, error);
               await logEndpointActivity(group, endpoint, `Error`, 0, year);

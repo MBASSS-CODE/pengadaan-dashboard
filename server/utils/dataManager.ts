@@ -93,6 +93,12 @@ const fetchWithRetry = async (url: string, options: any = {}, context: string = 
  * Synchronize data from external API to local file and memory cache
  */
 export const syncEndpointData = async (group: string, endpoint: string, tahun: string, extraParams: any = {}) => {
+  // Khusus grup dashboard, alihkan ke syncDashboardPrecomputed
+  if (group === 'dashboard') {
+    const res = await syncDashboardPrecomputed(tahun);
+    return [{ success: true, count: res.count }];
+  }
+
   const config = useRuntimeConfig();
   const token = config.apiDataToken;
   const kodeKlpd = config.apiDataKodeKlpd;
@@ -243,6 +249,16 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
 };
 
 /**
+ * Helper: menentukan path file cache precomputed
+ */
+const getPrecomputedFilePath = (dirPath: string, tahun: string, instansi: string, satker?: string) => {
+  const fileName = satker
+    ? `dashboard_precomputed_${tahun}_${instansi}_satker_${satker}.json`
+    : `dashboard_precomputed_${tahun}_${instansi}.json`;
+  return path.resolve(dirPath, fileName);
+};
+
+/**
  * Get precomputed dashboard data
  */
 export const getDashboardPrecomputed = async (tahun: string, instansi: string, jenis?: string, view?: string, eselon?: string, satker?: string) => {
@@ -254,10 +270,21 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
   }
 
   const dirPath = path.resolve(process.cwd(), 'server/data');
-  const filePath = path.resolve(dirPath, `dashboard_precomputed_${tahun}_${instansi}.json`);
+  const filePath = getPrecomputedFilePath(dirPath, tahun, instansi, satker);
 
   try {
-    const fileData = await fs.readFile(filePath, 'utf-8');
+    let fileData: string;
+    try {
+      fileData = await fs.readFile(filePath, 'utf-8');
+    } catch (readErr: any) {
+      if (satker && readErr.code === 'ENOENT') {
+        // Fallback jika file per satker belum dibuat, gunakan file agregat instansi
+        const fallbackPath = path.resolve(dirPath, `dashboard_precomputed_${tahun}_${instansi}.json`);
+        fileData = await fs.readFile(fallbackPath, 'utf-8');
+      } else {
+        throw readErr;
+      }
+    }
     const parsedData = JSON.parse(fileData);
     
     memoryCache[cacheKey] = parsedData;
@@ -300,6 +327,71 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
     console.error(`[${new Date().toLocaleString('id-ID')}] Error fetching dashboard precomputed:`, error);
     throw createError({ statusCode: 500, statusMessage: `Failed to fetch dashboard data: ${error.message || 'Unknown error'}` });
   }
+};
+
+/**
+ * Synchronize dashboard precomputed data from API and update file & RAM cache (called by cron)
+ */
+export const syncDashboardPrecomputed = async (tahun: string, instansiParam?: string) => {
+  const config = useRuntimeConfig();
+  const token = config.apiDataToken;
+  const instansi = instansiParam || config.apiDataKodeKlpd || 'K22';
+  const dirPath = path.resolve(process.cwd(), 'server/data');
+
+  console.log(`[${new Date().toLocaleString('id-ID')}] [Dashboard Sync] Memulai sinkronisasi precomputed data untuk ${tahun} - ${instansi}...`);
+  await fs.mkdir(dirPath, { recursive: true });
+
+  const targets = [
+    // 1. Publik / Instansi aggregate
+    {
+      params: { tahun, instansi, jenis: '1', view: 'Nilai' },
+      filePath: getPrecomputedFilePath(dirPath, tahun, instansi),
+      cacheKeyPrefix: `dashboard_precomputed_${tahun}_${instansi}_1_Nilai`
+    },
+    // 2. Satker internal (427950)
+    {
+      params: { tahun, instansi, jenis: '1', eselon: '00', satker: '427950' },
+      filePath: getPrecomputedFilePath(dirPath, tahun, instansi, '427950'),
+      cacheKeyPrefix: `dashboard_precomputed_${tahun}_${instansi}_1_undefined_00_427950`
+    }
+  ];
+
+  // Invalidate matching RAM cache keys
+  for (const key of Object.keys(memoryCache)) {
+    if (key.startsWith(`dashboard_precomputed_${tahun}_${instansi}`)) {
+      delete memoryCache[key];
+    }
+  }
+
+  let successCount = 0;
+  for (const target of targets) {
+    try {
+      const response: any = await fetchWithRetry('https://data.inaproc.id/api/v1/dashboard/profil/precomputed', {
+        params: target.params,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Referer': 'https://data.inaproc.id/',
+          'Origin': 'https://data.inaproc.id'
+        }
+      }, `sync:dashboard/profil-precomputed`);
+
+      await fs.writeFile(target.filePath, JSON.stringify(response, null, 2), 'utf-8');
+      memoryCache[target.cacheKeyPrefix] = response;
+      successCount++;
+      console.log(`[${new Date().toLocaleString('id-ID')}] [Dashboard Sync] Berhasil memperbarui ${path.basename(target.filePath)}`);
+    } catch (err: any) {
+      console.error(`[${new Date().toLocaleString('id-ID')}] [Dashboard Sync] Gagal memperbarui ${path.basename(target.filePath)}:`, err.message || err);
+    }
+  }
+
+  if (successCount === 0) {
+    throw new Error(`Gagal menyinkronkan data dashboard precomputed untuk tahun ${tahun}`);
+  }
+
+  return { success: true, count: successCount };
 };
 
 /**
