@@ -38,7 +38,7 @@
             <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">Pencarian</label>
             <MazInput 
               v-model="searchQuery" 
-              placeholder="Cari Kode Paket, Nama Paket, Kode RUP, atau Penyedia..." 
+              placeholder="Cari Kode Paket, Nama Paket, atau Kode RUP..." 
               size="sm"
               @update:model-value="onSearch"
               clearable
@@ -121,7 +121,7 @@
                 <th class="py-4 px-4 min-w-[300px]">Informasi Paket</th>
                 <th class="py-4 px-4 min-w-[250px]">Pelaksanaan</th>
                 <th class="py-4 px-4 min-w-[150px]">Status</th>
-                <th class="py-4 px-4 min-w-[200px] text-right">Nilai Transaksi</th>\n                <th class="py-4 px-4 w-24 text-center">Aksi</th>
+                <th class="py-4 px-4 min-w-[200px] text-right">Nilai Transaksi</th>
               </tr>
             </thead>
             <tbody class="align-top relative">
@@ -166,9 +166,6 @@
                   </td>
                   
                   <td class="py-4 px-4">
-                    <div class="font-semibold text-[color:hsl(var(--maz-primary))] mb-2 truncate max-w-[250px]" :title="item.nama_penyedia || '-'">
-                      {{ item.nama_penyedia || '-' }}
-                    </div>
                     <div class="flex flex-wrap gap-1 mt-1 text-[10px]">
                       <span class="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                         {{ item.sumber_transaksi || '-' }}
@@ -178,6 +175,9 @@
                       </span>
                       <span class="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800" v-if="item.jenis_pengadaan && item.jenis_pengadaan !== '-'">
                         {{ item.jenis_pengadaan }}
+                      </span>
+                      <span class="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" v-if="item.sumber_dana && item.sumber_dana !== '-'">
+                        {{ item.sumber_dana }}
                       </span>
                     </div>
                   </td>
@@ -241,8 +241,8 @@
                   <span class="font-medium text-[color:hsl(var(--maz-foreground))] truncate" :title="item.nama_satuan_kerja || '-'">{{ item.nama_satuan_kerja || '-' }}</span>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <span class="text-[color:hsl(var(--maz-muted))]">Penyedia</span>
-                  <span class="font-medium text-[color:hsl(var(--maz-primary))] truncate" :title="item.nama_penyedia || '-'">{{ item.nama_penyedia || '-' }}</span>
+                  <span class="text-[color:hsl(var(--maz-muted))]">Sumber Dana</span>
+                  <span class="font-medium text-[color:hsl(var(--maz-foreground))] truncate" :title="item.sumber_dana || '-'">{{ item.sumber_dana || '-' }}</span>
                 </div>
                 <div class="flex flex-col gap-1">
                   <span class="text-[color:hsl(var(--maz-muted))]">Kode Paket / RUP</span>
@@ -487,7 +487,6 @@ const executeExport = async () => {
         'Tahun Anggaran': row.tahun_anggaran || '-',
         'Sumber Transaksi': row.sumber_transaksi || '-',
         'Sumber Dana': row.sumber_dana || '-',
-        'Nama Penyedia': row.nama_penyedia || '-',
         'Metode Pengadaan': row.metode_pengadaan || '-',
         'Jenis Pengadaan': row.jenis_pengadaan || '-',
         'Nama Paket': row.nama_paket || '-',
@@ -504,7 +503,7 @@ const executeExport = async () => {
 
       const wscols = [
         {wch: 5}, {wch: 40}, {wch: 40}, {wch: 15}, {wch: 15}, {wch: 10},
-        {wch: 20}, {wch: 15}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 50},
+        {wch: 20}, {wch: 15}, {wch: 20}, {wch: 20}, {wch: 50},
         {wch: 15}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}
       ];
       ws['!cols'] = wscols;

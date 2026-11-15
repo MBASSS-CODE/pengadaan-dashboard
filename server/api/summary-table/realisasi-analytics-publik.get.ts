@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
           summary: {
             totalPesanan: 0, totalNilai: 0, totalPdn: 0, totalUmk: 0,
             trend: [], sumberTransaksi: [], metodePengadaan: [], jenisPengadaan: [],
-            sumberDana: [], topPpk: [], topPenyedia: []
+            sumberDana: []
           } 
         };
     }
@@ -39,8 +39,6 @@ export default defineEventHandler(async (event) => {
     const metodeMap = new Map();
     const jenisMap = new Map();
     const sumberDanaMap = new Map();
-    const ppkMap = new Map();
-    const penyediaMap = new Map();
 
     const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
     monthNames.forEach(m => trendMap.set(m, 0));
@@ -73,14 +71,6 @@ export default defineEventHandler(async (event) => {
       addGroup(metodeMap, item.metode_pengadaan, valNilai);
       addGroup(jenisMap, item.jenis_pengadaan, valNilai);
       addGroup(sumberDanaMap, item.sumber_dana, valNilai);
-      
-      // Publik view doesn't show PPK normally, but if the frontend expects it we can send dummy or just send it if it exists. Let's provide it.
-      if (item.nama_ppk && item.nama_ppk !== '-') {
-        addGroup(ppkMap, item.nama_ppk, valNilai);
-      }
-      if (item.nama_penyedia && item.nama_penyedia !== '-') {
-        addGroup(penyediaMap, item.nama_penyedia, valNilai);
-      }
     });
 
     const formatResult = (mapObj: Map<string, number>) => {
@@ -102,9 +92,7 @@ export default defineEventHandler(async (event) => {
         sumberTransaksi: sortResult(formatResult(sumberTransaksiMap)),
         metodePengadaan: sortResult(formatResult(metodeMap)),
         jenisPengadaan: sortResult(formatResult(jenisMap)),
-        sumberDana: sortResult(formatResult(sumberDanaMap)),
-        topPpk: sortResult(formatResult(ppkMap)).slice(0, 10),
-        topPenyedia: sortResult(formatResult(penyediaMap)).slice(0, 10)
+        sumberDana: sortResult(formatResult(sumberDanaMap))
       }
     };
   } catch (error: any) {

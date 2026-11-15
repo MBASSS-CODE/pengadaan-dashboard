@@ -47,7 +47,6 @@ export default defineEventHandler(async (event) => {
       const search = (query.search as string).toLowerCase();
       filteredData = filteredData.filter(item => 
         (item.nama_paket && item.nama_paket.toLowerCase().includes(search)) ||
-        (item.nama_penyedia && item.nama_penyedia.toLowerCase().includes(search)) ||
         (item.kode_rup && String(item.kode_rup).includes(search)) ||
         (item.kode_paket && String(item.kode_paket).includes(search))
       );
@@ -100,9 +99,12 @@ export default defineEventHandler(async (event) => {
       paginatedData = filteredData.slice(startIndex, endIndex);
     }
 
+    // Hapus field sensitif (nama_ppk, nama_penyedia) dan internal (_sort_date) untuk publik
+    const safeData = paginatedData.map(({ nama_ppk, nama_penyedia, _sort_date, ...rest }) => rest);
+
     return {
       success: true,
-      data: paginatedData,
+      data: safeData,
       meta: {
         totalItems,
         totalPages,
