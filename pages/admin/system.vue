@@ -370,11 +370,19 @@
             </svg>
             Integrasi Data (Merge)
           </h2>
-          <p class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">Kelola dan jalankan proses penggabungan data secara terpusat</p>
+          <p class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">Kelola dan jalankan proses penggabungan data secara terpusat (Realisasi Master, RUP, Transaksi, dan Rekap PPK)</p>
         </div>
-        <NuxtLink to="/admin/data-merge">
-          <MazBtn color="primary" size="sm">Kelola Merge Data</MazBtn>
-        </NuxtLink>
+        <div class="flex flex-wrap items-center gap-2">
+          <NuxtLink to="/admin/data-merge?tab=realisasi-master">
+            <MazBtn color="secondary" size="sm">Merge Realisasi</MazBtn>
+          </NuxtLink>
+          <NuxtLink to="/admin/data-merge?tab=rekap-ppk">
+            <MazBtn color="secondary" size="sm">Merge Rekap PPK</MazBtn>
+          </NuxtLink>
+          <NuxtLink to="/admin/data-merge">
+            <MazBtn color="primary" size="sm">Kelola Merge Data</MazBtn>
+          </NuxtLink>
+        </div>
       </div>
     </div>
   </div>

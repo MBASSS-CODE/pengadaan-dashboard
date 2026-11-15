@@ -2,6 +2,12 @@ import fs from 'fs/promises';
 import path from 'path';
 import { loadPpkMaster } from './ppkManager';
 import { loadPenyediaMaster } from './penyediaManager';
+import {
+  checkRekapPpkPrerequisitesRaw,
+  runRekapPpkMerge,
+  loadRekapPpkMergedData,
+  invalidateRekapPpkCache
+} from './rekapPpkMerge';
 
 // ─── In-Memory Cache ────────────────────────────────────────────────────────
 let mergedCache: Record<string, any[]> = {};
@@ -455,6 +461,8 @@ export const triggerAutoMerge = (tahun: string, trigger: string) => {
       await executeRupSwakelolaMerge(tahun, trigger);
       // 6. Merge E-Purchasing
       await executeEPurchasingMerge(tahun, trigger);
+      // 7. Merge Rekap PPK
+      await runRekapPpkMerge(tahun, trigger, appendMergeHistory);
     } catch (error) {
       console.error(`[Auto-Merge] Failed for year ${tahun}:`, error);
     } finally {
@@ -875,8 +883,6 @@ export const executePencatatanNonTenderMerge = async (tahun: string, trigger: st
     return result;
   }
 };
-
-
 
 // ─── Pencatatan Swakelola Merge ──────────────────────────────────────────────
 export const executePencatatanSwakelolaMerge = async (tahun: string, trigger: string = 'manual') => {
@@ -1406,4 +1412,21 @@ export const executeEPurchasingMerge = async (tahun: string, trigger: string = '
     await appendMergeHistory(result);
     return result;
   }
+};
+
+// ─── Rekap PPK Wrappers & Global Cache Invalidation ─────────────────────────
+export const checkRekapPpkPrerequisites = checkRekapPpkPrerequisitesRaw;
+
+export const executeRekapPpkMerge = async (tahun: string, trigger: string = 'manual') => {
+  return runRekapPpkMerge(tahun, trigger, appendMergeHistory);
+};
+
+export const getRekapPpkMergedData = async (tahun: string) => {
+  return loadRekapPpkMergedData(tahun, appendMergeHistory);
+};
+
+export const invalidateMergedCache = () => {
+  mergedCache = {};
+  mergeHistoryCache = null;
+  invalidateRekapPpkCache();
 };

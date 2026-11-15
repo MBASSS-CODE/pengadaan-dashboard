@@ -2,6 +2,7 @@ import AdmZip from 'adm-zip';
 import path from 'path';
 import fs from 'fs';
 import { invalidatePpkCache } from '../../utils/ppkManager';
+import { invalidateMergedCache } from '../../utils/mergeManager';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -32,6 +33,7 @@ export default defineEventHandler(async (event) => {
 
     // Invalidate caches so the app reads fresh data from files
     invalidatePpkCache();
+    invalidateMergedCache();
 
     return {
       success: true,

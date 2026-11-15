@@ -63,6 +63,13 @@
       >
         E-Purchasing
       </button>
+      <button 
+        class="tab-btn whitespace-nowrap" 
+        :class="{ active: activeTab === 'rekap-ppk' }"
+        @click="activeTab = 'rekap-ppk'"
+      >
+        Rekap PPK
+      </button>
     </div>
 
     <!-- Tab Content -->
@@ -75,13 +82,15 @@
         <MergePencatatanSwakelola v-else-if="activeTab === 'pencatatan-swakelola'" />
         <MergeRupSwakelola v-else-if="activeTab === 'rup-swakelola'" />
         <MergeEPurchasing v-else-if="activeTab === 'epurchasing'" />
+        <MergeRekapPpk v-else-if="activeTab === 'rekap-ppk'" />
       </Transition>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import MergeRupPenyedia from '~/components/admin/MergeRupPenyedia.vue';
 import MergeNonTender from '~/components/admin/MergeNonTender.vue';
 import MergePencatatanNonTender from '~/components/admin/MergePencatatanNonTender.vue';
@@ -89,8 +98,33 @@ import MergePencatatanSwakelola from '~/components/admin/MergePencatatanSwakelol
 import MergeRupSwakelola from '~/components/admin/MergeRupSwakelola.vue';
 import MergeEPurchasing from '~/components/admin/MergeEPurchasing.vue';
 import MergeRealisasiMaster from '~/components/admin/MergeRealisasiMaster.vue';
+import MergeRekapPpk from '~/components/admin/MergeRekapPpk.vue';
 
-const activeTab = ref('realisasi-master');
+const route = useRoute();
+const validTabs = [
+  'realisasi-master',
+  'rup-penyedia',
+  'non-tender',
+  'pencatatan-nontender',
+  'pencatatan-swakelola',
+  'rup-swakelola',
+  'epurchasing',
+  'rekap-ppk'
+];
+const initialTab = typeof route.query.tab === 'string' && validTabs.includes(route.query.tab)
+  ? route.query.tab
+  : 'realisasi-master';
+
+const activeTab = ref(initialTab);
+
+watch(
+  () => route.query.tab,
+  (newTab) => {
+    if (typeof newTab === 'string' && validTabs.includes(newTab)) {
+      activeTab.value = newTab;
+    }
+  }
+);
 </script>
 
 <style scoped>
