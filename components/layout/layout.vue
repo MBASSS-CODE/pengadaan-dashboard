@@ -6,12 +6,23 @@
         <!-- Sidebar -->
         <aside class="app-sidebar" :class="{ 'is-mobile': isMobile, 'is-open': isSidebarOpen }">
             <div class="sidebar-header">
-                <div class="flex items-center justify-center w-11 h-11 bg-white dark:bg-slate-800 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] border border-slate-100/80 dark:border-slate-700/80 shrink-0 transition-transform hover:scale-105 cursor-pointer">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/9/90/National_emblem_of_Indonesia_Garuda_Pancasila.svg" alt="Garuda Logo" class="w-7 h-7 object-contain drop-shadow-sm" />
-                </div>
-                <h1 class="text-lg font-extrabold tracking-tight text-slate-800 dark:text-slate-100 ml-3.5 mt-0.5" style="font-family: 'Inter', sans-serif;">
-                    E<span class="text-blue-600 dark:text-blue-400">UKPBJ</span>
-                </h1>
+                <NuxtLink
+                    to="/dashboard"
+                    class="w-full h-full flex items-center rounded-xl px-3 border transition-transform hover:scale-[1.02] cursor-pointer"
+                    @click="closeSidebar"
+                >
+                    <div
+                        class="relative w-full max-w-[190px] overflow-hidden shrink-0"
+                        style="aspect-ratio: 1820 / 448;"
+                    >
+                        <img
+                            src="~/assets/css/images/radar-logo.png"
+                            alt="RADAR PBJ KEMENPANRB"
+                            class="max-w-none block select-none"
+                            style="width: 100%; height: auto; margin-top: -3.54%;"
+                        />
+                    </div>
+                </NuxtLink>
             </div>
             
             <nav class="sidebar-nav">
@@ -318,11 +329,12 @@ const handleLogout = async () => {
 }
 
 .sidebar-header {
-  padding: 1.5rem;
+  height: 4.5rem;
+  padding: 0.5rem 1.25rem;
   border-bottom: 1px solid hsl(var(--maz-border));
   display: flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
 }
 
 .logo-box {

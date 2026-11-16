@@ -4,6 +4,17 @@
   </NuxtLayout>
 </template>
 
+<script setup lang="ts">
+import faviconUrl from '~/assets/css/images/radar-pbj-favicon.ico';
+
+useHead({
+  link: [
+    { rel: 'icon', type: 'image/x-icon', href: faviconUrl },
+    { rel: 'shortcut icon', type: 'image/x-icon', href: faviconUrl }
+  ]
+});
+</script>
+
 <style>
 /* CSS Reset (Karena Tailwind dihapus) */
 html, body {
