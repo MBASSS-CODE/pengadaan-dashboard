@@ -67,18 +67,65 @@
                         </div>
                         
                         <div v-show="!isGroupCollapsed(group.label)" class="nav-group-items">
-                            <template v-for="item in group.items" :key="item.path">
-                                <NuxtLink 
-                                    v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
-                                    :to="item.path" 
-                                    class="nav-item" 
-                                    @click="closeSidebar"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path v-for="(path, idx) in item.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
-                                    </svg>
-                                    <span class="nav-item-text">{{ item.name }}</span>
-                                </NuxtLink>
+                            <!-- Direct Items -->
+                            <template v-if="group.items">
+                                <template v-for="item in group.items" :key="item.path">
+                                    <NuxtLink 
+                                        v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
+                                        :to="item.path" 
+                                        class="nav-item" 
+                                        @click="closeSidebar"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path v-for="(path, idx) in item.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
+                                        </svg>
+                                        <span class="nav-item-text">{{ item.name }}</span>
+                                    </NuxtLink>
+                                </template>
+                            </template>
+
+                            <!-- Sub Groups -->
+                            <template v-if="group.subGroups">
+                                <div v-for="sub in group.subGroups" :key="sub.label" class="nav-subgroup mb-2">
+                                    <div 
+                                        class="nav-sublabel"
+                                        :class="{ 'is-active-subgroup': hasActiveChildInSubGroup(sub) }"
+                                        @click.stop="toggleSubGroup(group.label, sub.label)"
+                                    >
+                                        <div class="flex items-center gap-1.5 min-w-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="subgroup-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                            </svg>
+                                            <span class="subgroup-text">{{ sub.label }}</span>
+                                        </div>
+                                        <svg 
+                                            xmlns="http://www.w3.org/2000/svg" 
+                                            class="sub-collapse-icon" 
+                                            :class="{ 'is-collapsed': isSubGroupCollapsed(group.label, sub.label) }"
+                                            fill="none" 
+                                            viewBox="0 0 24 24" 
+                                            stroke="currentColor"
+                                        >
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+
+                                    <div v-show="!isSubGroupCollapsed(group.label, sub.label)" class="nav-subgroup-items">
+                                        <template v-for="item in sub.items" :key="item.path">
+                                            <NuxtLink 
+                                                v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
+                                                :to="item.path" 
+                                                class="nav-item nav-sub-item" 
+                                                @click="closeSidebar"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path v-for="(path, idx) in item.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
+                                                </svg>
+                                                <span class="nav-item-text">{{ item.name }}</span>
+                                            </NuxtLink>
+                                        </template>
+                                    </div>
+                                </div>
                             </template>
                         </div>
                     </div>
@@ -151,11 +198,22 @@ const userName = useCookie('user_name');
 
 // State kelompok menu (Boolean: true = collapsed, false = expanded)
 const collapsedGroups = ref({});
+const collapsedSubGroups = ref({});
 
 // Inisialisasi & update state: buka grup rute baru tanpa menutup grup yang sudah dibuka pengguna
 const syncMenuCollapseState = (currentPath) => {
   menuGroups.forEach(group => {
-    const hasActiveItem = group.items?.some(item => item.path === currentPath);
+    let hasActiveItem = group.items?.some(item => item.path === currentPath);
+    if (group.subGroups) {
+      group.subGroups.forEach(sub => {
+        const inSub = sub.items?.some(item => item.path === currentPath);
+        if (inSub) {
+          hasActiveItem = true;
+          collapsedSubGroups.value[`${group.label}_${sub.label}`] = false;
+        }
+      });
+    }
+
     if (collapsedGroups.value[group.label] === undefined) {
       collapsedGroups.value[group.label] = !hasActiveItem;
     } else if (hasActiveItem) {
@@ -170,6 +228,20 @@ const isGroupCollapsed = (label) => {
 
 const toggleGroup = (label) => {
   collapsedGroups.value[label] = isGroupCollapsed(label) ? false : true;
+};
+
+const isSubGroupCollapsed = (groupLabel, subLabel) => {
+  const key = `${groupLabel}_${subLabel}`;
+  return collapsedSubGroups.value[key] === true;
+};
+
+const toggleSubGroup = (groupLabel, subLabel) => {
+  const key = `${groupLabel}_${subLabel}`;
+  collapsedSubGroups.value[key] = !isSubGroupCollapsed(groupLabel, subLabel);
+};
+
+const hasActiveChildInSubGroup = (subGroup) => {
+  return subGroup.items?.some(item => item.path === route.path);
 };
 
 // Pantau perubahan rute: buka grup rute baru TANPA menutup grup yang sudah pernah dibuka
@@ -207,15 +279,27 @@ const isEndpointActive = (endpoint) => {
 };
 
 const isGroupVisible = (group) => {
-    if (!group.items || group.items.length === 0) return true;
-    return group.items.some(item => 
-        (!item.adminOnly || userRole.value === 'admin') && 
-        (!item.endpointActive || isEndpointActive(item.endpointActive))
-    );
+    if (group.items && group.items.length > 0) {
+        return group.items.some(item => 
+            (!item.adminOnly || userRole.value === 'admin') && 
+            (!item.endpointActive || isEndpointActive(item.endpointActive))
+        );
+    }
+    if (group.subGroups && group.subGroups.length > 0) {
+        return group.subGroups.some(sub => 
+            sub.items.some(item => 
+                (!item.adminOnly || userRole.value === 'admin') && 
+                (!item.endpointActive || isEndpointActive(item.endpointActive))
+            )
+        );
+    }
+    return true;
 };
 
 const hasActiveChild = (group) => {
-    return group.items?.some(item => item.path === route.path);
+    if (group.items?.some(item => item.path === route.path)) return true;
+    if (group.subGroups?.some(sub => sub.items?.some(item => item.path === route.path))) return true;
+    return false;
 };
 
 const checkMobile = () => {
@@ -580,6 +664,79 @@ const handleLogout = async () => {
   width: 3px;
   background-color: hsl(var(--maz-primary));
   border-radius: 0 3px 3px 0;
+}
+
+/* Sub-group nested styles */
+.nav-subgroup {
+  margin-bottom: 0.35rem;
+}
+
+.nav-sublabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.55rem;
+  border-radius: var(--maz-border-radius, 0.45rem);
+  font-size: 0.725rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--maz-muted));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.nav-sublabel:hover {
+  color: hsl(var(--maz-foreground));
+  background-color: hsl(var(--maz-foreground) / 4%);
+}
+
+.nav-sublabel.is-active-subgroup {
+  color: hsl(var(--maz-primary));
+}
+
+.subgroup-icon {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+  color: hsl(var(--maz-muted));
+}
+
+.nav-sublabel:hover .subgroup-icon,
+.nav-sublabel.is-active-subgroup .subgroup-icon {
+  color: hsl(var(--maz-primary));
+}
+
+.subgroup-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sub-collapse-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.sub-collapse-icon.is-collapsed {
+  transform: rotate(-90deg);
+}
+
+.nav-subgroup-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-left: 0.45rem;
+  padding-left: 0.45rem;
+  border-left: 1px dashed hsl(var(--maz-border));
+}
+
+.nav-sub-item {
+  font-size: 0.8rem !important;
+  padding: 0.4rem 0.6rem !important;
 }
 
 /* Sidebar Footer */

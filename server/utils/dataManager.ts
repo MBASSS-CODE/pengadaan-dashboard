@@ -93,21 +93,22 @@ const fetchWithRetry = async (url: string, options: any = {}, context: string = 
  * Synchronize data from external API to local file and memory cache
  */
 export const syncEndpointData = async (group: string, endpoint: string, tahun: string, extraParams: any = {}) => {
-  // Khusus grup dashboard, alihkan ke syncDashboardPrecomputed
-  if (group === 'dashboard') {
+  // Khusus grup dashboard profil-precomputed, alihkan ke syncDashboardPrecomputed
+  if (group === 'dashboard' && (endpoint === 'profil-precomputed' || endpoint === 'profil/precomputed')) {
     const res = await syncDashboardPrecomputed(tahun);
     return [{ success: true, count: res.count }];
   }
 
   const config = useRuntimeConfig();
   const token = config.apiDataToken;
-  const kodeKlpd = config.apiDataKodeKlpd;
+  const kodeKlpd = config.apiDataKodeKlpd || 'K22';
 
   let hasMore = true;
   let cursor = "";
   let allData: any[] = [];
 
   let fetchSuccess = false;
+  let lastError: any = null;
 
   console.log(`[${new Date().toLocaleString('id-ID')}] Starting sync for ${group}/${endpoint}...`);
 
@@ -116,9 +117,16 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
       // Menyusun param untuk log agar Anda bisa melihat URL aslinya
       const requestParams: any = {
         tahun,
-        kode_klpd: kodeKlpd,
         ...extraParams
       };
+
+      // Pastikan kode_klpd dan kd_klpd tersedia jika relevan
+      if (endpoint !== 'realisasi/penyedia/per-sumber') {
+        const klpdVal = requestParams.kd_klpd || requestParams.kode_klpd || kodeKlpd;
+        requestParams.kd_klpd = klpdVal;
+        requestParams.kode_klpd = klpdVal;
+      }
+
       if (cursor) requestParams.cursor = cursor;
       
       const queryString = new URLSearchParams(requestParams).toString();
@@ -135,10 +143,8 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
           'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7'
         },
         params: {
-          tahun,
-          kode_klpd: kodeKlpd,
-          cursor: cursor || undefined, // Send undefined if empty so it doesn't appear in query
-          ...extraParams
+          ...requestParams,
+          cursor: cursor || undefined // Send undefined if empty so it doesn't appear in query
         }
       }, `sync:${group}/${endpoint}`);
       
@@ -146,8 +152,31 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
 
       fetchSuccess = true;
 
-      // Adjust based on the actual API structure
-      const items = response.data || response.list || [];
+      // Adjust based on the actual API structure (mendukung array, single summary object, pagination result)
+      let items: any[] = [];
+      if (Array.isArray(response)) {
+        items = response;
+      } else if (Array.isArray(response.data)) {
+        items = response.data;
+      } else if (Array.isArray(response.list)) {
+        items = response.list;
+      } else if (Array.isArray(response.result)) {
+        items = response.result;
+      } else if (Array.isArray(response.rows)) {
+        items = response.rows;
+      } else if (response.data && typeof response.data === 'object') {
+        items = [response.data];
+      } else if (response && typeof response === 'object') {
+        const cleanObj = { ...response };
+        delete cleanObj.meta;
+        delete cleanObj.status;
+        delete cleanObj.success;
+        delete cleanObj.message;
+        if (Object.keys(cleanObj).length > 0) {
+          items = [cleanObj];
+        }
+      }
+
       allData = [...allData, ...items];
 
       // Check has_more logic, supporting meta object from new API standard
@@ -163,8 +192,9 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
           hasMore = false; 
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`[${new Date().toLocaleString('id-ID')}] Error fetching data for ${group}/${endpoint}:`, error);
+      lastError = error;
       hasMore = false; // Stop loop on error
     }
   }
@@ -177,7 +207,7 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
     const filePath = path.resolve(dirPath, `${endpoint}_${tahun}.json`);
     
     try {
-      await fs.mkdir(dirPath, { recursive: true });
+      await fs.mkdir(path.dirname(filePath), { recursive: true });
       // Write to JSON file
       await fs.writeFile(filePath, JSON.stringify(allData, null, 2), 'utf-8');
       console.log(`[${new Date().toLocaleString('id-ID')}] Successfully synced ${allData.length} records to ${filePath}`);
@@ -200,6 +230,19 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
       extractAndSavePenyedia(tahun).catch(err => {
         console.error(`[${new Date().toLocaleString('id-ID')}] [DataManager] Gagal memicu ekstraksi penyedia:`, err);
       });
+    }
+  } else if (allData.length === 0 && lastError) {
+    // Jika gagal fetch ke INAPROC (misal IP ditolak / timeout), coba gunakan cache lokal jika ada
+    const dirPath = path.resolve(process.cwd(), `server/data/${group}`);
+    const filePath = path.resolve(dirPath, `${endpoint}_${tahun}.json`);
+    try {
+      const fileData = await fs.readFile(filePath, 'utf-8');
+      const parsedData = JSON.parse(fileData);
+      console.warn(`[${new Date().toLocaleString('id-ID')}] [Fallback Cache] Memakai data cache tersimpan untuk ${group}/${endpoint} karena koneksi ke API gagal`);
+      return parsedData;
+    } catch (_) {
+      const errMsg = lastError?.data?.error || lastError?.message || 'Gagal terhubung ke API INAPROC';
+      throw new Error(`[INAPROC API Error] ${errMsg}`);
     }
   }
 
@@ -232,6 +275,16 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
       
       return parsedData;
     } catch (error: any) {
+      if (group === 'dashboard' && (endpoint === 'profil/precomputed' || endpoint === 'profil-precomputed')) {
+        try {
+          const fallbackData = await getDashboardPrecomputed(tahun, 'K22');
+          if (fallbackData) {
+            const arr = Array.isArray(fallbackData) ? fallbackData : [fallbackData];
+            memoryCache[cacheKey] = arr;
+            return arr;
+          }
+        } catch (_) {}
+      }
       if (error.code !== 'ENOENT') {
         console.error(`[${new Date().toLocaleString('id-ID')}] Error reading cache file ${filePath}:`, error);
       }
@@ -245,7 +298,19 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
   if (group === 'merged') {
     return []; // Never sync merged from external API
   }
-  return await syncEndpointData(group, endpoint, tahun, extraParams);
+
+  try {
+    return await syncEndpointData(group, endpoint, tahun, extraParams);
+  } catch (syncErr: any) {
+    try {
+      const fileData = await fs.readFile(filePath, 'utf-8');
+      const parsedData = JSON.parse(fileData);
+      console.warn(`[${new Date().toLocaleString('id-ID')}] [Fallback Cache] Menampilkan cache tersimpan karena sync gagal: ${syncErr.message || syncErr}`);
+      return parsedData;
+    } catch (_) {
+      throw syncErr;
+    }
+  }
 };
 
 /**

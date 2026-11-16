@@ -9,6 +9,20 @@ import { processPenyediaQueue } from './penyediaManager';
 export const endpointRegistry: Record<string, { endpoint: string; label: string; description: string }[]> = {
   dashboard: [
     { endpoint: 'profil-precomputed', label: 'Dashboard Precomputed Realisasi & RUP', description: 'Data agregasi realisasi dan perencanaan pengadaan' },
+    { endpoint: 'afirmasi/summary', label: 'Dashboard Afirmasi Summary', description: 'Ringkasan afirmasi pengadaan' },
+    { endpoint: 'afirmasi/table', label: 'Dashboard Afirmasi Table', description: 'Data tabel afirmasi pengadaan' },
+    { endpoint: 'profil/precomputed', label: 'Dashboard Profil Precomputed', description: 'Data profil precomputed pengadaan' },
+    { endpoint: 'profil/summary', label: 'Dashboard Profil Summary', description: 'Ringkasan profil pengadaan' },
+    { endpoint: 'profil/table', label: 'Dashboard Profil Table', description: 'Data tabel profil pengadaan' },
+    { endpoint: 'realisasi/penyedia/per-sumber', label: 'Dashboard Realisasi Penyedia Per Sumber', description: 'Realisasi penyedia berdasarkan sumber dana' },
+    { endpoint: 'realisasi/summary', label: 'Dashboard Realisasi Summary', description: 'Ringkasan realisasi pengadaan' },
+    { endpoint: 'realisasi/table', label: 'Dashboard Realisasi Table', description: 'Data tabel realisasi pengadaan' },
+    { endpoint: 'realisasi-rup/search', label: 'Dashboard Realisasi RUP Search', description: 'Pencarian realisasi RUP pengadaan' },
+    { endpoint: 'realisasi-rup/summary', label: 'Dashboard Realisasi RUP Summary', description: 'Ringkasan realisasi RUP pengadaan' },
+    { endpoint: 'rup/kegiatan/summary', label: 'Dashboard RUP Kegiatan Summary', description: 'Ringkasan kegiatan RUP' },
+    { endpoint: 'rup/kegiatan/table', label: 'Dashboard RUP Kegiatan Table', description: 'Data tabel kegiatan RUP' },
+    { endpoint: 'rup/summary', label: 'Dashboard RUP Summary', description: 'Ringkasan Rencana Umum Pengadaan' },
+    { endpoint: 'rup/table', label: 'Dashboard RUP Table', description: 'Data tabel Rencana Umum Pengadaan' },
   ],
   tender: [
     { endpoint: 'pengumuman', label: 'Pengumuman Tender', description: 'Pengumuman paket tender' },
