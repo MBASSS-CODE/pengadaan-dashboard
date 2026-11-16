@@ -15,18 +15,25 @@
     <!-- Tabs -->
     <div class="flex gap-4 mb-6 pb-2 border-b border-[color:hsl(var(--maz-border))] overflow-x-auto">
       <button 
-        class="tab-btn whitespace-nowrap font-bold" 
-        :class="{ active: activeTab === 'realisasi-master' }"
-        @click="activeTab = 'realisasi-master'"
-      >
-        Realisasi Master
-      </button>
-      <button 
         class="tab-btn whitespace-nowrap" 
         :class="{ active: activeTab === 'rup-penyedia' }"
         @click="activeTab = 'rup-penyedia'"
       >
-        RUP Penyedia Master
+        RUP Paket Penyedia
+      </button>
+      <button 
+        class="tab-btn whitespace-nowrap" 
+        :class="{ active: activeTab === 'rup-swakelola' }"
+        @click="activeTab = 'rup-swakelola'"
+      >
+        RUP Paket Swakelola
+      </button>
+      <button 
+        class="tab-btn whitespace-nowrap font-bold" 
+        :class="{ active: activeTab === 'realisasi-master' }"
+        @click="activeTab = 'realisasi-master'"
+      >
+        Realisasi Pengadaan
       </button>
       <button 
         class="tab-btn whitespace-nowrap" 
@@ -51,17 +58,17 @@
       </button>
       <button 
         class="tab-btn whitespace-nowrap" 
-        :class="{ active: activeTab === 'rup-swakelola' }"
-        @click="activeTab = 'rup-swakelola'"
-      >
-        RUP Swakelola
-      </button>
-      <button 
-        class="tab-btn whitespace-nowrap" 
         :class="{ active: activeTab === 'epurchasing' }"
         @click="activeTab = 'epurchasing'"
       >
         E-Purchasing
+      </button>
+      <button 
+        class="tab-btn whitespace-nowrap" 
+        :class="{ active: activeTab === 'rekap-ppk' }"
+        @click="activeTab = 'rekap-ppk'"
+      >
+        Rekap PPK
       </button>
     </div>
 
@@ -75,13 +82,15 @@
         <MergePencatatanSwakelola v-else-if="activeTab === 'pencatatan-swakelola'" />
         <MergeRupSwakelola v-else-if="activeTab === 'rup-swakelola'" />
         <MergeEPurchasing v-else-if="activeTab === 'epurchasing'" />
+        <MergeRekapPpk v-else-if="activeTab === 'rekap-ppk'" />
       </Transition>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import MergeRupPenyedia from '~/components/admin/MergeRupPenyedia.vue';
 import MergeNonTender from '~/components/admin/MergeNonTender.vue';
 import MergePencatatanNonTender from '~/components/admin/MergePencatatanNonTender.vue';
@@ -89,8 +98,33 @@ import MergePencatatanSwakelola from '~/components/admin/MergePencatatanSwakelol
 import MergeRupSwakelola from '~/components/admin/MergeRupSwakelola.vue';
 import MergeEPurchasing from '~/components/admin/MergeEPurchasing.vue';
 import MergeRealisasiMaster from '~/components/admin/MergeRealisasiMaster.vue';
+import MergeRekapPpk from '~/components/admin/MergeRekapPpk.vue';
 
-const activeTab = ref('realisasi-master');
+const route = useRoute();
+const validTabs = [
+  'realisasi-master',
+  'rup-penyedia',
+  'non-tender',
+  'pencatatan-nontender',
+  'pencatatan-swakelola',
+  'rup-swakelola',
+  'epurchasing',
+  'rekap-ppk'
+];
+const initialTab = typeof route.query.tab === 'string' && validTabs.includes(route.query.tab)
+  ? route.query.tab
+  : 'realisasi-master';
+
+const activeTab = ref(initialTab);
+
+watch(
+  () => route.query.tab,
+  (newTab) => {
+    if (typeof newTab === 'string' && validTabs.includes(newTab)) {
+      activeTab.value = newTab;
+    }
+  }
+);
 </script>
 
 <style scoped>

@@ -2,12 +2,29 @@ import { getDataDir } from './dataDir';
 import fs from 'fs/promises';
 import path from 'path';
 import * as cron from 'node-cron';
-import { syncEndpointData } from './dataManager';
+import { syncEndpointData, syncDashboardPrecomputed } from './dataManager';
 import { processPenyediaQueue } from './penyediaManager';
 
 // ─── Master Registry: Daftar SEMUA endpoint yang tersedia ─────────────────────
 // Ini adalah "katalog" lengkap. Admin bisa mengaktifkan/menonaktifkan masing-masing.
 export const endpointRegistry: Record<string, { endpoint: string; label: string; description: string }[]> = {
+  dashboard: [
+    { endpoint: 'profil-precomputed', label: 'Dashboard Precomputed Realisasi & RUP', description: 'Data agregasi realisasi dan perencanaan pengadaan' },
+    { endpoint: 'afirmasi/summary', label: 'Dashboard Afirmasi Summary', description: 'Ringkasan afirmasi pengadaan' },
+    { endpoint: 'afirmasi/table', label: 'Dashboard Afirmasi Table', description: 'Data tabel afirmasi pengadaan' },
+    { endpoint: 'profil/precomputed', label: 'Dashboard Profil Precomputed', description: 'Data profil precomputed pengadaan' },
+    { endpoint: 'profil/summary', label: 'Dashboard Profil Summary', description: 'Ringkasan profil pengadaan' },
+    { endpoint: 'profil/table', label: 'Dashboard Profil Table', description: 'Data tabel profil pengadaan' },
+    { endpoint: 'realisasi/penyedia/per-sumber', label: 'Dashboard Realisasi Penyedia Per Sumber', description: 'Realisasi penyedia berdasarkan sumber dana' },
+    { endpoint: 'realisasi/summary', label: 'Dashboard Realisasi Summary', description: 'Ringkasan realisasi pengadaan' },
+    { endpoint: 'realisasi/table', label: 'Dashboard Realisasi Table', description: 'Data tabel realisasi pengadaan' },
+    { endpoint: 'realisasi-rup/search', label: 'Dashboard Realisasi RUP Search', description: 'Pencarian realisasi RUP pengadaan' },
+    { endpoint: 'realisasi-rup/summary', label: 'Dashboard Realisasi RUP Summary', description: 'Ringkasan realisasi RUP pengadaan' },
+    { endpoint: 'rup/kegiatan/summary', label: 'Dashboard RUP Kegiatan Summary', description: 'Ringkasan kegiatan RUP' },
+    { endpoint: 'rup/kegiatan/table', label: 'Dashboard RUP Kegiatan Table', description: 'Data tabel kegiatan RUP' },
+    { endpoint: 'rup/summary', label: 'Dashboard RUP Summary', description: 'Ringkasan Rencana Umum Pengadaan' },
+    { endpoint: 'rup/table', label: 'Dashboard RUP Table', description: 'Data tabel Rencana Umum Pengadaan' },
+  ],
   tender: [
     { endpoint: 'pengumuman', label: 'Pengumuman Tender', description: 'Pengumuman paket tender' },
     { endpoint: 'peserta-tender', label: 'Peserta Tender', description: 'Daftar peserta dan pemenang tender' },
@@ -51,6 +68,19 @@ export const loadEndpointsConfig = async (): Promise<Record<string, string[]>> =
   try {
     const data = await fs.readFile(endpointsConfigPath, 'utf-8');
     activeEndpoints = JSON.parse(data);
+
+    // Pastikan grup baru dari endpointRegistry masuk ke activeEndpoints jika belum ada
+    let hasNewEndpoints = false;
+    for (const [group, items] of Object.entries(endpointRegistry)) {
+      if (!activeEndpoints[group]) {
+        activeEndpoints[group] = items.map(i => i.endpoint);
+        hasNewEndpoints = true;
+      }
+    }
+    if (hasNewEndpoints) {
+      await saveEndpointsConfig(activeEndpoints);
+    }
+
     return activeEndpoints;
   } catch (e) {
     // File doesn't exist yet — default: semua endpoint di registry aktif
@@ -97,6 +127,9 @@ export const getCronConfig = async () => {
 };
 
 export const saveCronConfig = async (newConfig: { schedule?: string, enablePenyedia?: boolean, enableMainCron?: boolean }) => {
+  if (newConfig.schedule && !cron.validate(newConfig.schedule)) {
+    throw new Error(`Format cron '${newConfig.schedule}' tidak valid.`);
+  }
   const currentConfig = await getCronConfig();
   const config = { ...currentConfig, ...newConfig };
   const dir = path.dirname(configPath);
@@ -144,8 +177,13 @@ export const triggerSyncAll = async () => {
         if (!endpoints) continue;
         for (const endpoint of endpoints) {
           try {
-            const data = await syncEndpointData(group, endpoint, year);
-            await logEndpointActivity(group, endpoint, `Success`, data.length, year);
+            if (group === 'dashboard' && endpoint === 'profil-precomputed') {
+              const res = await syncDashboardPrecomputed(year);
+              await logEndpointActivity(group, endpoint, `Success`, res.count, year);
+            } else {
+              const data = await syncEndpointData(group, endpoint, year);
+              await logEndpointActivity(group, endpoint, `Success`, data.length, year);
+            }
           } catch (error) {
             console.error(`[${new Date().toLocaleString('id-ID')}] [Manual Sync] Gagal melakukan sinkronisasi ${group}/${endpoint} tahun ${year}:`, error);
             await logEndpointActivity(group, endpoint, `Error`, 0, year);
@@ -177,8 +215,13 @@ export const reloadCronJob = async () => {
           if (!endpoints) continue;
           for (const endpoint of endpoints) {
             try {
-              const data = await syncEndpointData(group, endpoint, year);
-              await logEndpointActivity(group, endpoint, `Success`, data.length, year);
+              if (group === 'dashboard' && endpoint === 'profil-precomputed') {
+                const res = await syncDashboardPrecomputed(year);
+                await logEndpointActivity(group, endpoint, `Success`, res.count, year);
+              } else {
+                const data = await syncEndpointData(group, endpoint, year);
+                await logEndpointActivity(group, endpoint, `Success`, data.length, year);
+              }
             } catch (error) {
               console.error(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Gagal melakukan sinkronisasi ${group}/${endpoint} tahun ${year}:`, error);
               await logEndpointActivity(group, endpoint, `Error`, 0, year);
@@ -186,8 +229,10 @@ export const reloadCronJob = async () => {
           }
         }
       }
+    }, {
+      timezone: 'Asia/Jakarta'
     });
-    console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Diperbarui dengan jadwal:`, currentScheduleStr, '(Status: Aktif)');
+    console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Diperbarui dengan jadwal:`, currentScheduleStr, '(Status: Aktif, Timezone: Asia/Jakarta)');
   } else {
     console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Sinkronisasi otomatis (Main) dimatikan.`);
   }
@@ -207,6 +252,8 @@ export const reloadCronJob = async () => {
     } catch (error) {
       console.error(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Gagal menjalankan queue penyedia:`, error);
     }
+  }, {
+    timezone: 'Asia/Jakarta'
   });
-  console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Penyedia queue diset jadwal: */15 * * * * (Status: ${isPenyediaEnabled ? 'Aktif' : 'Mati'})`);
+  console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Penyedia queue diset jadwal: */15 * * * * (Status: ${isPenyediaEnabled ? 'Aktif' : 'Mati'}, Timezone: Asia/Jakarta)`);
 };

@@ -7,7 +7,9 @@ export default defineEventHandler((event) => {
     '/api/auth/login',
     '/api/dashboard',
     '/api/summary-table/epurchasing-public',
-    '/api/summary-table/epurchasing-analytics-summary-public'
+    '/api/summary-table/epurchasing-analytics-summary-public',
+    '/api/summary-table/realisasi-publik',
+    '/api/summary-table/realisasi-analytics-publik'
   ];
   const isPublicApi = publicApiPaths.some(p => url.pathname.startsWith(p));
 

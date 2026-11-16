@@ -10,7 +10,7 @@
                     <img src="https://upload.wikimedia.org/wikipedia/commons/9/90/National_emblem_of_Indonesia_Garuda_Pancasila.svg" alt="Garuda Logo" class="w-7 h-7 object-contain drop-shadow-sm" />
                 </div>
                 <h1 class="text-lg font-extrabold tracking-tight text-slate-800 dark:text-slate-100 ml-3.5 mt-0.5" style="font-family: 'Inter', sans-serif;">
-                    PRISMA <span class="text-blue-600 dark:text-blue-400">MENPAN</span>
+                    E<span class="text-blue-600 dark:text-blue-400">UKPBJ</span>
                 </h1>
             </div>
             
@@ -31,40 +31,105 @@
                 </template>
 
                 <!-- Kelompok menu collapsible -->
-                <div v-for="group in menuGroups" :key="group.label" class="mb-1">
-                    <div 
-                        class="nav-label mt-2" 
-                        @click="toggleGroup(group.label)"
-                    >
-                        <span>{{ group.label }}</span>
-                        <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            class="collapse-icon" 
-                            :class="{ 'is-collapsed': isGroupCollapsed(group.label) }"
-                            fill="none" 
-                            viewBox="0 0 24 24" 
-                            stroke="currentColor"
+                <template v-for="group in menuGroups" :key="group.label">
+                    <div v-if="isGroupVisible(group)" class="mb-1">
+                        <!-- Pembatas / Section Divider -->
+                        <div v-if="group.section || group.divider" class="menu-section-divider">
+                            <span v-if="group.section" class="divider-text">{{ group.section }}</span>
+                            <div class="divider-line"></div>
+                        </div>
+
+                        <div 
+                            class="nav-label" 
+                            :class="{ 
+                                'mt-2': !group.section && !group.divider, 
+                                'mt-1': group.section || group.divider,
+                                'is-active-group': hasActiveChild(group)
+                            }"
+                            @click="toggleGroup(group.label)"
                         >
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
-                    
-                    <div v-show="!isGroupCollapsed(group.label)" class="nav-group-items">
-                        <template v-for="item in group.items" :key="item.path">
-                            <NuxtLink 
-                                v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
-                                :to="item.path" 
-                                class="nav-item" 
-                                @click="closeSidebar"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path v-for="(path, idx) in item.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
+                            <div class="nav-label-left">
+                                <svg v-if="group.iconPaths && group.iconPaths.length" xmlns="http://www.w3.org/2000/svg" class="group-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path v-for="(path, idx) in group.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
                                 </svg>
-                                {{ item.name }}
-                            </NuxtLink>
-                        </template>
+                                <span class="group-label-text">{{ group.label }}</span>
+                            </div>
+                            <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                class="collapse-icon" 
+                                :class="{ 'is-collapsed': isGroupCollapsed(group.label) }"
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor"
+                            >
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                        
+                        <div v-show="!isGroupCollapsed(group.label)" class="nav-group-items">
+                            <!-- Direct Items -->
+                            <template v-if="group.items">
+                                <template v-for="item in group.items" :key="item.path">
+                                    <NuxtLink 
+                                        v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
+                                        :to="item.path" 
+                                        class="nav-item" 
+                                        @click="closeSidebar"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path v-for="(path, idx) in item.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
+                                        </svg>
+                                        <span class="nav-item-text">{{ item.name }}</span>
+                                    </NuxtLink>
+                                </template>
+                            </template>
+
+                            <!-- Sub Groups -->
+                            <template v-if="group.subGroups">
+                                <div v-for="sub in group.subGroups" :key="sub.label" class="nav-subgroup mb-2">
+                                    <div 
+                                        class="nav-sublabel"
+                                        :class="{ 'is-active-subgroup': hasActiveChildInSubGroup(sub) }"
+                                        @click.stop="toggleSubGroup(group.label, sub.label)"
+                                    >
+                                        <div class="flex items-center gap-1.5 min-w-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="subgroup-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                            </svg>
+                                            <span class="subgroup-text">{{ sub.label }}</span>
+                                        </div>
+                                        <svg 
+                                            xmlns="http://www.w3.org/2000/svg" 
+                                            class="sub-collapse-icon" 
+                                            :class="{ 'is-collapsed': isSubGroupCollapsed(group.label, sub.label) }"
+                                            fill="none" 
+                                            viewBox="0 0 24 24" 
+                                            stroke="currentColor"
+                                        >
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+
+                                    <div v-show="!isSubGroupCollapsed(group.label, sub.label)" class="nav-subgroup-items">
+                                        <template v-for="item in sub.items" :key="item.path">
+                                            <NuxtLink 
+                                                v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
+                                                :to="item.path" 
+                                                class="nav-item nav-sub-item" 
+                                                @click="closeSidebar"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path v-for="(path, idx) in item.iconPaths" :key="idx" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="path" />
+                                                </svg>
+                                                <span class="nav-item-text">{{ item.name }}</span>
+                                            </NuxtLink>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
                     </div>
-                </div>
+                </template>
             </nav>
 
             <div class="sidebar-footer">
@@ -133,11 +198,22 @@ const userName = useCookie('user_name');
 
 // State kelompok menu (Boolean: true = collapsed, false = expanded)
 const collapsedGroups = ref({});
+const collapsedSubGroups = ref({});
 
 // Inisialisasi & update state: buka grup rute baru tanpa menutup grup yang sudah dibuka pengguna
 const syncMenuCollapseState = (currentPath) => {
   menuGroups.forEach(group => {
-    const hasActiveItem = group.items?.some(item => item.path === currentPath);
+    let hasActiveItem = group.items?.some(item => item.path === currentPath);
+    if (group.subGroups) {
+      group.subGroups.forEach(sub => {
+        const inSub = sub.items?.some(item => item.path === currentPath);
+        if (inSub) {
+          hasActiveItem = true;
+          collapsedSubGroups.value[`${group.label}_${sub.label}`] = false;
+        }
+      });
+    }
+
     if (collapsedGroups.value[group.label] === undefined) {
       collapsedGroups.value[group.label] = !hasActiveItem;
     } else if (hasActiveItem) {
@@ -152,6 +228,20 @@ const isGroupCollapsed = (label) => {
 
 const toggleGroup = (label) => {
   collapsedGroups.value[label] = isGroupCollapsed(label) ? false : true;
+};
+
+const isSubGroupCollapsed = (groupLabel, subLabel) => {
+  const key = `${groupLabel}_${subLabel}`;
+  return collapsedSubGroups.value[key] === true;
+};
+
+const toggleSubGroup = (groupLabel, subLabel) => {
+  const key = `${groupLabel}_${subLabel}`;
+  collapsedSubGroups.value[key] = !isSubGroupCollapsed(groupLabel, subLabel);
+};
+
+const hasActiveChildInSubGroup = (subGroup) => {
+  return subGroup.items?.some(item => item.path === route.path);
 };
 
 // Pantau perubahan rute: buka grup rute baru TANPA menutup grup yang sudah pernah dibuka
@@ -185,6 +275,30 @@ const isEndpointActive = (endpoint) => {
             return true;
         }
     }
+    return false;
+};
+
+const isGroupVisible = (group) => {
+    if (group.items && group.items.length > 0) {
+        return group.items.some(item => 
+            (!item.adminOnly || userRole.value === 'admin') && 
+            (!item.endpointActive || isEndpointActive(item.endpointActive))
+        );
+    }
+    if (group.subGroups && group.subGroups.length > 0) {
+        return group.subGroups.some(sub => 
+            sub.items.some(item => 
+                (!item.adminOnly || userRole.value === 'admin') && 
+                (!item.endpointActive || isEndpointActive(item.endpointActive))
+            )
+        );
+    }
+    return true;
+};
+
+const hasActiveChild = (group) => {
+    if (group.items?.some(item => item.path === route.path)) return true;
+    if (group.subGroups?.some(sub => sub.items?.some(item => item.path === route.path))) return true;
     return false;
 };
 
@@ -321,7 +435,7 @@ const handleLogout = async () => {
 }
 
 .sidebar-nav {
-  padding: 1.5rem 1rem;
+  padding: 1.25rem 0.85rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -329,21 +443,122 @@ const handleLogout = async () => {
   overflow-y: auto;
 }
 
-.nav-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
+/* Standalone menu item (Dashboard, etc.) */
+.sidebar-nav > .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--maz-border-radius, 0.75rem);
+  color: hsl(var(--maz-foreground) / 80%);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-nav > .nav-item .nav-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-nav > .nav-item:hover {
+  color: hsl(var(--maz-foreground));
+  background-color: hsl(var(--maz-foreground) / 5%);
+}
+
+.sidebar-nav > .nav-item:hover .nav-icon {
+  transform: scale(1.08);
+  color: hsl(var(--maz-primary));
+}
+
+.sidebar-nav > .nav-item.router-link-active {
+  background-color: hsl(var(--maz-primary) / 10%);
+  color: hsl(var(--maz-primary));
+}
+
+.sidebar-nav > .nav-item.router-link-active .nav-icon {
+  color: hsl(var(--maz-primary));
+}
+
+.sidebar-nav > .nav-item.router-link-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  bottom: 15%;
+  width: 4px;
+  background-color: hsl(var(--maz-primary));
+  border-radius: 0 4px 4px 0;
+}
+
+/* Menu Section Divider */
+.menu-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0 0.5rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.divider-text {
+  font-size: 0.65rem;
   font-weight: 700;
-  color: hsl(var(--maz-muted));
-  letter-spacing: 1px;
-  margin-bottom: 0.25rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: hsl(var(--maz-muted) / 70%);
+  white-space: nowrap;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background-color: hsl(var(--maz-border));
+}
+
+/* Parent Group Accordion Label */
+.nav-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: hsl(var(--maz-foreground) / 80%);
+  margin-bottom: 0.15rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--maz-border-radius, 0.75rem);
   cursor: pointer;
   user-select: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  gap: 0.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-label-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.group-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  color: hsl(var(--maz-muted));
+  flex-shrink: 0;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.group-label-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .nav-label:hover {
@@ -351,71 +566,177 @@ const handleLogout = async () => {
   color: hsl(var(--maz-foreground));
 }
 
+.nav-label:hover .group-icon {
+  color: hsl(var(--maz-primary));
+}
+
+.nav-label.is-active-group {
+  color: hsl(var(--maz-primary));
+}
+
+.nav-label.is-active-group .group-icon {
+  color: hsl(var(--maz-primary));
+}
+
 .collapse-icon {
-  width: 1rem;
-  height: 1rem;
-  transition: transform 0.2s ease;
+  width: 0.95rem;
+  height: 0.95rem;
+  color: hsl(var(--maz-muted));
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .collapse-icon.is-collapsed {
   transform: rotate(-90deg);
 }
 
+.nav-label:hover .collapse-icon,
+.nav-label.is-active-group .collapse-icon {
+  color: hsl(var(--maz-foreground));
+}
+
+/* Sub-menu Items (Indented with guide line) */
 .nav-group-items {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
+  margin-left: 1.45rem;
+  padding-left: 0.75rem;
+  border-left: 1.5px solid hsl(var(--maz-border));
+  margin-top: 0.15rem;
+  margin-bottom: 0.45rem;
 }
 
-.nav-item {
+.nav-group-items .nav-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.85rem 1rem;
-  border-radius: var(--maz-border-radius, 0.75rem);
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--maz-border-radius, 0.55rem);
   color: hsl(var(--maz-muted));
   text-decoration: none;
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 0.825rem;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
 }
 
-.nav-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  transition: transform 0.2s ease;
+.nav-group-items .nav-item .nav-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
-.nav-item:hover {
+.nav-group-items .nav-item-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-group-items .nav-item:hover {
   color: hsl(var(--maz-foreground));
   background-color: hsl(var(--maz-foreground) / 5%);
 }
 
-.nav-item:hover .nav-icon {
-  transform: scale(1.1);
+.nav-group-items .nav-item:hover .nav-icon {
+  transform: scale(1.08);
   color: hsl(var(--maz-primary));
 }
 
-.nav-item.router-link-active {
+.nav-group-items .nav-item.router-link-active {
   background-color: hsl(var(--maz-primary) / 10%);
   color: hsl(var(--maz-primary));
+  font-weight: 600;
 }
 
-.nav-item.router-link-active .nav-icon {
+.nav-group-items .nav-item.router-link-active .nav-icon {
   color: hsl(var(--maz-primary));
 }
 
-.nav-item.router-link-active::before {
+.nav-group-items .nav-item.router-link-active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 10%;
-  bottom: 10%;
-  width: 4px;
+  top: 15%;
+  bottom: 15%;
+  width: 3px;
   background-color: hsl(var(--maz-primary));
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 3px 3px 0;
+}
+
+/* Sub-group nested styles */
+.nav-subgroup {
+  margin-bottom: 0.35rem;
+}
+
+.nav-sublabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.55rem;
+  border-radius: var(--maz-border-radius, 0.45rem);
+  font-size: 0.725rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--maz-muted));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.nav-sublabel:hover {
+  color: hsl(var(--maz-foreground));
+  background-color: hsl(var(--maz-foreground) / 4%);
+}
+
+.nav-sublabel.is-active-subgroup {
+  color: hsl(var(--maz-primary));
+}
+
+.subgroup-icon {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex-shrink: 0;
+  color: hsl(var(--maz-muted));
+}
+
+.nav-sublabel:hover .subgroup-icon,
+.nav-sublabel.is-active-subgroup .subgroup-icon {
+  color: hsl(var(--maz-primary));
+}
+
+.subgroup-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sub-collapse-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.sub-collapse-icon.is-collapsed {
+  transform: rotate(-90deg);
+}
+
+.nav-subgroup-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-left: 0.45rem;
+  padding-left: 0.45rem;
+  border-left: 1px dashed hsl(var(--maz-border));
+}
+
+.nav-sub-item {
+  font-size: 0.8rem !important;
+  padding: 0.4rem 0.6rem !important;
 }
 
 /* Sidebar Footer */

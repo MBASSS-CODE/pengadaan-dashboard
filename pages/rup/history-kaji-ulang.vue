@@ -12,6 +12,15 @@
         <select v-model="selectedYear" class="px-4 py-2 bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors" @change="onFilterChange(true)">
           <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
         </select>
+
+        <div class="flex gap-2">
+          <MazBtn @click="exportModal = true" color="success" size="sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Export Excel
+          </MazBtn>
+        </div>
         
         <MazBtn @click="loadData(true)" :loading="loading" color="primary">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -27,19 +36,23 @@
       
       <!-- Search/Filter Bar -->
       <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col lg:flex-row lg:items-center gap-4">
-        <div class="flex-1 min-w-[250px]">
-          <MazInput 
-            v-model="searchQuery" 
-            placeholder="Cari nama satker atau alasan..." 
-            size="sm"
-            @update:model-value="onSearchDebounced"
-          >
-            <template #left-icon>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-[color:hsl(var(--maz-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </template>
-          </MazInput>
+        <div class="flex-1 min-w-[250px] flex items-center gap-4">
+          <div class="flex-grow">
+            <MazInput 
+              v-model="searchQuery" 
+              placeholder="Cari nama satker atau alasan..." 
+              size="sm"
+              block
+              class="w-full"
+              @update:model-value="onSearchDebounced"
+            >
+              <template #left-icon>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-[color:hsl(var(--maz-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </template>
+            </MazInput>
+          </div>
         </div>
 
         <div class="w-full lg:w-48">
@@ -147,11 +160,46 @@
         </MazTable>
       </div>
     </div>
+
+    <!-- Modal Export -->
+    <MazDialog v-model="exportModal" title="Export ke Excel (XLSX)">
+      <div class="flex flex-col gap-4 py-2">
+        <p class="text-sm text-[color:hsl(var(--maz-muted))]">
+          Pilih mode ekspor data History Kaji Ulang untuk Tahun Anggaran {{ selectedYear }}:
+        </p>
+        
+        <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] border border-[color:hsl(var(--maz-border))] p-4 rounded-lg">
+          <div class="flex flex-col gap-3">
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="radio" v-model="exportMode" value="filtered" class="mt-1" />
+              <div>
+                <div class="font-semibold text-sm">Sesuai Filter Saat Ini</div>
+                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor data yang tampil pada tabel saat ini berdasarkan pencarian dan filter yang aktif (estimasi: {{ totalItems }} data).</div>
+              </div>
+            </label>
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input type="radio" v-model="exportMode" value="all" class="mt-1" />
+              <div>
+                <div class="font-semibold text-sm">Seluruh Data (Tahun {{ selectedYear }})</div>
+                <div class="text-xs text-[color:hsl(var(--maz-muted))]">Mengekspor seluruh data transaksi untuk tahun anggaran {{ selectedYear }} tanpa filter apapun (estimasi: {{ totalAllItems }} data).</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <MazBtn @click="exportModal = false" color="transparent" size="sm">Batal</MazBtn>
+          <MazBtn @click="executeExport" :loading="exportLoading" color="success" size="sm">Download Excel</MazBtn>
+        </div>
+      </template>
+    </MazDialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { utils, writeFile } from 'xlsx';
 
 const loading = ref(true);
 const error = ref(false);
@@ -245,6 +293,63 @@ const goToPage = (page) => {
 onMounted(() => {
   loadData(false);
 });
+
+// Export Excel state & functions
+const exportModal = ref(false);
+const exportMode = ref('filtered');
+const exportLoading = ref(false);
+
+const executeExport = async () => {
+  exportLoading.value = true;
+  try {
+    const params = {
+      tahun: selectedYear.value,
+      page: 1,
+      limit: 100000
+    };
+
+    if (exportMode.value === 'filtered') {
+      if (searchQuery.value) params.search = searchQuery.value;
+      if (filterDate.value) params.filterDate = filterDate.value;
+      if (filterJenisRevisi.value) params.filterJenisRevisi = filterJenisRevisi.value;
+    }
+
+    const response = await $fetch('/api/data/rup/history-kaji-ulang', { params });
+    
+    if (response.data) {
+      const flatData = response.data.map((row, i) => ({
+        'No.': i + 1,
+        'Tgl Kaji Ulang': formatDate(row.tgl_kaji_ulang),
+        'Nama Satker': row.nama_satker || '-',
+        'Kode Satker': row.kd_satker_str || '-',
+        'Kode RUP Lama': row.kd_rup_lama || '-',
+        'Kode RUP Baru': row.kd_rup_baru || '-',
+        'Jenis Revisi': row.jenis_revisi || '-',
+        'Alasan Kaji Ulang': row.alasan_kajiulang || '-',
+        'Jenis Paket': row.jenis_paket || '-'
+      }));
+
+      const ws = utils.json_to_sheet(flatData);
+      const wb = utils.book_new();
+      utils.book_append_sheet(wb, ws, "History_Kaji_Ulang");
+
+      const wscols = [
+        {wch: 5}, {wch: 20}, {wch: 40}, {wch: 15}, {wch: 15}, {wch: 15},
+        {wch: 15}, {wch: 50}, {wch: 15}
+      ];
+      ws['!cols'] = wscols;
+
+      const filename = `History_Kaji_Ulang_${selectedYear.value}${exportMode.value === 'filtered' ? '_Filtered' : ''}.xlsx`;
+      writeFile(wb, filename);
+      exportModal.value = false;
+    }
+  } catch (err) {
+    console.error('Failed to export:', err);
+    alert('Gagal melakukan ekspor data. Silakan coba lagi.');
+  } finally {
+    exportLoading.value = false;
+  }
+};
 </script>
 
 <style scoped>

@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
 
   // Pagination parameters
   const page = Math.max(1, parseInt(query.page as string) || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(query.limit as string) || 10));
+  const limit = Math.min(100000, Math.max(1, parseInt(query.limit as string) || 10));
 
   // Search & filter parameters
   const search = (query.search as string || '').toLowerCase().trim();

@@ -94,15 +94,22 @@ const fetchWithRetry = async (url: string, options: any = {}, context: string = 
  * Synchronize data from external API to local file and memory cache
  */
 export const syncEndpointData = async (group: string, endpoint: string, tahun: string, extraParams: any = {}) => {
+  // Khusus grup dashboard profil-precomputed, alihkan ke syncDashboardPrecomputed
+  if (group === 'dashboard' && (endpoint === 'profil-precomputed' || endpoint === 'profil/precomputed')) {
+    const res = await syncDashboardPrecomputed(tahun);
+    return [{ success: true, count: res.count }];
+  }
+
   const config = useRuntimeConfig();
   const token = config.apiDataToken;
-  const kodeKlpd = config.apiDataKodeKlpd;
+  const kodeKlpd = config.apiDataKodeKlpd || 'K22';
 
   let hasMore = true;
   let cursor = "";
   let allData: any[] = [];
 
   let fetchSuccess = false;
+  let lastError: any = null;
 
   console.log(`[${new Date().toLocaleString('id-ID')}] Starting sync for ${group}/${endpoint}...`);
 
@@ -111,9 +118,16 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
       // Menyusun param untuk log agar Anda bisa melihat URL aslinya
       const requestParams: any = {
         tahun,
-        kode_klpd: kodeKlpd,
         ...extraParams
       };
+
+      // Pastikan kode_klpd dan kd_klpd tersedia jika relevan
+      if (endpoint !== 'realisasi/penyedia/per-sumber') {
+        const klpdVal = requestParams.kd_klpd || requestParams.kode_klpd || kodeKlpd;
+        requestParams.kd_klpd = klpdVal;
+        requestParams.kode_klpd = klpdVal;
+      }
+
       if (cursor) requestParams.cursor = cursor;
       
       const queryString = new URLSearchParams(requestParams).toString();
@@ -124,13 +138,14 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
       const response: any = await fetchWithRetry(`/${group}/${endpoint}`, {
         baseURL: BASE_URL,
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7'
         },
         params: {
-          tahun,
-          kode_klpd: kodeKlpd,
-          cursor: cursor || undefined, // Send undefined if empty so it doesn't appear in query
-          ...extraParams
+          ...requestParams,
+          cursor: cursor || undefined // Send undefined if empty so it doesn't appear in query
         }
       }, `sync:${group}/${endpoint}`);
       
@@ -138,8 +153,31 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
 
       fetchSuccess = true;
 
-      // Adjust based on the actual API structure
-      const items = response.data || response.list || [];
+      // Adjust based on the actual API structure (mendukung array, single summary object, pagination result)
+      let items: any[] = [];
+      if (Array.isArray(response)) {
+        items = response;
+      } else if (Array.isArray(response.data)) {
+        items = response.data;
+      } else if (Array.isArray(response.list)) {
+        items = response.list;
+      } else if (Array.isArray(response.result)) {
+        items = response.result;
+      } else if (Array.isArray(response.rows)) {
+        items = response.rows;
+      } else if (response.data && typeof response.data === 'object') {
+        items = [response.data];
+      } else if (response && typeof response === 'object') {
+        const cleanObj = { ...response };
+        delete cleanObj.meta;
+        delete cleanObj.status;
+        delete cleanObj.success;
+        delete cleanObj.message;
+        if (Object.keys(cleanObj).length > 0) {
+          items = [cleanObj];
+        }
+      }
+
       allData = [...allData, ...items];
 
       // Check has_more logic, supporting meta object from new API standard
@@ -155,8 +193,9 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
           hasMore = false; 
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`[${new Date().toLocaleString('id-ID')}] Error fetching data for ${group}/${endpoint}:`, error);
+      lastError = error;
       hasMore = false; // Stop loop on error
     }
   }
@@ -168,11 +207,14 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
     // Tambahkan tahun ke nama file agar tidak bentrok
     const filePath = path.resolve(dirPath, `${endpoint}_${tahun}.json`);
     
-    await fs.mkdir(dirPath, { recursive: true });
-    
-    // Write to JSON file
-    await fs.writeFile(filePath, JSON.stringify(allData, null, 2), 'utf-8');
-    console.log(`[${new Date().toLocaleString('id-ID')}] Successfully synced ${allData.length} records to ${filePath}`);
+    try {
+      await fs.mkdir(path.dirname(filePath), { recursive: true });
+      // Write to JSON file
+      await fs.writeFile(filePath, JSON.stringify(allData, null, 2), 'utf-8');
+      console.log(`[${new Date().toLocaleString('id-ID')}] Successfully synced ${allData.length} records to ${filePath}`);
+    } catch (fsError) {
+      console.warn(`[${new Date().toLocaleString('id-ID')}] Could not write cache to file in production:`, fsError);
+    }
 
     // Save to memory cache
     const cacheKey = `${group}_${endpoint}_${tahun}`;
@@ -189,6 +231,19 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
       extractAndSavePenyedia(tahun).catch(err => {
         console.error(`[${new Date().toLocaleString('id-ID')}] [DataManager] Gagal memicu ekstraksi penyedia:`, err);
       });
+    }
+  } else if (allData.length === 0 && lastError) {
+    // Jika gagal fetch ke INAPROC (misal IP ditolak / timeout), coba gunakan cache lokal jika ada
+    const dirPath = path.resolve(process.cwd(), `server/data/${group}`);
+    const filePath = path.resolve(dirPath, `${endpoint}_${tahun}.json`);
+    try {
+      const fileData = await fs.readFile(filePath, 'utf-8');
+      const parsedData = JSON.parse(fileData);
+      console.warn(`[${new Date().toLocaleString('id-ID')}] [Fallback Cache] Memakai data cache tersimpan untuk ${group}/${endpoint} karena koneksi ke API gagal`);
+      return parsedData;
+    } catch (_) {
+      const errMsg = lastError?.data?.error || lastError?.message || 'Gagal terhubung ke API INAPROC';
+      throw new Error(`[INAPROC API Error] ${errMsg}`);
     }
   }
 
@@ -221,6 +276,16 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
       
       return parsedData;
     } catch (error: any) {
+      if (group === 'dashboard' && (endpoint === 'profil/precomputed' || endpoint === 'profil-precomputed')) {
+        try {
+          const fallbackData = await getDashboardPrecomputed(tahun, 'K22');
+          if (fallbackData) {
+            const arr = Array.isArray(fallbackData) ? fallbackData : [fallbackData];
+            memoryCache[cacheKey] = arr;
+            return arr;
+          }
+        } catch (_) {}
+      }
       if (error.code !== 'ENOENT') {
         console.error(`[${new Date().toLocaleString('id-ID')}] Error reading cache file ${filePath}:`, error);
       }
@@ -234,25 +299,58 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
   if (group === 'merged') {
     return []; // Never sync merged from external API
   }
-  return await syncEndpointData(group, endpoint, tahun, extraParams);
+
+  try {
+    return await syncEndpointData(group, endpoint, tahun, extraParams);
+  } catch (syncErr: any) {
+    try {
+      const fileData = await fs.readFile(filePath, 'utf-8');
+      const parsedData = JSON.parse(fileData);
+      console.warn(`[${new Date().toLocaleString('id-ID')}] [Fallback Cache] Menampilkan cache tersimpan karena sync gagal: ${syncErr.message || syncErr}`);
+      return parsedData;
+    } catch (_) {
+      throw syncErr;
+    }
+  }
+};
+
+/**
+ * Helper: menentukan path file cache precomputed
+ */
+const getPrecomputedFilePath = (dirPath: string, tahun: string, instansi: string, satker?: string) => {
+  const fileName = satker
+    ? `dashboard_precomputed_${tahun}_${instansi}_satker_${satker}.json`
+    : `dashboard_precomputed_${tahun}_${instansi}.json`;
+  return path.resolve(dirPath, fileName);
 };
 
 /**
  * Get precomputed dashboard data
  */
-export const getDashboardPrecomputed = async (tahun: string, instansi: string, jenis?: string, view?: string) => {
-  const cacheKey = `dashboard_precomputed_${tahun}_${instansi}_${jenis}_${view}`;
+export const getDashboardPrecomputed = async (tahun: string, instansi: string, jenis?: string, view?: string, eselon?: string, satker?: string) => {
+  const cacheKey = `dashboard_precomputed_${tahun}_${instansi}_${jenis}_${view}_${eselon}_${satker}`;
   
   if (memoryCache[cacheKey]) {
     console.log(`[${new Date().toLocaleString('id-ID')}] [Cache Hit - RAM] Dashboard Precomputed ${tahun} ${instansi}`);
     return memoryCache[cacheKey];
   }
 
-  const dirPath = getDataDir();
-  const filePath = path.resolve(dirPath, `dashboard_precomputed_${tahun}_${instansi}.json`);
+  const dirPath = path.resolve(process.cwd(), 'server/data');
+  const filePath = getPrecomputedFilePath(dirPath, tahun, instansi, satker);
 
   try {
-    const fileData = await fs.readFile(filePath, 'utf-8');
+    let fileData: string;
+    try {
+      fileData = await fs.readFile(filePath, 'utf-8');
+    } catch (readErr: any) {
+      if (satker && readErr.code === 'ENOENT') {
+        // Fallback jika file per satker belum dibuat, gunakan file agregat instansi
+        const fallbackPath = path.resolve(dirPath, `dashboard_precomputed_${tahun}_${instansi}.json`);
+        fileData = await fs.readFile(fallbackPath, 'utf-8');
+      } else {
+        throw readErr;
+      }
+    }
     const parsedData = JSON.parse(fileData);
     
     memoryCache[cacheKey] = parsedData;
@@ -267,19 +365,99 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
   // Fetch from API
   console.log(`[${new Date().toLocaleString('id-ID')}] Fetching dashboard precomputed data for ${tahun} - ${instansi}...`);
   try {
-    const response: any = await fetchWithRetry('https://data.inaproc.id/dashboard-api/profil-pengadaan/precomputed', {
-      params: { tahun, instansi, jenis, view }
+    const config = useRuntimeConfig();
+    const token = config.apiDataToken;
+
+    const response: any = await fetchWithRetry('https://data.inaproc.id/api/v1/dashboard/profil/precomputed', {
+      params: { tahun, instansi, jenis, view, eselon, satker },
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Referer': 'https://data.inaproc.id/',
+        'Origin': 'https://data.inaproc.id'
+      }
     }, 'dashboard-precomputed');
     
-    await fs.mkdir(dirPath, { recursive: true });
-    await fs.writeFile(filePath, JSON.stringify(response, null, 2), 'utf-8');
+    try {
+      await fs.mkdir(dirPath, { recursive: true });
+      await fs.writeFile(filePath, JSON.stringify(response, null, 2), 'utf-8');
+    } catch (fsError) {
+      console.warn(`[${new Date().toLocaleString('id-ID')}] Could not write dashboard cache to file in production:`, fsError);
+    }
     
     memoryCache[cacheKey] = response;
     return response;
   } catch (error: any) {
     console.error(`[${new Date().toLocaleString('id-ID')}] Error fetching dashboard precomputed:`, error);
-    throw createError({ statusCode: 500, statusMessage: 'Failed to fetch dashboard data' });
+    throw createError({ statusCode: 500, statusMessage: `Failed to fetch dashboard data: ${error.message || 'Unknown error'}` });
   }
+};
+
+/**
+ * Synchronize dashboard precomputed data from API and update file & RAM cache (called by cron)
+ */
+export const syncDashboardPrecomputed = async (tahun: string, instansiParam?: string) => {
+  const config = useRuntimeConfig();
+  const token = config.apiDataToken;
+  const instansi = instansiParam || config.apiDataKodeKlpd || 'K22';
+  const dirPath = path.resolve(process.cwd(), 'server/data');
+
+  console.log(`[${new Date().toLocaleString('id-ID')}] [Dashboard Sync] Memulai sinkronisasi precomputed data untuk ${tahun} - ${instansi}...`);
+  await fs.mkdir(dirPath, { recursive: true });
+
+  const targets = [
+    // 1. Publik / Instansi aggregate
+    {
+      params: { tahun, instansi, jenis: '1', view: 'Nilai' },
+      filePath: getPrecomputedFilePath(dirPath, tahun, instansi),
+      cacheKeyPrefix: `dashboard_precomputed_${tahun}_${instansi}_1_Nilai`
+    },
+    // 2. Satker internal (427950)
+    {
+      params: { tahun, instansi, jenis: '1', eselon: '00', satker: '427950' },
+      filePath: getPrecomputedFilePath(dirPath, tahun, instansi, '427950'),
+      cacheKeyPrefix: `dashboard_precomputed_${tahun}_${instansi}_1_undefined_00_427950`
+    }
+  ];
+
+  // Invalidate matching RAM cache keys
+  for (const key of Object.keys(memoryCache)) {
+    if (key.startsWith(`dashboard_precomputed_${tahun}_${instansi}`)) {
+      delete memoryCache[key];
+    }
+  }
+
+  let successCount = 0;
+  for (const target of targets) {
+    try {
+      const response: any = await fetchWithRetry('https://data.inaproc.id/api/v1/dashboard/profil/precomputed', {
+        params: target.params,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+          'Referer': 'https://data.inaproc.id/',
+          'Origin': 'https://data.inaproc.id'
+        }
+      }, `sync:dashboard/profil-precomputed`);
+
+      await fs.writeFile(target.filePath, JSON.stringify(response, null, 2), 'utf-8');
+      memoryCache[target.cacheKeyPrefix] = response;
+      successCount++;
+      console.log(`[${new Date().toLocaleString('id-ID')}] [Dashboard Sync] Berhasil memperbarui ${path.basename(target.filePath)}`);
+    } catch (err: any) {
+      console.error(`[${new Date().toLocaleString('id-ID')}] [Dashboard Sync] Gagal memperbarui ${path.basename(target.filePath)}:`, err.message || err);
+    }
+  }
+
+  if (successCount === 0) {
+    throw new Error(`Gagal menyinkronkan data dashboard precomputed untuk tahun ${tahun}`);
+  }
+
+  return { success: true, count: successCount };
 };
 
 /**

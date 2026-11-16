@@ -51,8 +51,13 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
   masterSatker.forEach((s: any) => satkerMap.set(String(s.kd_satker), s));
 
   const ppkMap = new Map();
+  const ppkMapLower = new Map();
   ppkMaster.forEach((p: any) => {
-    if (p.nip_nama_masked) ppkMap.set(p.nip_nama_masked, p);
+    if (p.nip_nama_masked) {
+      const norm = String(p.nip_nama_masked).replace(/\s+/g, ' ').trim();
+      ppkMap.set(norm, p);
+      ppkMapLower.set(norm.toLowerCase(), p);
+    }
     if (p.nip_asli) ppkMap.set(p.nip_asli, p);
   });
 
@@ -82,9 +87,13 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
     return s ? s.nama_satker : defaultName;
   };
 
-  const getPpkName = (nip: string, nama: string, fallback: string) => {
-    const maskedKey = nip && nama ? `${nip} - ${nama}` : nip || nama;
-    const p = ppkMap.get(maskedKey) || ppkMap.get(nip);
+  const getPpkName = (nip: string, nama: string, fallback: string, rawMasked?: string) => {
+    const cleanRaw = rawMasked ? String(rawMasked).replace(/\s+/g, ' ').trim() : '';
+    const maskedKey = nip && nama ? `${String(nip).trim()} - ${String(nama).replace(/\s+/g, ' ').trim()}` : (nip || nama || '').replace(/\s+/g, ' ').trim();
+    const p =
+      (cleanRaw && (ppkMap.get(cleanRaw) || ppkMapLower.get(cleanRaw.toLowerCase()))) ||
+      (maskedKey && (ppkMap.get(maskedKey) || ppkMapLower.get(maskedKey.toLowerCase()))) ||
+      (nip && ppkMap.get(nip));
     return p ? p.nama_lengkap : fallback;
   };
 
@@ -227,7 +236,7 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
       sumber_transaksi: 'Non Tender',
       sumber_dana: item.sumber_dana || '-',
       nama_penyedia: item.nama_penyedia || item.pemenang || '-',
-      nama_ppk: getPpkName(item.nip_ppk, item.nama_ppk, item.nama_ppk || '-'),
+      nama_ppk: getPpkName(item.nip_ppk || rup.nip_ppk, item.nama_ppk || rup.nama_ppk, item.nama_ppk || rup.nama_ppk || item.nip_nama_ppk || '-', item.nip_nama_ppk),
       metode_pengadaan: item.mtd_pemilihan || '-',
       jenis_pengadaan: item.jenis_pengadaan || rup.jenis_pengadaan || '-',
       nama_paket: item.nama_paket || '-',
@@ -257,7 +266,7 @@ export const executeRealisasiMasterMerge = async (tahun: string, trigger: string
       sumber_transaksi: 'Tender',
       sumber_dana: item.sumber_dana || '-',
       nama_penyedia: '-',
-      nama_ppk: getPpkName(item.nip_ppk, item.nama_ppk, item.nama_ppk || '-'),
+      nama_ppk: getPpkName(item.nip_ppk || rup.nip_ppk, item.nama_ppk || rup.nama_ppk, item.nama_ppk || rup.nama_ppk || '-'),
       metode_pengadaan: item.mtd_pemilihan || 'Tender',
       jenis_pengadaan: item.jenis_pengadaan || rup.jenis_pengadaan || '-',
       nama_paket: item.nama_paket || '-',
