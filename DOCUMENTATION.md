@@ -80,6 +80,7 @@ Konfigurasi runtime dibaca di `nuxt.config.ts` (`runtimeConfig`) dan langsung da
 | `INPROC_API` | Base URL API eksternal INAPROC (contoh: `https://data.inaproc.id/api/v1`) | `dataManager.ts`, `penyediaManager.ts` |
 | `API_DATA_TOKEN` | Bearer Token rahasia untuk mengakses API INAPROC | `nuxt.config.ts`, `dataManager.ts`, `penyediaManager.ts` |
 | `API_DATA_KODE_KLPD` | Kode KLPD instansi (contoh: `K22`) | `nuxt.config.ts`, `dataManager.ts` |
+| `API_DATA_JENIS` | Parameter `jenis` default untuk endpoint dashboard API (contoh: `1`) | `nuxt.config.ts`, `dataManager.ts`, `dashboard.get.ts` |
 | `JWT_SECRET` | Secret key untuk menandatangani & memverifikasi JWT `auth_token` | `nuxt.config.ts`, `login.post.ts`, `server/middleware/auth.ts` |
 | `NUXT_PUBLIC_NAMA_INSTANSI` | Nama instansi yang ditampilkan di UI publik | `nuxt.config.ts` |
 | `DB_HOST_PROD`, `DB_USER_PROD`, `DB_PASSWORD_PROD`, `DB_NAME_PROD` | Kredensial MariaDB saat `NODE_ENV === 'production'` | `server/utils/db.ts` |

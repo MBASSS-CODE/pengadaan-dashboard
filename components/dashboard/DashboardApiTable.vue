@@ -3,246 +3,312 @@
     <!-- Header Area -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div>
-        <div class="flex items-center gap-2 mb-1">
-          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+        <div class="flex flex-wrap items-center gap-2 mb-1.5">
+          <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[color:hsl(var(--maz-primary)_/_12%)] text-[color:hsl(var(--maz-primary))] border border-[color:hsl(var(--maz-primary)_/_25%)]">
             {{ group }}/{{ endpoint }}
           </span>
-          <span v-if="params && params.length" class="text-xs text-[color:hsl(var(--maz-muted))]">
+          <span
+            v-if="params && params.length"
+            class="px-2 py-0.5 rounded text-[11px] font-medium bg-[color:hsl(var(--maz-foreground)_/_5%)] text-[color:hsl(var(--maz-muted))] border border-[color:hsl(var(--maz-border))]"
+          >
             Param: {{ params.join(', ') }}
           </span>
         </div>
         <h1 class="text-2xl font-bold text-[color:hsl(var(--maz-foreground))]">{{ title }}</h1>
-        <p class="text-sm text-[color:hsl(var(--maz-muted))] mt-1">{{ subtitle || `Data dari endpoint ${group}/${endpoint}` }}</p>
+        <p class="text-sm text-[color:hsl(var(--maz-muted))] mt-1">
+          {{ subtitle || `Data dari endpoint ${group}/${endpoint}` }}
+        </p>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-        <!-- Filter Tahun -->
-        <select 
-          v-model="selectedYear" 
-          class="px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors"
+      <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <!-- Filter Tahun Dinamis -->
+        <select
+          v-model="selectedYear"
+          class="px-4 py-2 bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors"
           @change="onFilterChange(true)"
         >
-          <option v-for="year in availableYears" :key="year" :value="year">Tahun {{ year }}</option>
+          <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
         </select>
 
-        <!-- Filter Satker (jika didukung parameter) -->
-        <div v-if="supportsSatker" class="relative">
-          <select 
-            v-model="selectedSatker" 
-            class="max-w-[220px] truncate px-3 py-2 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors"
-            @change="onFilterChange(true)"
-          >
-            <option value="">Semua Satuan Kerja</option>
-            <option v-for="s in satkerList" :key="s.kd_satker" :value="String(s.kd_satker)">
-              {{ s.nama_satker }} ({{ s.kd_satker }})
-            </option>
-          </select>
-        </div>
-
-        <!-- Tombol Export Excel -->
-        <MazBtn @click="exportModal = true" color="success" size="sm" :disabled="loading || totalItems === 0">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <MazBtn
+          @click="exportModal = true"
+          color="success"
+          :disabled="loading || totalItems === 0"
+          class="mr-1"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          Export
+          Export Excel
         </MazBtn>
 
-        <!-- Tombol Refresh / Sinkronisasi -->
-        <MazBtn @click="loadData(true)" :loading="loading" color="primary" size="sm">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <MazBtn @click="loadData(true)" :loading="loading" color="primary">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Refresh
+          Refresh Data
         </MazBtn>
       </div>
     </div>
 
     <!-- Main Content Card -->
     <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm overflow-hidden">
-      <!-- Search & Controls Bar -->
-      <div class="p-4 border-b border-[color:hsl(var(--maz-border))] flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
-        <div class="relative flex-1 max-w-md">
-          <input 
-            v-model="searchQuery" 
-            type="text"
-            placeholder="Cari data di semua kolom..." 
-            class="w-full pl-9 pr-4 py-1.5 text-sm bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded-lg focus:outline-none focus:border-[color:hsl(var(--maz-primary))] transition-colors"
-            @input="onSearchDebounced"
-          />
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-2.5 text-[color:hsl(var(--maz-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+      <!-- Search & Filter Bar -->
+      <div class="p-4 border-b border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-background))] flex flex-col lg:flex-row gap-4 items-end justify-between">
+        <div class="w-full lg:flex-1 lg:max-w-md">
+          <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">
+            {{ isSummaryView ? 'Filter Metrik' : 'Pencarian' }}
+          </label>
+          <MazInput
+            v-if="!isSummaryView"
+            v-model="searchQuery"
+            placeholder="Cari data di semua kolom..."
+            size="sm"
+            clearable
+            @update:model-value="onSearchDebounced"
+          >
+            <template #left-icon>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-[color:hsl(var(--maz-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </template>
+          </MazInput>
+          <MazInput
+            v-else
+            v-model="metricSearch"
+            placeholder="Cari nama metrik ringkasan..."
+            size="sm"
+            clearable
+          >
+            <template #left-icon>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 text-[color:hsl(var(--maz-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </template>
+          </MazInput>
         </div>
 
-        <div class="flex items-center gap-3 text-xs text-[color:hsl(var(--maz-muted))] justify-between sm:justify-end">
-          <span>Menampilkan {{ totalItems }} data</span>
-          <div class="flex items-center gap-1.5">
-            <span>Per hal:</span>
-            <select 
-              v-model="itemsPerPage" 
-              class="px-2 py-1 text-xs bg-[color:hsl(var(--maz-background))] border border-[color:hsl(var(--maz-border))] text-[color:hsl(var(--maz-foreground))] rounded focus:outline-none"
-              @change="onFilterChange(false)"
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 w-full lg:w-auto">
+          <!-- Filter Satker Lokal (jika data memiliki kolom satker) -->
+          <div v-if="satkerOptions.length > 1 && !isSummaryView" class="w-full sm:w-64">
+            <label class="block text-xs font-semibold text-[color:hsl(var(--maz-muted))] mb-1.5 uppercase tracking-wider">
+              Satuan Kerja
+            </label>
+            <MazSelect
+              v-model="selectedSatker"
+              :options="satkerOptions"
+              size="sm"
+              search
+              @update:model-value="onFilterChange(false)"
+            />
+          </div>
+
+          <!-- Toggle Summary Cards / Table View jika data berupa single-object ringkasan -->
+          <div v-if="canShowSummaryCards" class="flex items-center gap-2">
+            <MazBtn
+              :color="viewMode === 'cards' ? 'primary' : 'transparent'"
+              :outline="viewMode !== 'cards'"
+              size="sm"
+              @click="viewMode = 'cards'"
             >
-              <option :value="10">10</option>
-              <option :value="25">25</option>
-              <option :value="50">50</option>
-              <option :value="100">100</option>
-            </select>
+              Ringkasan
+            </MazBtn>
+            <MazBtn
+              :color="viewMode === 'table' ? 'primary' : 'transparent'"
+              :outline="viewMode !== 'table'"
+              size="sm"
+              @click="viewMode = 'table'"
+            >
+              Tabel
+            </MazBtn>
+          </div>
+
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] pb-2 whitespace-nowrap">
+            Total: <strong class="text-[color:hsl(var(--maz-foreground))]">{{ totalItems.toLocaleString('id-ID') }}</strong> data
           </div>
         </div>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-[color:hsl(var(--maz-muted))]">
-        <MazSpinner color="primary" class="text-4xl mb-3" />
-        <p class="text-sm">Memuat data dari {{ endpoint }}...</p>
-      </div>
-
       <!-- Error State -->
-      <div v-else-if="error" class="flex flex-col items-center justify-center py-16 text-rose-500">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div v-if="error" class="flex flex-col items-center justify-center py-20 text-[color:hsl(var(--maz-destructive))]">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <p class="font-medium text-sm">Gagal memuat data dari server.</p>
-        <p class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">{{ errorMessage }}</p>
-        <MazBtn @click="loadData(true)" size="sm" outline class="mt-3">Coba Lagi</MazBtn>
+        <p class="font-medium">Gagal memuat data dari server.</p>
+        <p v-if="errorMessage" class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">{{ errorMessage }}</p>
+        <MazBtn @click="loadData(true)" size="sm" outline class="mt-4">Coba Lagi</MazBtn>
+      </div>
+
+      <!-- Loading State for Summary View -->
+      <div v-else-if="loading && isSummaryView" class="flex flex-col items-center justify-center py-20 text-[color:hsl(var(--maz-muted))]">
+        <MazSpinner color="primary" class="text-4xl mb-3" />
+        <p class="text-sm">Memuat data {{ title }}...</p>
       </div>
 
       <!-- Empty State -->
-      <div v-else-if="pageData.length === 0" class="flex flex-col items-center justify-center py-16 text-[color:hsl(var(--maz-muted))]">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-3 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div v-else-if="!loading && pageData.length === 0" class="flex flex-col items-center justify-center py-16 text-[color:hsl(var(--maz-muted))]">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
         </svg>
         <p class="font-medium text-sm text-[color:hsl(var(--maz-foreground))]">Belum Ada Data</p>
         <p class="text-xs mt-1">Data belum tersinkronisasi atau tidak ditemukan untuk filter ini.</p>
-        <MazBtn @click="loadData(true)" size="sm" color="primary" class="mt-3">
-          Sinkronisasi Sekarang
-        </MazBtn>
+        <MazBtn @click="loadData(true)" size="sm" color="primary" class="mt-4">Sinkronisasi Sekarang</MazBtn>
       </div>
 
-      <!-- Data Table -->
-      <div v-else class="overflow-x-auto w-full">
-        <table class="w-full text-left border-collapse text-xs sm:text-sm">
-          <thead>
-            <tr class="border-b border-[color:hsl(var(--maz-border))] bg-slate-50/75 dark:bg-slate-800/40">
-              <th class="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500 w-12 text-center">No</th>
-              <th 
-                v-for="col in columns" 
-                :key="col.key"
-                @click="sortBy(col.key)"
-                class="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 cursor-pointer select-none whitespace-nowrap hover:text-blue-600 transition-colors"
-              >
-                <div class="flex items-center gap-1">
-                  <span>{{ col.label }}</span>
-                  <span v-if="sortKey === col.key" class="text-xs text-blue-600">
-                    {{ sortOrder === 'asc' ? '▲' : '▼' }}
-                  </span>
-                </div>
-              </th>
-              <th class="py-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500 w-16 text-center">Detail</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-[color:hsl(var(--maz-border))]">
-            <tr 
-              v-for="(row, idx) in sortedRows" 
-              :key="idx"
-              class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+      <!-- Summary KPI Cards View (untuk endpoint */summary atau single-object) -->
+      <div v-else-if="isSummaryView && (summaryEntries.length > 0 || summaryArraySections.length > 0)" class="p-6 space-y-6">
+        <div v-if="filteredSummaryEntries.length === 0 && summaryArraySections.length === 0" class="py-12 text-center text-sm text-[color:hsl(var(--maz-muted))]">
+          Tidak ada metrik yang cocok dengan pencarian "{{ metricSearch }}".
+        </div>
+        <div v-else-if="filteredSummaryEntries.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div
+            v-for="item in filteredSummaryEntries"
+            :key="item.key"
+            class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col justify-between"
+          >
+            <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1.5">
+              {{ item.label }}
+            </div>
+            <div
+              class="text-lg font-bold break-words"
+              :class="item.isCurrency ? 'text-green-600 dark:text-green-400' : item.isPercent ? 'text-[color:hsl(var(--maz-primary))]' : 'text-[color:hsl(var(--maz-foreground))]'"
             >
-              <td class="py-2.5 px-3 text-center font-medium text-slate-400">
-                {{ (currentPage - 1) * itemsPerPage + idx + 1 }}
-              </td>
-              <td 
-                v-for="col in columns" 
-                :key="col.key"
-                class="py-2.5 px-3 text-slate-700 dark:text-slate-200 whitespace-nowrap max-w-[260px] truncate"
-                :title="String(row[col.key] ?? '')"
-              >
-                <span v-if="isCurrency(col.key, row[col.key])" class="font-semibold text-emerald-600 dark:text-emerald-400">
+              {{ item.formatted }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabel rincian jika ada properti array (mis. progress di realisasi-rup/summary) -->
+        <div v-for="section in summaryArraySections" :key="section.key" class="space-y-3">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-[color:hsl(var(--maz-muted))]">
+            {{ section.label }}
+          </h2>
+          <div class="rounded-xl border border-[color:hsl(var(--maz-border))] overflow-x-auto">
+            <MazTable
+              size="sm"
+              color="primary"
+              hoverable
+              background-even
+              :headers="section.headers"
+              :rows="section.rows"
+            >
+              <template v-for="col in section.columns" :key="col.key" #[`cell-${col.key}`]="{ row }">
+                <span v-if="isCurrency(col.key, row[col.key])" class="font-bold text-green-600 dark:text-green-400 whitespace-nowrap">
                   {{ formatCurrency(row[col.key]) }}
                 </span>
-                <span v-else-if="isBoolean(row[col.key])" :class="row[col.key] ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'" class="px-2 py-0.5 rounded text-xs font-medium">
-                  {{ row[col.key] ? 'Ya' : 'Tidak' }}
+                <span v-else-if="typeof row[col.key] === 'number'" class="font-medium whitespace-nowrap">
+                  {{ Number(row[col.key]).toLocaleString('id-ID') }}
                 </span>
-                <span v-else>
+                <span v-else class="text-xs whitespace-nowrap">
                   {{ formatCell(col.key, row[col.key]) }}
                 </span>
-              </td>
-              <td class="py-2.5 px-3 text-center">
-                <button 
-                  @click="openDetail(row)"
-                  class="px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
-                  title="Lihat Detail JSON"
-                >
-                  Lihat
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </template>
+            </MazTable>
+          </div>
+        </div>
       </div>
 
-      <!-- Pagination Footer -->
-      <div v-if="totalPages > 1" class="p-3 border-t border-[color:hsl(var(--maz-border))] flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-800/20">
-        <div class="text-xs text-[color:hsl(var(--maz-muted))]">
-          Halaman {{ currentPage }} dari {{ totalPages }} (Total {{ totalItems }} data)
-        </div>
-        <div class="flex items-center gap-1">
-          <button 
-            :disabled="currentPage === 1"
-            @click="goToPage(1)"
-            class="px-2.5 py-1 text-xs border border-[color:hsl(var(--maz-border))] rounded hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            «
-          </button>
-          <button 
-            :disabled="currentPage === 1"
-            @click="goToPage(currentPage - 1)"
-            class="px-2.5 py-1 text-xs border border-[color:hsl(var(--maz-border))] rounded hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            ‹
-          </button>
-          <span class="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 dark:bg-blue-950/40 rounded border border-blue-200 dark:border-blue-900">
-            {{ currentPage }}
-          </span>
-          <button 
-            :disabled="currentPage >= totalPages"
-            @click="goToPage(currentPage + 1)"
-            class="px-2.5 py-1 text-xs border border-[color:hsl(var(--maz-border))] rounded hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            ›
-          </button>
-          <button 
-            :disabled="currentPage >= totalPages"
-            @click="goToPage(totalPages)"
-            class="px-2.5 py-1 text-xs border border-[color:hsl(var(--maz-border))] rounded hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            »
-          </button>
-        </div>
+      <!-- MazTable Data Table -->
+      <div v-else class="overflow-x-auto w-full">
+        <MazTable
+          size="sm"
+          v-model:page="currentPage"
+          v-model:page-size="itemsPerPage"
+          pagination
+          :paginate-rows="false"
+          :total-items="totalItems"
+          :loading="loading"
+          color="primary"
+          hoverable
+          background-even
+          :headers="tableHeaders"
+          :rows="pageData"
+          @update:page="loadData(false)"
+          @update:page-size="onFilterChange(false)"
+        >
+          <template #cell-index="{ row }">
+            <span class="font-medium">{{ (currentPage - 1) * itemsPerPage + (row._index || 0) + 1 }}</span>
+          </template>
+
+          <template v-for="col in columns" :key="col.key" #[`cell-${col.key}`]="{ row }">
+            <span
+              v-if="isCurrency(col.key, row[col.key])"
+              class="font-bold text-green-600 dark:text-green-400 whitespace-nowrap"
+            >
+              {{ formatCurrency(row[col.key]) }}
+            </span>
+            <span
+              v-else-if="isPercentage(col.key, row[col.key])"
+              class="font-semibold text-[color:hsl(var(--maz-primary))] whitespace-nowrap"
+            >
+              {{ formatPercent(row[col.key]) }}
+            </span>
+            <span
+              v-else-if="isBoolean(row[col.key])"
+              class="px-2.5 py-1 text-[0.7rem] font-semibold rounded-full border border-transparent leading-none"
+              :class="row[col.key]
+                ? 'bg-[color:hsl(var(--maz-success)_/_15%)] text-[color:hsl(var(--maz-success)_/_100%)] dark:bg-[color:hsl(var(--maz-success)_/_20%)]'
+                : 'bg-[color:hsl(var(--maz-muted)_/_15%)] text-[color:hsl(var(--maz-foreground)_/_80%)] dark:bg-[color:hsl(var(--maz-muted)_/_20%)]'"
+            >
+              {{ row[col.key] ? 'Ya' : 'Tidak' }}
+            </span>
+            <span
+              v-else-if="typeof row[col.key] === 'number'"
+              class="font-medium text-[color:hsl(var(--maz-foreground))] whitespace-nowrap"
+            >
+              {{ Number(row[col.key]).toLocaleString('id-ID') }}
+            </span>
+            <span
+              v-else
+              class="text-xs text-[color:hsl(var(--maz-foreground))] block max-w-[260px] truncate"
+              :title="formatCell(col.key, row[col.key])"
+            >
+              {{ formatCell(col.key, row[col.key]) }}
+            </span>
+          </template>
+
+          <template #cell-actions="{ row }">
+            <MazBtn @click="openDetail(row)" size="xs" color="primary" outline>
+              Lihat
+            </MazBtn>
+          </template>
+        </MazTable>
       </div>
     </div>
 
     <!-- Detail Modal Dialog -->
-    <MazDialog v-model="detailModal" :title="`Detail Data - ${title}`" width="700px">
+    <MazDialog v-model="detailModal" :title="`Detail Data - ${title}`" width="720px">
       <div v-if="selectedRow" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 py-2">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div 
-            v-for="(val, key) in cleanSelectedRow" 
-            :key="key" 
-            class="p-2.5 rounded-lg border border-[color:hsl(var(--maz-border))] bg-slate-50/50 dark:bg-slate-800/30"
+          <div
+            v-for="(val, key) in cleanSelectedRow"
+            :key="key"
+            class="p-3 rounded-lg border border-[color:hsl(var(--maz-border))] bg-[color:hsl(var(--maz-foreground)_/_2%)]"
           >
             <div class="text-[11px] font-semibold uppercase tracking-wider text-[color:hsl(var(--maz-muted))] mb-1">
               {{ formatHeaderLabel(String(key)) }}
             </div>
             <div class="text-xs font-medium text-[color:hsl(var(--maz-foreground))] break-words">
-              <span v-if="isCurrency(String(key), val)" class="font-bold text-emerald-600 dark:text-emerald-400">
+              <span v-if="isCurrency(String(key), val)" class="font-bold text-green-600 dark:text-green-400">
                 {{ formatCurrency(val) }}
               </span>
-              <span v-else-if="isBoolean(val)" :class="val ? 'text-emerald-600 font-semibold' : 'text-slate-500'">
+              <span v-else-if="isPercentage(String(key), val)" class="font-bold text-[color:hsl(var(--maz-primary))]">
+                {{ formatPercent(val) }}
+              </span>
+              <span
+                v-else-if="isBoolean(val)"
+                class="px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                :class="val
+                  ? 'bg-[color:hsl(var(--maz-success)_/_15%)] text-[color:hsl(var(--maz-success)_/_100%)]'
+                  : 'bg-[color:hsl(var(--maz-muted)_/_15%)] text-[color:hsl(var(--maz-muted))]'"
+              >
                 {{ val ? 'Ya' : 'Tidak' }}
               </span>
+              <span v-else-if="typeof val === 'number'" class="font-semibold">
+                {{ Number(val).toLocaleString('id-ID') }}
+              </span>
               <span v-else>
-                {{ val !== null && val !== undefined && val !== '' ? String(val) : '-' }}
+                {{ formatCell(String(key), val) }}
               </span>
             </div>
           </div>
@@ -259,9 +325,9 @@
     <MazDialog v-model="exportModal" title="Export ke Excel (XLSX)">
       <div class="flex flex-col gap-4 py-2">
         <p class="text-sm text-[color:hsl(var(--maz-muted))]">
-          Pilih data yang ingin diekspor untuk {{ title }} (Tahun {{ selectedYear }}):
+          Pilih mode ekspor data untuk {{ title }} (Tahun Anggaran {{ selectedYear }}):
         </p>
-        
+
         <div class="bg-[color:hsl(var(--maz-foreground)_/_2%)] border border-[color:hsl(var(--maz-border))] p-4 rounded-lg">
           <div class="flex flex-col gap-3">
             <label class="flex items-start gap-3 cursor-pointer">
@@ -269,7 +335,7 @@
               <div>
                 <div class="font-semibold text-sm">Sesuai Filter Saat Ini</div>
                 <div class="text-xs text-[color:hsl(var(--maz-muted))]">
-                  Mengekspor data berdasarkan pencarian dan filter yang aktif (estimasi: {{ totalItems }} baris).
+                  Mengekspor data yang tampil berdasarkan pencarian dan filter yang aktif (estimasi: {{ totalItems }} baris).
                 </div>
               </div>
             </label>
@@ -278,7 +344,7 @@
               <div>
                 <div class="font-semibold text-sm">Seluruh Data (Tahun {{ selectedYear }})</div>
                 <div class="text-xs text-[color:hsl(var(--maz-muted))]">
-                  Mengekspor seluruh data tersimpan pada tahun {{ selectedYear }} (estimasi: {{ totalAllItems }} baris).
+                  Mengekspor seluruh data tersimpan pada tahun anggaran {{ selectedYear }} (estimasi: {{ totalAllItems }} baris).
                 </div>
               </div>
             </label>
@@ -318,7 +384,7 @@ const props = defineProps({
   },
   params: {
     type: Array,
-    default: () => ['tahun', 'kd_klpd', 'kd_satker']
+    default: () => ['tahun', 'jenis', 'instansi']
   }
 });
 
@@ -339,26 +405,58 @@ const availableYears = [
 ];
 const selectedYear = ref(currentYear.toString());
 
-// Satker
-const selectedSatker = ref('');
-const satkerList = ref([]);
-const supportsSatker = computed(() => {
-  return props.params.some(p => p.toLowerCase().includes('satker'));
-});
+// Filter Satker Lokal (dari filterOptions hasil server cache)
+const selectedSatker = ref('ALL');
+const satkerOptions = ref([{ label: 'Semua Satuan Kerja', value: 'ALL' }]);
 
 // Search & Pagination
 const searchQuery = ref('');
+const metricSearch = ref('');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 let searchTimer = null;
 
-// Sorting
-const sortKey = ref('');
-const sortOrder = ref('asc');
+// Mode Tampilan (Kartu Ringkasan vs Tabel)
+const viewMode = ref('cards');
 
 // Modal Detail
 const detailModal = ref(false);
 const selectedRow = ref(null);
+
+// Export Excel
+const exportModal = ref(false);
+const exportMode = ref('filtered');
+const exportLoading = ref(false);
+
+/**
+ * Unwrap { data: { ... } } & flatten simple nested object keys so every metric/column renders cleanly
+ */
+const normalizeRow = (item) => {
+  if (!item || typeof item !== 'object') return {};
+  let source = item;
+  if (
+    source.data &&
+    typeof source.data === 'object' &&
+    !Array.isArray(source.data) &&
+    Object.keys(source).filter((k) => k !== '_index').length === 1
+  ) {
+    source = source.data;
+  }
+
+  const normalized = {};
+  for (const [key, val] of Object.entries(source)) {
+    if (key === '_index') continue;
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      for (const [subKey, subVal] of Object.entries(val)) {
+        normalized[`${key}_${subKey}`] = subVal;
+      }
+    } else {
+      normalized[key] = val;
+    }
+  }
+  return normalized;
+};
+
 const cleanSelectedRow = computed(() => {
   if (!selectedRow.value) return {};
   const copy = { ...selectedRow.value };
@@ -366,85 +464,88 @@ const cleanSelectedRow = computed(() => {
   return copy;
 });
 
-// Export Excel
-const exportModal = ref(false);
-const exportMode = ref('filtered');
-const exportLoading = ref(false);
-
-// Kolom dinamis berdasarkan isi baris data
-const columns = computed(() => {
-  if (!pageData.value || pageData.value.length === 0) return [];
-  
-  // Ambil semua key unik dari data
-  const keySet = new Set();
-  pageData.value.forEach(row => {
-    Object.keys(row).forEach(k => {
-      if (k !== '_index') keySet.add(k);
-    });
-  });
-
-  return Array.from(keySet).map(key => ({
-    key,
-    label: formatHeaderLabel(key)
-  }));
+// Tampilkan kartu ringkasan otomatis untuk endpoint summary atau single-object lebar
+const canShowSummaryCards = computed(() => {
+  if (totalAllItems.value !== 1 || pageData.value.length !== 1) return false;
+  const keys = Object.keys(pageData.value[0] || {}).filter((k) => k !== '_index');
+  return props.endpoint.endsWith('/summary') || keys.length >= 6;
 });
 
-// Sorting client-side untuk halaman aktif
-const sortedRows = computed(() => {
-  if (!sortKey.value) return pageData.value;
-  return [...pageData.value].sort((a, b) => {
-    const valA = a[sortKey.value];
-    const valB = b[sortKey.value];
-    if (valA === valB) return 0;
-    if (valA === null || valA === undefined) return 1;
-    if (valB === null || valB === undefined) return -1;
-
-    let res = 0;
-    if (typeof valA === 'number' && typeof valB === 'number') {
-      res = valA - valB;
-    } else {
-      res = String(valA).localeCompare(String(valB));
-    }
-    return sortOrder.value === 'asc' ? res : -res;
-  });
+const isSummaryView = computed(() => {
+  return canShowSummaryCards.value && viewMode.value === 'cards';
 });
-
-const sortBy = (key) => {
-  if (sortKey.value === key) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
-  } else {
-    sortKey.value = key;
-    sortOrder.value = 'asc';
-  }
-};
 
 const formatHeaderLabel = (key) => {
   return key
     .replace(/_/g, ' ')
-    .replace(/\b\w/g, l => l.toUpperCase());
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+};
+
+const isPercentage = (key, val) => {
+  if (typeof val !== 'number') return false;
+  const lower = key.toLowerCase();
+  return (
+    lower.includes('persen') ||
+    lower.includes('percent') ||
+    lower.includes('capaian') ||
+    lower.includes('komitmen') ||
+    lower.includes('thd_') ||
+    (lower.startsWith('pelaksanaan_pdn') && val <= 100) ||
+    (lower.startsWith('perencanaan_pdn') && val <= 100) ||
+    (lower.startsWith('perencanaan_epurchasing') && val <= 100)
+  );
 };
 
 const isCurrency = (key, val) => {
   if (typeof val !== 'number') return false;
+  if (isPercentage(key, val)) return false;
   const lower = key.toLowerCase();
-  return lower.includes('nilai') || lower.includes('pagu') || lower.includes('anggaran') || lower.includes('realisasi') || lower.includes('biaya') || lower.includes('harga') || lower.includes('nominal');
+  if (
+    lower.includes('paket') ||
+    lower.includes('jumlah') ||
+    lower.includes('count') ||
+    lower === 'total_realisasi' ||
+    lower === 'total_rup' ||
+    lower === 'total_pembayaran'
+  ) {
+    return false;
+  }
+  return (
+    lower.includes('nilai') ||
+    lower.includes('pagu') ||
+    lower.includes('anggaran') ||
+    lower.includes('realisasi') ||
+    lower.includes('biaya') ||
+    lower.includes('harga') ||
+    lower.includes('nominal') ||
+    lower.includes('belanja') ||
+    lower.includes('pembayaran') ||
+    lower.includes('total_pelaksanaan') ||
+    lower.includes('total_perencanaan') ||
+    lower.includes('total_epurchasing') ||
+    lower.includes('pdn_pelaksanaan') ||
+    lower.includes('pelaksanaan_epurchasing') ||
+    lower.includes('pelaksanaan_total') ||
+    lower.includes('perencanaan_total')
+  );
 };
 
-const isBoolean = (val) => {
-  return typeof val === 'boolean';
-};
+const isBoolean = (val) => typeof val === 'boolean';
 
 const formatCurrency = (val) => {
   if (val === null || val === undefined) return '-';
   return 'Rp ' + Number(val).toLocaleString('id-ID');
 };
 
+const formatPercent = (val) => {
+  if (val === null || val === undefined) return '-';
+  return `${Number(val).toLocaleString('id-ID', { maximumFractionDigits: 2 })}%`;
+};
+
 const formatCell = (key, val) => {
   if (val === null || val === undefined || val === '') return '-';
-  if (typeof val === 'object') {
-    return JSON.stringify(val);
-  }
-  // Cek tanggal ISO
+  if (Array.isArray(val)) return val.length ? `${val.length} item` : '-';
+  if (typeof val === 'object') return JSON.stringify(val);
   if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
     try {
       const d = new Date(val);
@@ -460,26 +561,98 @@ const formatCell = (key, val) => {
   return String(val);
 };
 
+const summaryEntries = computed(() => {
+  if (!pageData.value.length) return [];
+  const row = pageData.value[0];
+  return Object.entries(row)
+    .filter(([key, val]) => key !== '_index' && !(Array.isArray(val) && val.length > 0 && typeof val[0] === 'object'))
+    .map(([key, val]) => {
+      const currency = isCurrency(key, val);
+      const percent = isPercentage(key, val);
+      let formatted = '-';
+      if (currency) formatted = formatCurrency(val);
+      else if (percent) formatted = formatPercent(val);
+      else if (isBoolean(val)) formatted = val ? 'Ya' : 'Tidak';
+      else if (typeof val === 'number') formatted = Number(val).toLocaleString('id-ID');
+      else formatted = formatCell(key, val);
+
+      return {
+        key,
+        label: formatHeaderLabel(key),
+        isCurrency: currency,
+        isPercent: percent,
+        formatted
+      };
+    });
+});
+
+const summaryArraySections = computed(() => {
+  if (!pageData.value.length) return [];
+  const row = pageData.value[0];
+  return Object.entries(row)
+    .filter(([key, val]) => key !== '_index' && Array.isArray(val) && val.length > 0 && typeof val[0] === 'object')
+    .map(([key, val]) => {
+      const keySet = new Set();
+      val.forEach((item) => {
+        Object.keys(item || {}).forEach((k) => keySet.add(k));
+      });
+      const cols = Array.from(keySet).map((k) => ({ key: k, label: formatHeaderLabel(k) }));
+      return {
+        key,
+        label: formatHeaderLabel(key),
+        columns: cols,
+        headers: cols.map((c) => ({ label: c.label, key: c.key, sortable: false, classes: 'whitespace-nowrap' })),
+        rows: val
+      };
+    });
+});
+
+const filteredSummaryEntries = computed(() => {
+  const q = metricSearch.value.trim().toLowerCase();
+  if (!q) return summaryEntries.value;
+  return summaryEntries.value.filter(
+    (entry) =>
+      entry.label.toLowerCase().includes(q) ||
+      entry.key.toLowerCase().includes(q) ||
+      entry.formatted.toLowerCase().includes(q)
+  );
+});
+
+// Kolom dinamis berdasarkan isi baris data
+const columns = computed(() => {
+  if (!pageData.value || pageData.value.length === 0) return [];
+
+  const keySet = new Set();
+  pageData.value.forEach((row) => {
+    Object.keys(row).forEach((k) => {
+      if (k !== '_index') keySet.add(k);
+    });
+  });
+
+  return Array.from(keySet).map((key) => ({
+    key,
+    label: formatHeaderLabel(key)
+  }));
+});
+
+const tableHeaders = computed(() => {
+  return [
+    { label: 'No', key: 'index', align: 'center', width: '4rem', sortable: false },
+    ...columns.value.map((col) => ({
+      label: col.label,
+      key: col.key,
+      sortable: false,
+      classes: 'whitespace-nowrap'
+    })),
+    { label: 'Aksi', key: 'actions', align: 'center', width: '5rem', sortable: false }
+  ];
+});
+
 const openDetail = (row) => {
   selectedRow.value = row;
   detailModal.value = true;
 };
 
-// Ambil daftar master satker untuk dropdown
-const fetchSatkerList = async () => {
-  try {
-    const res = await $fetch('/api/data/rup/master-satker', {
-      params: { tahun: selectedYear.value, limit: 1000 }
-    });
-    if (res && res.data) {
-      satkerList.value = res.data;
-    }
-  } catch (e) {
-    console.warn('Gagal memuat list satker:', e);
-  }
-};
-
-// Load data utama
 const loadData = async (force = false) => {
   loading.value = true;
   error.value = false;
@@ -491,27 +664,30 @@ const loadData = async (force = false) => {
       page: currentPage.value,
       limit: itemsPerPage.value,
       search: searchQuery.value || undefined,
+      filterSatker: selectedSatker.value !== 'ALL' ? selectedSatker.value : undefined,
       forceRefresh: force ? 'true' : undefined
     };
-
-    if (supportsSatker.value && selectedSatker.value) {
-      requestParams.kd_satker = selectedSatker.value;
-      requestParams.filterSatker = selectedSatker.value;
-    }
 
     const res = await $fetch(`/api/data/${props.group}/${props.endpoint}`, {
       params: requestParams
     });
 
     const raw = res.data || [];
-    pageData.value = raw.map((item, index) => ({ ...item, _index: index }));
+    pageData.value = raw.map((item, index) => ({ ...normalizeRow(item), _index: index }));
     totalItems.value = res.meta?.totalItems ?? raw.length;
     totalPages.value = res.meta?.totalPages ?? (raw.length ? 1 : 0);
     totalAllItems.value = res.meta?.totalAllItems ?? raw.length;
+
+    if (res.filterOptions?.satker) {
+      satkerOptions.value = [
+        { label: 'Semua Satuan Kerja', value: 'ALL' },
+        ...res.filterOptions.satker.map((s) => ({ label: s, value: s }))
+      ];
+    }
   } catch (err) {
     console.error(`Error fetching /api/data/${props.group}/${props.endpoint}:`, err);
     error.value = true;
-    errorMessage.value = err.message || 'Terjadi kesalahan saat memuat data';
+    errorMessage.value = err.data?.statusMessage || err.message || 'Terjadi kesalahan saat memuat data';
   } finally {
     loading.value = false;
   }
@@ -530,52 +706,35 @@ const onSearchDebounced = () => {
   }, 400);
 };
 
-const goToPage = (page) => {
-  currentPage.value = page;
-  loadData(false);
-};
-
 const executeExport = async () => {
   exportLoading.value = true;
   try {
-    let exportData = [];
+    const requestParams = {
+      tahun: selectedYear.value,
+      page: 1,
+      limit: 100000
+    };
 
     if (exportMode.value === 'filtered') {
-      // Ambil seluruh data hasil filter
-      const res = await $fetch(`/api/data/${props.group}/${props.endpoint}`, {
-        params: {
-          tahun: selectedYear.value,
-          limit: 100000,
-          search: searchQuery.value || undefined,
-          kd_satker: selectedSatker.value || undefined,
-          filterSatker: selectedSatker.value || undefined
-        }
-      });
-      exportData = res.data || pageData.value;
-    } else {
-      // Seluruh data tanpa filter
-      const res = await $fetch(`/api/data/${props.group}/${props.endpoint}`, {
-        params: {
-          tahun: selectedYear.value,
-          limit: 100000
-        }
-      });
-      exportData = res.data || pageData.value;
+      if (searchQuery.value) requestParams.search = searchQuery.value;
+      if (selectedSatker.value !== 'ALL') requestParams.filterSatker = selectedSatker.value;
     }
 
-    // Bersihkan field internal _index
-    const cleanData = exportData.map(item => {
-      const copy = { ...item };
-      delete copy._index;
-      return copy;
+    const res = await $fetch(`/api/data/${props.group}/${props.endpoint}`, {
+      params: requestParams
     });
 
-    const worksheet = utils.json_to_sheet(cleanData);
+    const exportData = (res.data || pageData.value).map((item, idx) => ({
+      No: idx + 1,
+      ...normalizeRow(item)
+    }));
+
+    const worksheet = utils.json_to_sheet(exportData);
     const workbook = utils.book_new();
     const sheetName = props.endpoint.replace(/\//g, '_').substring(0, 31);
     utils.book_append_sheet(workbook, worksheet, sheetName);
     writeFile(workbook, `${props.group}_${sheetName}_${selectedYear.value}.xlsx`);
-    
+
     exportModal.value = false;
   } catch (err) {
     console.error('Export Excel failed:', err);
@@ -586,9 +745,12 @@ const executeExport = async () => {
 };
 
 onMounted(() => {
-  if (supportsSatker.value) {
-    fetchSatkerList();
-  }
   loadData(false);
 });
 </script>
+
+<style scoped>
+:deep(.m-table-wrapper) {
+  overflow-x: auto !important;
+}
+</style>

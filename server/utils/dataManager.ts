@@ -96,7 +96,7 @@ const fetchWithRetry = async (url: string, options: any = {}, context: string = 
  */
 export const syncEndpointData = async (group: string, endpoint: string, tahun: string, extraParams: any = {}) => {
   // Khusus grup dashboard profil-precomputed, alihkan ke syncDashboardPrecomputed
-  if (group === 'dashboard' && (endpoint === 'profil-precomputed' || endpoint === 'profil/precomputed')) {
+  if (group === 'dashboard' && endpoint === 'profil-precomputed') {
     const res = await syncDashboardPrecomputed(tahun);
     return [{ success: true, count: res.count }];
   }
@@ -104,6 +104,7 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
   const config = useRuntimeConfig();
   const token = config.apiDataToken;
   const kodeKlpd = config.apiDataKodeKlpd || 'K22';
+  const apiJenis = config.apiDataJenis || '1';
 
   let hasMore = true;
   let cursor = "";
@@ -118,12 +119,19 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
     try {
       // Menyusun param untuk log agar Anda bisa melihat URL aslinya
       const requestParams: any = {
-        tahun,
-        ...extraParams
+        tahun
       };
 
-      // Pastikan kode_klpd dan kd_klpd tersedia jika relevan
-      if (endpoint !== 'realisasi/penyedia/per-sumber') {
+      if (group === 'dashboard') {
+        const instansiVal = extraParams?.instansi || extraParams?.kd_klpd || extraParams?.kode_klpd || kodeKlpd;
+        requestParams.instansi = instansiVal;
+
+        // Semua endpoint dashboard memerlukan parameter jenis, kecuali realisasi/penyedia/per-sumber
+        if (endpoint !== 'realisasi/penyedia/per-sumber') {
+          requestParams.jenis = extraParams?.jenis || apiJenis;
+        }
+      } else {
+        Object.assign(requestParams, extraParams);
         const klpdVal = requestParams.kd_klpd || requestParams.kode_klpd || kodeKlpd;
         requestParams.kd_klpd = klpdVal;
         requestParams.kode_klpd = klpdVal;
@@ -156,18 +164,28 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
 
       // Adjust based on the actual API structure (mendukung array, single summary object, pagination result)
       let items: any[] = [];
+      const primaryData = (
+        response?.data &&
+        typeof response.data === 'object' &&
+        !Array.isArray(response.data) &&
+        response.data.data !== undefined &&
+        Object.keys(response.data).every((k) => ['data', 'meta', 'success', 'message', 'status'].includes(k))
+      )
+        ? response.data.data
+        : response?.data;
+
       if (Array.isArray(response)) {
         items = response;
-      } else if (Array.isArray(response.data)) {
-        items = response.data;
+      } else if (Array.isArray(primaryData)) {
+        items = primaryData;
       } else if (Array.isArray(response.list)) {
         items = response.list;
       } else if (Array.isArray(response.result)) {
         items = response.result;
       } else if (Array.isArray(response.rows)) {
         items = response.rows;
-      } else if (response.data && typeof response.data === 'object') {
-        items = [response.data];
+      } else if (primaryData && typeof primaryData === 'object') {
+        items = [primaryData];
       } else if (response && typeof response === 'object') {
         const cleanObj = { ...response };
         delete cleanObj.meta;
@@ -277,9 +295,9 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
       
       return parsedData;
     } catch (error: any) {
-      if (group === 'dashboard' && (endpoint === 'profil/precomputed' || endpoint === 'profil-precomputed')) {
+      if (group === 'dashboard' && endpoint === 'profil-precomputed') {
         try {
-          const fallbackData = await getDashboardPrecomputed(tahun, 'K22');
+          const fallbackData = await getDashboardPrecomputed(tahun, useRuntimeConfig().apiDataKodeKlpd || 'K22');
           if (fallbackData) {
             const arr = Array.isArray(fallbackData) ? fallbackData : [fallbackData];
             memoryCache[cacheKey] = arr;
@@ -370,7 +388,7 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
     const token = config.apiDataToken;
 
     const response: any = await fetchWithRetry('https://data.inaproc.id/api/v1/dashboard/profil/precomputed', {
-      params: { tahun, instansi, jenis, view, eselon, satker },
+      params: { tahun, instansi, jenis: jenis || config.apiDataJenis || '1', view, eselon, satker },
       headers: {
         'Authorization': `Bearer ${token}`,
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -403,6 +421,7 @@ export const syncDashboardPrecomputed = async (tahun: string, instansiParam?: st
   const config = useRuntimeConfig();
   const token = config.apiDataToken;
   const instansi = instansiParam || config.apiDataKodeKlpd || 'K22';
+  const jenis = config.apiDataJenis || '1';
   const dirPath = path.resolve(process.cwd(), 'server/data');
 
   console.log(`[${new Date().toLocaleString('id-ID')}] [Dashboard Sync] Memulai sinkronisasi precomputed data untuk ${tahun} - ${instansi}...`);
@@ -411,15 +430,15 @@ export const syncDashboardPrecomputed = async (tahun: string, instansiParam?: st
   const targets = [
     // 1. Publik / Instansi aggregate
     {
-      params: { tahun, instansi, jenis: '1', view: 'Nilai' },
+      params: { tahun, instansi, jenis, view: 'Nilai' },
       filePath: getPrecomputedFilePath(dirPath, tahun, instansi),
-      cacheKeyPrefix: `dashboard_precomputed_${tahun}_${instansi}_1_Nilai`
+      cacheKeyPrefix: `dashboard_precomputed_${tahun}_${instansi}_${jenis}_Nilai`
     },
     // 2. Satker internal (427950)
     {
-      params: { tahun, instansi, jenis: '1', eselon: '00', satker: '427950' },
+      params: { tahun, instansi, jenis, eselon: '00', satker: '427950' },
       filePath: getPrecomputedFilePath(dirPath, tahun, instansi, '427950'),
-      cacheKeyPrefix: `dashboard_precomputed_${tahun}_${instansi}_1_undefined_00_427950`
+      cacheKeyPrefix: `dashboard_precomputed_${tahun}_${instansi}_${jenis}_undefined_00_427950`
     }
   ];
 

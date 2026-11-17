@@ -107,8 +107,6 @@ const loadData = async () => {
     const res = await $fetch('/api/dashboard', {
       params: {
         tahun: selectedYear.value,
-        jenis: '1',
-        instansi: 'K22',
         eselon: '00',
         satker: '427950'
       }

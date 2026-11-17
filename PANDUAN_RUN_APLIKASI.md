@@ -45,6 +45,7 @@ Buat/pastikan file `.env` di root project berisi variabel berikut (sesuaikan nil
 ```env
 API_DATA_TOKEN=<TOKEN_API_INAPROC_AKTIF>
 API_DATA_KODE_KLPD=K22
+API_DATA_JENIS=1
 JWT_SECRET=<SECRET_KEY_JWT_PANJANG>
 NUXT_PUBLIC_PRIMEUI_LICENSE=<LICENSE_KEY_JIKA_ADA>
 INPROC_API=https://data.inaproc.id/api/v1

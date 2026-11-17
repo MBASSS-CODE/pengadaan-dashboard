@@ -4,6 +4,6 @@
     endpoint="realisasi/penyedia/per-sumber"
     title="Realisasi Penyedia Per-Sumber"
     subtitle="Data realisasi penyedia berdasarkan sumber dana"
-    :params="['tahun', 'kd_satker']"
+    :params="['tahun', 'instansi']"
   />
 </template>
