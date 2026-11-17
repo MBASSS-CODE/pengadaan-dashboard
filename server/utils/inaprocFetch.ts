@@ -1,7 +1,15 @@
+import dns from 'node:dns';
 import http from 'node:http';
 import https from 'node:https';
 import { URL } from 'node:url';
 import { SocksProxyAgent } from 'socks-proxy-agent';
+
+const ipv4Lookup: typeof dns.lookup = ((hostname: string, options: any, callback: any) => {
+  if (typeof options === 'function') {
+    return dns.lookup(hostname, { family: 4 }, options);
+  }
+  return dns.lookup(hostname, { ...options, family: 4 }, callback);
+}) as typeof dns.lookup;
 
 export interface InaprocFetchOptions {
   baseURL?: string;
@@ -13,6 +21,22 @@ export interface InaprocFetchOptions {
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_REDIRECTS = 3;
+const DEFAULT_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+const buildHeaders = (headers?: Record<string, string>): Record<string, string> => {
+  const normalized: Record<string, string> = { ...(headers || {}) };
+  const hasHeader = (name: string) =>
+    Object.keys(normalized).some((key) => key.toLowerCase() === name.toLowerCase());
+
+  if (!hasHeader('user-agent')) {
+    normalized['User-Agent'] = DEFAULT_USER_AGENT;
+  }
+  if (!hasHeader('accept')) {
+    normalized['Accept'] = 'application/json, text/plain, */*';
+  }
+  return normalized;
+};
 
 let cachedProxyUrl: string | undefined;
 let cachedProxyAgent: SocksProxyAgent | undefined;
@@ -65,8 +89,9 @@ export const inaprocFetch = <T = any>(
       targetUrl,
       {
         method: options.method || 'GET',
-        headers: options.headers,
+        headers: buildHeaders(options.headers),
         timeout: timeoutMs,
+        lookup: ipv4Lookup,
         ...(proxyAgent ? { agent: proxyAgent } : { family: 4 }),
       },
       (res) => {
