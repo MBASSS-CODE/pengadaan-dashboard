@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { pool, initDB } from './db';
 import { triggerAutoMerge } from './mergeManager';
+import { inaprocFetch } from './inaprocFetch';
 
 const formatDateTime = (date: Date) => date.toISOString().slice(0, 19).replace('T', ' ');
 
@@ -117,11 +118,11 @@ export const processPenyediaQueue = async (): Promise<void> => {
     for (const row of rows) {
       const kode = row.kode_penyedia;
       try {
-        // Pemanggilan API.
-        const response: any = await $fetch(`${BASE_URL}/ekatalog/penyedia-detail`, {
+        // Pemanggilan API melalui IPv4.
+        const response: any = await inaprocFetch(`${BASE_URL}/ekatalog/penyedia-detail`, {
           params: { kode_penyedia: kode },
           headers: { 'Authorization': `Bearer ${token}` },
-          retry: 1
+          timeoutMs: 30_000
         });
         
         if (response?.success && Array.isArray(response.data) && response.data.length > 0) {
