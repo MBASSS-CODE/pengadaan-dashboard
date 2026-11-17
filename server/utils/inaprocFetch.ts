@@ -1,6 +1,7 @@
 import http from 'node:http';
 import https from 'node:https';
 import { URL } from 'node:url';
+import { SocksProxyAgent } from 'socks-proxy-agent';
 
 export interface InaprocFetchOptions {
   baseURL?: string;
@@ -12,6 +13,21 @@ export interface InaprocFetchOptions {
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_REDIRECTS = 3;
+
+let cachedProxyUrl: string | undefined;
+let cachedProxyAgent: SocksProxyAgent | undefined;
+
+const getProxyAgent = (): SocksProxyAgent | undefined => {
+  const proxyUrl = process.env.INAPROC_PROXY_URL?.trim();
+  if (!proxyUrl) {
+    return undefined;
+  }
+  if (cachedProxyUrl !== proxyUrl || !cachedProxyAgent) {
+    cachedProxyUrl = proxyUrl;
+    cachedProxyAgent = new SocksProxyAgent(proxyUrl);
+  }
+  return cachedProxyAgent;
+};
 
 const buildTargetUrl = (urlPath: string, baseURL?: string, params?: Record<string, any>): URL => {
   const fullUrl = baseURL
@@ -42,6 +58,7 @@ export const inaprocFetch = <T = any>(
   const targetUrl = buildTargetUrl(urlPath, options.baseURL, options.params);
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const client = targetUrl.protocol === 'https:' ? https : http;
+  const proxyAgent = getProxyAgent();
 
   return new Promise<T>((resolve, reject) => {
     const req = client.request(
@@ -49,8 +66,8 @@ export const inaprocFetch = <T = any>(
       {
         method: options.method || 'GET',
         headers: options.headers,
-        family: 4,
         timeout: timeoutMs,
+        ...(proxyAgent ? { agent: proxyAgent } : { family: 4 }),
       },
       (res) => {
         const statusCode = res.statusCode ?? 0;
