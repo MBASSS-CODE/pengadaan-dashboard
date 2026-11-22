@@ -34,6 +34,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     apiDataToken: process.env.API_DATA_TOKEN,
     apiDataKodeKlpd: process.env.API_DATA_KODE_KLPD,
+    apiDataJenis: process.env.API_DATA_JENIS || '1',
     jwtSecret: process.env.JWT_SECRET,
     public: {
       namaInstansi: process.env.NUXT_PUBLIC_NAMA_INSTANSI || 'Kementerian Pendayagunaan Aparatur Negara dan Reformasi Birokrasi'

@@ -359,6 +359,10 @@ const props = defineProps({
   selectedYear: {
     type: String,
     required: true
+  },
+  selectedSatker: {
+    type: String,
+    default: null
   }
 });
 
@@ -447,6 +451,7 @@ const loadData = async () => {
     const response = await $fetch('/api/data/merged/nontender-enriched', {
       params: { 
         tahun: props.selectedYear,
+          satker: props.selectedSatker || undefined,
         page: currentPage.value,
         limit: itemsPerPage.value,
         search: searchQuery.value || undefined,
@@ -518,6 +523,7 @@ const executeExport = async () => {
   try {
     const params = {
       tahun: props.selectedYear,
+          satker: props.selectedSatker || undefined,
       page: 1,
       limit: 100000 // limit besar untuk mengambil seluruh data
     };
@@ -584,6 +590,10 @@ onMounted(() => {
 });
 
 watch(() => props.selectedYear, () => {
+  currentPage.value = 1;
+  loadData();
+});
+watch(() => props.selectedSatker, () => {
   currentPage.value = 1;
   loadData();
 });

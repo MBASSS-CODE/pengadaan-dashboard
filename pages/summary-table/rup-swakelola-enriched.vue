@@ -13,6 +13,17 @@
           size="sm"
           class="w-32"
         />
+        <div class="h-6 w-px bg-[color:hsl(var(--maz-border))]"></div>
+        <span class="text-sm font-medium text-[color:hsl(var(--maz-muted))] whitespace-nowrap">Satker:</span>
+        <MazSelect
+          v-model="selectedSatker"
+          :options="satkerOptions"
+          size="sm"
+          search
+          placeholder="Semua Satker"
+          class="w-64"
+          clearable
+        />
       </div>
     </div>
 

@@ -3,7 +3,7 @@
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h1 class="text-2xl font-bold text-[color:hsl(var(--maz-foreground))]">Realisasi Pengadaan</h1>
-        <p class="text-sm text-[color:hsl(var(--maz-muted))] mt-1">Data Realisasi Pengadaan (Internal) yang mencakup E-Katalog, Non Tender, dan Tender</p>
+        <p class="text-sm text-[color:hsl(var(--maz-muted))] mt-1">Data Realisasi Pengadaan mengacu pada Dashboard Realisasi (Table &amp; Summary) yang diperkaya dengan data RUP, Anggaran/MAK, Kaji Ulang, E-Katalog, Tender, Non-Tender, PPK, dan Penyedia</p>
       </div>
 
       <div class="flex flex-wrap items-center gap-3">

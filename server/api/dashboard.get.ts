@@ -1,16 +1,17 @@
 import { getDashboardPrecomputed } from '../utils/dataManager';
 
 export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig();
   const query = getQuery(event);
   const tahun = query.tahun as string;
-  const instansi = query.instansi as string;
-  const jenis = query.jenis as string;
+  const instansi = (query.instansi as string) || config.apiDataKodeKlpd || 'K22';
+  const jenis = (query.jenis as string) || config.apiDataJenis || '1';
   const view = query.view as string;
   const eselon = query.eselon as string;
   const satker = query.satker as string;
 
-  if (!tahun || !instansi) {
-    throw createError({ statusCode: 400, statusMessage: 'Parameter tahun dan instansi are required' });
+  if (!tahun) {
+    throw createError({ statusCode: 400, statusMessage: 'Parameter tahun is required' });
   }
 
   try {

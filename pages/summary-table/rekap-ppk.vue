@@ -10,6 +10,16 @@
 
       <div class="flex flex-wrap items-center gap-3">
         <div class="flex items-center gap-2 bg-[color:hsl(var(--maz-background))] p-2 rounded-lg border border-[color:hsl(var(--maz-border))] shadow-sm">
+          <span class="text-sm font-medium text-[color:hsl(var(--maz-muted))] whitespace-nowrap pl-2">Cakupan Data:</span>
+          <MazSelect
+            v-model="scopeMode"
+            :options="scopeOptions"
+            size="sm"
+            class="w-60"
+          />
+        </div>
+
+        <div class="flex items-center gap-2 bg-[color:hsl(var(--maz-background))] p-2 rounded-lg border border-[color:hsl(var(--maz-border))] shadow-sm">
           <span class="text-sm font-medium text-[color:hsl(var(--maz-muted))] whitespace-nowrap pl-2">Periode:</span>
           <MazSelect
             v-model="filterType"
@@ -76,6 +86,27 @@
       </button>
     </div>
 
+    <!-- Info Banner Cakupan Aktif -->
+    <div
+      class="mb-4 px-4 py-2.5 rounded-lg border text-xs flex flex-wrap items-center justify-between gap-2"
+      :class="scopeMode === 'acuan'
+        ? 'bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50 text-emerald-800 dark:text-emerald-300'
+        : 'bg-blue-50/60 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/50 text-blue-800 dark:text-blue-300'"
+    >
+      <div class="flex items-center gap-2">
+        <span
+          class="w-2 h-2 rounded-full shrink-0"
+          :class="scopeMode === 'acuan' ? 'bg-emerald-500' : 'bg-blue-500'"
+        ></span>
+        <span v-if="scopeMode === 'acuan'">
+          <strong>Mode Acuan Standar (E-Katalog):</strong> Menampilkan angka default sesuai acuan penarikan RUP &amp; Realisasi PPK. Ubah pilihan <em>Cakupan Data</em> untuk melihat paket Non-E-Katalog.
+        </span>
+        <span v-else>
+          <strong>Mode Semua Sumber Realisasi:</strong> Menggabungkan transaksi E-Katalog bersama Tender, Non-Tender, Pencatatan Non-Tender, dan Swakelola.
+        </span>
+      </div>
+    </div>
+
     <!-- Tab Content -->
     <ClientOnly>
       <Transition name="fade" mode="out-in">
@@ -83,6 +114,7 @@
           <RekapPpkAnalytics
             v-if="activeTab === 'analytics'"
             :selected-year="selectedYear"
+            :scope-mode="scopeMode"
             :filter-type="filterType"
             :start-date="dateRange.start"
             :end-date="dateRange.end"
@@ -90,6 +122,7 @@
           />
           <RekapPpkTable
             v-else-if="activeTab === 'table'"
+            :scope-mode="scopeMode"
             :selected-year="selectedYear"
             :filter-type="filterType"
             :start-date="dateRange.start"
@@ -108,6 +141,12 @@ import RekapPpkAnalytics from '~/components/summary-table/rekap-ppk/RekapPpkAnal
 import RekapPpkTable from '~/components/summary-table/rekap-ppk/RekapPpkTable.vue';
 
 const activeTab = ref('analytics');
+
+const scopeMode = ref('acuan');
+const scopeOptions = [
+  { label: 'Acuan Standar (E-Katalog)', value: 'acuan' },
+  { label: 'Semua Sumber (+ Non-E-Katalog)', value: 'all' }
+];
 
 const currentYear = new Date().getFullYear();
 const availableYears = [

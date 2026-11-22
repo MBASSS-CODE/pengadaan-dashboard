@@ -1,15 +1,19 @@
-import { getEndpointData } from '../../../utils/dataManager';
+import { getEndpointData } from '../../utils/dataManager';
 
 export default defineEventHandler(async (event) => {
-  const group = getRouterParam(event, 'group');
-  const endpoint = getRouterParam(event, 'endpoint');
+  const rawSlug = getRouterParam(event, 'slug') || (event.context.params as any)?.slug || (event.context.params as any)?._ || '';
+  const slug = Array.isArray(rawSlug) ? rawSlug.join('/') : String(rawSlug);
+  const parts = slug.split('/').filter(Boolean);
+  
+  if (parts.length < 2) {
+    throw createError({ statusCode: 400, statusMessage: 'Group or Endpoint missing in path' });
+  }
+
+  const group = parts[0];
+  const endpoint = parts.slice(1).join('/');
   
   const query = getQuery(event);
   const tahun = query.tahun as string;
-  
-  if (!group || !endpoint) {
-    throw createError({ statusCode: 400, statusMessage: 'Group or Endpoint missing' });
-  }
   
   if (!tahun) {
     throw createError({ statusCode: 400, statusMessage: 'Parameter tahun is required' });
@@ -30,16 +34,16 @@ export default defineEventHandler(async (event) => {
   const filterStatusNontender = query.filterStatusNontender as string;
   const filterStatusTender = query.filterStatusTender as string;
   const filterMtdPemilihan = query.filterMtdPemilihan as string;
-  const filterSatker = query.filterSatker as string;
+  const filterSatker = (query.filterSatker || query.kd_satker) as string;
   const filterPemenang = query.filterPemenang as string;
   
   const filterStatus = query.filterStatus as string;
   const filterShipmentStatus = query.filterShipmentStatus as string;
   const filterFundingSource = query.filterFundingSource as string;
 
-  // Pisahkan extra parameters yang bukan pagination/filter (untuk diteruskan ke API eksternal)
+  // Pisahkan extra parameters yang bukan pagination/filter lokal (untuk diteruskan ke API eksternal)
   const forceRefresh = query.forceRefresh === 'true';
-  const extraParams = { ...query };
+  const extraParams: Record<string, any> = { ...query };
   delete extraParams.tahun;
   delete extraParams.forceRefresh;
   delete extraParams.page;
@@ -54,6 +58,7 @@ export default defineEventHandler(async (event) => {
   delete extraParams.filterStatusTender;
   delete extraParams.filterMtdPemilihan;
   delete extraParams.filterSatker;
+  delete extraParams.kd_satker;
   delete extraParams.filterPemenang;
   delete extraParams.filterStatus;
   delete extraParams.filterShipmentStatus;
@@ -63,7 +68,12 @@ export default defineEventHandler(async (event) => {
     const allData: any[] = await getEndpointData(group, endpoint, tahun, extraParams, forceRefresh);
 
     // ─── Server-side filtering ───────────────────────────────────────────
-    let filtered = allData;
+    let filtered: any[] = [];
+    if (Array.isArray(allData)) {
+      filtered = allData;
+    } else if (allData && typeof allData === 'object' && Object.keys(allData).length > 0) {
+      filtered = [allData];
+    }
 
     // Filter: status_aktif_rup
     if (filterAktif && filterAktif !== 'ALL') {
@@ -113,9 +123,14 @@ export default defineEventHandler(async (event) => {
       filtered = filtered.filter((item: any) => item.mtd_pemilihan === filterMtdPemilihan);
     }
 
-    // Filter: nama_satker
+    // Filter: nama_satker, nama_satuan_kerja, atau kd_satker
     if (filterSatker && filterSatker !== 'ALL') {
-      filtered = filtered.filter((item: any) => item.nama_satker === filterSatker);
+      filtered = filtered.filter((item: any) => 
+        item.nama_satker === filterSatker ||
+        item.nama_satuan_kerja === filterSatker ||
+        String(item.kd_satker) === filterSatker ||
+        String(item.kd_satker_str) === filterSatker
+      );
     }
 
     // Filter: pemenang (khusus peserta tender)
@@ -142,9 +157,8 @@ export default defineEventHandler(async (event) => {
     // Search: dynamic multi-field text search (works for any endpoint)
     if (search) {
       filtered = filtered.filter((item: any) => {
-        // Cek semua key di dalam object item
         return Object.values(item).some(val => {
-          if (val && (typeof val === 'string' || typeof val === 'number')) {
+          if (val !== null && val !== undefined && (typeof val === 'string' || typeof val === 'number')) {
             return val.toString().toLowerCase().includes(search);
           }
           return false;
@@ -153,18 +167,18 @@ export default defineEventHandler(async (event) => {
     }
 
     // ─── Extract unique filter options (from ALL data, before filtering) ─
-    const uniqueStatusUmumkan = [...new Set(allData.map((item: any) => item.status_umumkan_rup).filter(Boolean))].sort();
-    const uniqueStatusNontender = [...new Set(allData.map((item: any) => item.status_nontender).filter(Boolean))].sort();
-    const uniqueStatusTender = [...new Set(allData.map((item: any) => item.status_tender).filter(Boolean))].sort();
-    const uniqueMtdPemilihan = [...new Set(allData.map((item: any) => item.mtd_pemilihan).filter(Boolean))].sort();
-    const uniqueSatker = [...new Set(allData.map((item: any) => item.nama_satker).filter(Boolean))].sort();
-    const uniqueStatus = [...new Set(allData.map((item: any) => item.status).filter(Boolean))].sort();
-    const uniqueShipmentStatus = [...new Set(allData.map((item: any) => item.shipment_status).filter(Boolean))].sort();
-    const uniqueFundingSource = [...new Set(allData.map((item: any) => item.funding_source).filter(Boolean))].sort();
+    const uniqueStatusUmumkan = [...new Set(filtered.map((item: any) => item.status_umumkan_rup).filter(Boolean))].sort();
+    const uniqueStatusNontender = [...new Set(filtered.map((item: any) => item.status_nontender).filter(Boolean))].sort();
+    const uniqueStatusTender = [...new Set(filtered.map((item: any) => item.status_tender).filter(Boolean))].sort();
+    const uniqueMtdPemilihan = [...new Set(filtered.map((item: any) => item.mtd_pemilihan).filter(Boolean))].sort();
+    const uniqueSatker = [...new Set(filtered.map((item: any) => item.nama_satker || item.nama_satuan_kerja).filter(Boolean))].sort();
+    const uniqueStatus = [...new Set(filtered.map((item: any) => item.status).filter(Boolean))].sort();
+    const uniqueShipmentStatus = [...new Set(filtered.map((item: any) => item.shipment_status).filter(Boolean))].sort();
+    const uniqueFundingSource = [...new Set(filtered.map((item: any) => item.funding_source).filter(Boolean))].sort();
 
     // ─── Pagination ──────────────────────────────────────────────────────
     const totalFiltered = filtered.length;
-    const totalPages = Math.ceil(totalFiltered / limit);
+    const totalPages = Math.ceil(totalFiltered / limit) || 1;
     const startIndex = (page - 1) * limit;
     const paginatedData = filtered.slice(startIndex, startIndex + limit);
 
@@ -176,7 +190,7 @@ export default defineEventHandler(async (event) => {
         limit,
         totalItems: totalFiltered,
         totalPages,
-        totalAllItems: allData.length,
+        totalAllItems: Array.isArray(allData) ? allData.length : (allData ? 1 : 0),
       },
       filterOptions: {
         statusUmumkan: uniqueStatusUmumkan,

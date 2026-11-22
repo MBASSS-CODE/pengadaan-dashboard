@@ -1,3 +1,4 @@
+import { getDataDir } from '../../utils/dataDir';
 import path from 'path';
 import { readJsonSafe } from '../../utils/mergeManager';
 
@@ -6,8 +7,13 @@ export default defineEventHandler(async (event) => {
   const tahun = (query.tahun as string) || new Date().getFullYear().toString();
 
   try {
-    const filePath = path.resolve(process.cwd(), 'server', 'data', 'merged', `nontender_enriched_${tahun}.json`);
-    const data = await readJsonSafe(filePath);
+    const filePath = path.resolve(getDataDir(), 'merged', `nontender_enriched_${tahun}.json`);
+    let data = (await readJsonSafe(filePath)) as any[];
+
+    const satker = query.satker as string;
+    if (satker && data) {
+      data = data.filter((item: any) => String(item.kd_satker) === satker);
+    }
 
     if (!data) {
       return {

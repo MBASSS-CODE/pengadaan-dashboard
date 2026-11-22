@@ -1,10 +1,11 @@
+import { getDataDir } from '../../utils/dataDir';
 import AdmZip from 'adm-zip';
 import path from 'path';
 import fs from 'fs';
 
 export default defineEventHandler(async (event) => {
   try {
-    const dataDir = path.resolve(process.cwd(), 'server/data');
+    const dataDir = getDataDir();
     
     // Pastikan direktori ada
     if (!fs.existsSync(dataDir)) {

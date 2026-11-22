@@ -1,3 +1,4 @@
+import { getDataDir } from './dataDir';
 import fs from 'fs/promises';
 import path from 'path';
 import { loadPpkMaster } from './ppkManager';
@@ -8,6 +9,7 @@ import {
   loadRekapPpkMergedData,
   invalidateRekapPpkCache
 } from './rekapPpkMerge';
+import { executeRealisasiMasterMerge } from './realisasiMasterMerge';
 
 // ─── In-Memory Cache ────────────────────────────────────────────────────────
 let mergedCache: Record<string, any[]> = {};
@@ -18,12 +20,15 @@ let mergeDebounceTimers: Record<string, ReturnType<typeof setTimeout> | null> = 
 const MERGE_DEBOUNCE_MS = 5000;
 
 // ─── File Paths ─────────────────────────────────────────────────────────────
-const dataDir = path.resolve(process.cwd(), 'server/data');
+const dataDir = getDataDir();
 const mergedDir = path.resolve(dataDir, 'merged');
 const mergeHistoryPath = path.resolve(dataDir, 'merge_history.json');
 
 // ─── Sources that trigger auto-merge ────────────────────────────────────────
 export const MERGE_SOURCE_ENDPOINTS = [
+  { group: 'dashboard', endpoint: 'realisasi/table', label: 'Dashboard Realisasi Table', required: false },
+  { group: 'dashboard', endpoint: 'realisasi/summary', label: 'Dashboard Realisasi Summary', required: false },
+  { group: 'dashboard', endpoint: 'realisasi/penyedia/per-sumber', label: 'Dashboard Realisasi Penyedia Per Sumber', required: false },
   { group: 'tender', endpoint: 'non-tender-pengumuman', label: 'Non-Tender Pengumuman', required: true },
   { group: 'rup', endpoint: 'paket-penyedia', label: 'Paket Penyedia RUP', required: true },
   { group: 'rup', endpoint: 'master-satker', label: 'Master Satker', required: false },
@@ -461,8 +466,11 @@ export const triggerAutoMerge = (tahun: string, trigger: string) => {
       await executeRupSwakelolaMerge(tahun, trigger);
       // 6. Merge E-Purchasing
       await executeEPurchasingMerge(tahun, trigger);
-      // 7. Merge Rekap PPK
+      // 7. Merge Rekap PPK (invalidate cache terlebih dulu agar membaca file terbaru hasil cron/sync)
+      invalidateRekapPpkCache();
       await runRekapPpkMerge(tahun, trigger, appendMergeHistory);
+      // 8. Merge Realisasi Master (acuan dashboard/realisasi/table + pengayaan)
+      await executeRealisasiMasterMerge(tahun, trigger);
     } catch (error) {
       console.error(`[Auto-Merge] Failed for year ${tahun}:`, error);
     } finally {
@@ -481,7 +489,7 @@ export const executeRupPenyediaMerge = async (tahun: string, trigger: string = '
   const startTime = Date.now();
   
   try {
-    const dataDir = path.resolve(process.cwd(), 'server', 'data');
+    const dataDir = getDataDir();
     
     // Load all data sources
     const paketPenyediaData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-penyedia_${tahun}.json`))) || [];
@@ -713,7 +721,7 @@ export const executePencatatanNonTenderMerge = async (tahun: string, trigger: st
   const startTime = Date.now();
   
   try {
-    const dataDir = path.resolve(process.cwd(), 'server', 'data');
+    const dataDir = getDataDir();
     
     // Load data sources
     const pencatatanData: any[] = (await readJsonSafe(path.resolve(dataDir, `tender/pencatatan-non-tender_${tahun}.json`))) || [];
@@ -889,7 +897,7 @@ export const executePencatatanSwakelolaMerge = async (tahun: string, trigger: st
   const startTime = Date.now();
   
   try {
-    const dataDir = path.resolve(process.cwd(), 'server', 'data');
+    const dataDir = getDataDir();
     
     // Load data sources
     const pencatatanData: any[] = (await readJsonSafe(path.resolve(dataDir, `tender/pencatatan-swakelola_${tahun}.json`))) || [];
@@ -1037,7 +1045,7 @@ export const executeRupSwakelolaMerge = async (tahun: string, trigger: string = 
   const startTime = Date.now();
   
   try {
-    const dataDir = path.resolve(process.cwd(), 'server', 'data');
+    const dataDir = getDataDir();
     
     // Load all data sources
     const paketSwakelolaData: any[] = (await readJsonSafe(path.resolve(dataDir, `rup/paket-swakelola_${tahun}.json`))) || [];

@@ -14,6 +14,7 @@ Dokumen ini disusun sebagai **Developer Handover Guide** (acuan teknis) bagi pro
 7. [Logic Menyajikan Data (API ke Frontend & Keamanan)](#7-logic-menyajikan-data-api-ke-frontend--keamanan)
 8. [SOP Pengembangan Fitur / Endpoint Baru](#8-sop-pengembangan-fitur--endpoint-baru)
 9. [Operasional: Backup, Restore & Deployment](#9-operasional-backup-restore--deployment)
+10. [SSH Tunneling / Dynamic Port Forwarding (Akses Lokal API INAPROC)](#10-ssh-tunneling--dynamic-port-forwarding-akses-lokal-api-inaproc)
 
 ---
 
@@ -80,9 +81,12 @@ Konfigurasi runtime dibaca di `nuxt.config.ts` (`runtimeConfig`) dan langsung da
 | `INPROC_API` | Base URL API eksternal INAPROC (contoh: `https://data.inaproc.id/api/v1`) | `dataManager.ts`, `penyediaManager.ts` |
 | `API_DATA_TOKEN` | Bearer Token rahasia untuk mengakses API INAPROC | `nuxt.config.ts`, `dataManager.ts`, `penyediaManager.ts` |
 | `API_DATA_KODE_KLPD` | Kode KLPD instansi (contoh: `K22`) | `nuxt.config.ts`, `dataManager.ts` |
+| `API_DATA_JENIS` | Parameter `jenis` default untuk endpoint dashboard API (contoh: `1`) | `nuxt.config.ts`, `dataManager.ts`, `dashboard.get.ts` |
 | `JWT_SECRET` | Secret key untuk menandatangani & memverifikasi JWT `auth_token` | `nuxt.config.ts`, `login.post.ts`, `server/middleware/auth.ts` |
 | `NUXT_PUBLIC_NAMA_INSTANSI` | Nama instansi yang ditampilkan di UI publik | `nuxt.config.ts` |
 | `DB_HOST_PROD`, `DB_USER_PROD`, `DB_PASSWORD_PROD`, `DB_NAME_PROD` | Kredensial MariaDB saat `NODE_ENV === 'production'` | `server/utils/db.ts` |
+| `INAPROC_PROXY_URL` | URL SOCKS5 proxy lokal untuk routing request API INAPROC lewat SSH tunnel (contoh: `socks5://127.0.0.1:10808`). **Jangan diaktifkan di production Hostinger.** | `server/utils/inaprocFetch.ts` |
+| `USE_DEMO_DATA` | Jika `'true'`, memakai folder `server/data_demo` alih-alih `server/data` | `server/utils/dataDir.ts`, `penyediaManager.ts`, `ppkManager.ts` |
 
 ### C. Skema Database MariaDB (`server/utils/db.ts`)
 Tabel otomatis dibuat oleh fungsi `initDB()` jika belum ada:
@@ -151,7 +155,6 @@ server/data/
   * `cronManager.ts`: Master `endpointRegistry`, penjadwalan `node-cron`, logging, dan konfigurasi endpoint aktif.
   * `mergeManager.ts`: Engine penggabungan data untuk 6 dataset *enriched* + `triggerAutoMerge` (*debounce* 5 detik).
   * `realisasiMasterMerge.ts`: Engine penggabungan lintas transaksi menjadi `realisasi_master_{tahun}.json` + *auto-invalidation* berbasis timestamp file.
-  * `realisasiMergeManager.ts`: Versi legacy/alternatif cache realisasi (`server/data/cache/realisasi_{tahun}.json`).
   * `penyediaManager.ts`: Ekstraksi kode penyedia & antrean pemanggilan API detail penyedia.
   * `ppkManager.ts`: Ekstraksi NIP/Nama PPK ter-masking & CRUD master PPK ke MariaDB.
   * `userManager.ts` & `db.ts`: Koneksi pool MariaDB, inisialisasi tabel, dan manajemen user.
@@ -381,6 +384,85 @@ Ikuti daftar periksa ini setiap kali menambahkan endpoint API INAPROC baru atau 
 * **Backup Data JSON:** Melalui halaman Admin **Sistem & Cache** (`/admin/system`) atau memanggil `GET /api/admin/data-backup`. Seluruh isi `server/data/` akan dikompresi menjadi file `.zip`.
 * **Restore / Import Data:** Upload file `.zip` melalui UI Admin atau `POST /api/admin/data-import`. Sistem akan mengekstrak ke `server/data/` dan menginvalidasi cache PPK (`invalidatePpkCache()`). *Catatan:* Data `users`, `ppk_master`, dan `penyedia_master` berada di MariaDB sehingga perlu di-backup terpisah (misal via `mysqldump`).
 * **Deployment Production:**
-  1. Pastikan `.env` di server production sudah terisi lengkap (termasuk `DB_HOST_PROD`, `DB_USER_PROD`, `DB_PASSWORD_PROD`, `DB_NAME_PROD`, `JWT_SECRET`, `INPROC_API`, `API_DATA_TOKEN`, `API_DATA_KODE_KLPD`).
+  1. Pastikan `.env` di server production sudah terisi lengkap (termasuk `DB_HOST_PROD`, `DB_USER_PROD`, `DB_PASSWORD_PROD`, `DB_NAME_PROD`, `JWT_SECRET`, `INPROC_API`, `API_DATA_TOKEN`, `API_DATA_KODE_KLPD`). Pastikan `INAPROC_PROXY_URL` **tidak diset / dikomentari** di server production.
   2. Jalankan `npm run build`.
   3. Jalankan server Nitro hasil build (`node .output/server/index.mjs`) dengan process manager seperti PM2, serta pastikan folder `server/data/` memiliki izin tulis (*write permission*) agar cron sync dan merge dapat menyimpan file JSON.
+
+---
+
+## 10. SSH Tunneling / Dynamic Port Forwarding (Akses Lokal API INAPROC)
+
+API eksternal INAPROC (`data.inaproc.id`) menerapkan pembatasan IP (*IP Whitelisting*), sehingga akses langsung dari IP internet laptop/kantor saat development lokal bisa ditolak. Untuk mengatasinya tanpa harus selalu deploy ke server, kita memanfaatkan **SSH Tunneling** melalui server Hostinger yang IPv4-nya sudah di-*whitelist*.
+
+### A. Apa Itu SSH Tunneling & Dynamic Port Forwarding?
+
+* **SSH Tunneling:** Membuat jalur komunikasi terenkripsi antara laptop lokal dan server remote (Hostinger) melalui protokol SSH.
+* **Dynamic Port Forwarding (`-D`):** Berbeda dengan *Local Port Forwarding* (`-L`) yang hanya meneruskan ke 1 alamat dan port tertentu, opsi `-D` membuka port lokal (misalnya `127.0.0.1:10808`) sebagai **SOCKS5 Proxy Server** yang dapat meneruskan request secara dinamis ke berbagai tujuan melalui server Hostinger.
+* **Server Hostinger sebagai *Exit Node* / *Proxy Server*:** Seluruh request yang dikirim lewat `127.0.0.1:10808` akan keluar ke internet menggunakan **IPv4 milik server Hostinger**, bukan IP ISP laptop kamu.
+* **Bukan VPN Penuh:** Teknik ini bekerja di level aplikasi (*per-application proxy*), bukan membelokkan seluruh trafik internet laptop. Hanya aplikasi atau kode yang dikonfigurasi menuju `127.0.0.1:10808` — dalam project ini diatur lewat `INAPROC_PROXY_URL` pada fungsi `getProxyAgent()` di `server/utils/inaprocFetch.ts` (`SocksProxyAgent`) — yang akan memakai IP Hostinger.
+* **Mengapa `socks5://` (Bukan `socks5h://`):** Konfigurasi di `.env` sengaja menggunakan `socks5://127.0.0.1:10808` agar resolusi DNS tetap dilakukan secara lokal ke IPv4 (`ipv4Lookup` di `inaprocFetch.ts`), lalu diteruskan melalui tunnel menggunakan IPv4 Hostinger yang sudah di-*whitelist* (menghindari trafik keluar lewat IPv6 yang belum di-*whitelist*).
+
+### B. Cara Menggunakan Perintah `ssh -D`
+
+1. **Aktifkan variabel proxy di file `.env` lokal:**
+   ```env
+   INAPROC_PROXY_URL=socks5://127.0.0.1:10808
+   ```
+   *(Catatan: Di server production Hostinger, baris ini harus dikomentari `#` atau dihapus).*
+
+2. **Buka terminal terpisah**, lalu jalankan perintah SSH Dynamic Port Forwarding:
+   ```powershell
+   ssh -D 10808 -N -p <PORT_SSH_HOSTINGER> <USER_SSH>@<IP_SERVER_HOSTINGER>
+   ```
+   **Penjelasan parameter:**
+   * `-D 10808` : Membuka SOCKS5 proxy lokal pada `127.0.0.1:10808` (*Dynamic Port Forwarding*).
+   * `-N` : Tidak menjalankan shell interaktif di server remote (khusus untuk meneruskan tunnel saja).
+   * `-p <PORT_SSH_HOSTINGER>` : Port SSH server Hostinger (pada shared/cloud hosting Hostinger umumnya `65002`, pada VPS umumnya `22` atau port custom).
+   * `<USER_SSH>@<IP_SERVER_HOSTINGER>` : Username dan IPv4 server Hostinger kamu.
+
+   **Contoh:**
+   ```powershell
+   ssh -D 10808 -N -p 65002 u406257103@123.45.67.89
+   ```
+   Masukkan password SSH (atau gunakan SSH key) jika diminta. Jika berhasil, terminal akan tampak diam/menunggu — **jangan ditutup**, biarkan terminal tersebut tetap menyala selama kamu menarik data INAPROC dari lokal.
+
+3. **Jalankan / restart aplikasi Nuxt di terminal lain:**
+   ```powershell
+   npm run dev
+   ```
+   *(Jika `npm run dev` sudah berjalan sebelum `.env` diubah, restart terlebih dahulu agar nilai `INAPROC_PROXY_URL` terbaca).*
+
+### C. Cara Mengecek Apakah Tunnel Sudah Menggunakan IP Hostinger
+
+Pastikan terminal SSH tunnel (`ssh -D 10808 ...`) sedang aktif, lalu buka terminal PowerShell baru dan lakukan pengecekan berikut:
+
+1. **Cek apakah port lokal `10808` sudah aktif (*listening*):**
+   ```powershell
+   Test-NetConnection 127.0.0.1 -Port 10808
+   ```
+   Jika tunnel aktif, hasilnya harus menampilkan `TcpTestSucceeded : True`.
+
+2. **Bandingkan IP tanpa proxy vs melalui SOCKS5 proxy (`curl.exe`):**
+   > **Catatan PowerShell:** Gunakan `curl.exe` (bukan `curl`), karena di PowerShell `curl` merupakan alias untuk `Invoke-WebRequest`.
+
+   ```powershell
+   # 1. Cek IP asli laptop (tanpa proxy)
+   curl.exe -4 https://api.ipify.org
+
+   # 2. Cek IP yang keluar melalui SSH tunnel Hostinger
+   curl.exe -4 --socks5 127.0.0.1:10808 https://api.ipify.org
+   ```
+   Jika IP yang tampil pada perintah kedua **berbeda dengan IP laptopmu** dan **sama dengan IPv4 server Hostinger**, berarti SSH tunnel sudah berhasil.
+   *(Jika `curl.exe` mengalami kendala resolusi host lokal dengan `--socks5`, gunakan `--socks5-hostname 127.0.0.1:10808` khusus untuk pengetesan curl).*
+
+3. **Uji langsung dengan Node.js (`socks-proxy-agent`):**
+   Untuk memverifikasi jalur yang identik dengan implementasi `server/utils/inaprocFetch.ts`, jalankan perintah berikut di root folder project:
+   ```powershell
+   node -e "import https from 'node:https'; import { SocksProxyAgent } from 'socks-proxy-agent'; https.get('https://api.ipify.org?format=json', { agent: new SocksProxyAgent('socks5://127.0.0.1:10808') }, r => r.on('data', d => console.log(d.toString())))"
+   ```
+   Output JSON `{"ip":"..."}` harus menampilkan **IPv4 server Hostinger** kamu.
+
+4. **Troubleshooting Singkat:**
+   * **`ECONNREFUSED 127.0.0.1:10808`:** Terminal `ssh -D 10808 ...` belum dijalankan atau koneksinya terputus.
+   * **Aplikasi masih terkena blokir/menggunakan IP lokal:** Pastikan `INAPROC_PROXY_URL=socks5://127.0.0.1:10808` tidak dikomentari di `.env` dan server `npm run dev` sudah di-restart.
+   * **Koneksi SSH sering terputus saat idle:** Tambahkan opsi `-o ServerAliveInterval=60` pada perintah `ssh` agar koneksi tetap terjaga.

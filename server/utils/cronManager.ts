@@ -1,3 +1,4 @@
+import { getDataDir } from './dataDir';
 import fs from 'fs/promises';
 import path from 'path';
 import * as cron from 'node-cron';
@@ -9,6 +10,20 @@ import { processPenyediaQueue } from './penyediaManager';
 export const endpointRegistry: Record<string, { endpoint: string; label: string; description: string }[]> = {
   dashboard: [
     { endpoint: 'profil-precomputed', label: 'Dashboard Precomputed Realisasi & RUP', description: 'Data agregasi realisasi dan perencanaan pengadaan' },
+    { endpoint: 'afirmasi/summary', label: 'Dashboard Afirmasi Summary', description: 'Ringkasan afirmasi pengadaan' },
+    { endpoint: 'afirmasi/table', label: 'Dashboard Afirmasi Table', description: 'Data tabel afirmasi pengadaan' },
+    { endpoint: 'profil/precomputed', label: 'Dashboard Profil Precomputed', description: 'Data profil precomputed pengadaan' },
+    { endpoint: 'profil/summary', label: 'Dashboard Profil Summary', description: 'Ringkasan profil pengadaan' },
+    { endpoint: 'profil/table', label: 'Dashboard Profil Table', description: 'Data tabel profil pengadaan' },
+    { endpoint: 'realisasi/penyedia/per-sumber', label: 'Dashboard Realisasi Penyedia Per Sumber', description: 'Realisasi penyedia berdasarkan sumber dana' },
+    { endpoint: 'realisasi/summary', label: 'Dashboard Realisasi Summary', description: 'Ringkasan realisasi pengadaan' },
+    { endpoint: 'realisasi/table', label: 'Dashboard Realisasi Table', description: 'Data tabel realisasi pengadaan' },
+    { endpoint: 'realisasi-rup/search', label: 'Dashboard Realisasi RUP Search', description: 'Pencarian realisasi RUP pengadaan' },
+    { endpoint: 'realisasi-rup/summary', label: 'Dashboard Realisasi RUP Summary', description: 'Ringkasan realisasi RUP pengadaan' },
+    { endpoint: 'rup/kegiatan/summary', label: 'Dashboard RUP Kegiatan Summary', description: 'Ringkasan kegiatan RUP' },
+    { endpoint: 'rup/kegiatan/table', label: 'Dashboard RUP Kegiatan Table', description: 'Data tabel kegiatan RUP' },
+    { endpoint: 'rup/summary', label: 'Dashboard RUP Summary', description: 'Ringkasan Rencana Umum Pengadaan' },
+    { endpoint: 'rup/table', label: 'Dashboard RUP Table', description: 'Data tabel Rencana Umum Pengadaan' },
   ],
   tender: [
     { endpoint: 'pengumuman', label: 'Pengumuman Tender', description: 'Pengumuman paket tender' },
@@ -40,9 +55,9 @@ export const endpointRegistry: Record<string, { endpoint: string; label: string;
 // Daftar endpoint aktif per grup (akan di-load dari file config)
 let activeEndpoints: Record<string, string[]> = {};
 
-const configPath = path.resolve(process.cwd(), 'server/data/cron_config.json');
-const logsPath = path.resolve(process.cwd(), 'server/data/endpoint_logs.json');
-const endpointsConfigPath = path.resolve(process.cwd(), 'server/data/endpoints_config.json');
+const configPath = path.resolve(getDataDir(), 'cron_config.json');
+const logsPath = path.resolve(getDataDir(), 'endpoint_logs.json');
+const endpointsConfigPath = path.resolve(getDataDir(), 'endpoints_config.json');
 
 // ─── Endpoints Config (Persistence) ───────────────────────────────────────────
 
@@ -97,10 +112,44 @@ export const getActiveEndpoints = (): Record<string, string[]> => {
   return activeEndpoints;
 };
 
-// Default config
 let currentScheduleStr = '0 6,12 * * *';
 let currentTask: cron.ScheduledTask | null = null;
 let penyediaTask: cron.ScheduledTask | null = null;
+let isSyncAllRunning = false;
+
+const runFullSyncCycle = async (sourceLabel: string) => {
+  if (isSyncAllRunning) {
+    console.warn(`[${new Date().toLocaleString('id-ID')}] [${sourceLabel}] Sinkronisasi sedang berjalan, melewati eksekusi ganda.`);
+    return;
+  }
+  isSyncAllRunning = true;
+  try {
+    const currentYear = new Date().getFullYear();
+    const yearsToSync = [currentYear.toString(), (currentYear - 1).toString()];
+
+    for (const year of yearsToSync) {
+      for (const [group, endpoints] of Object.entries(activeEndpoints)) {
+        if (!endpoints) continue;
+        for (const endpoint of endpoints) {
+          try {
+            if (group === 'dashboard' && endpoint === 'profil-precomputed') {
+              const res = await syncDashboardPrecomputed(year);
+              await logEndpointActivity(group, endpoint, `Success`, res.count, year);
+            } else {
+              const data = await syncEndpointData(group, endpoint, year);
+              await logEndpointActivity(group, endpoint, `Success`, data.length, year);
+            }
+          } catch (error) {
+            console.error(`[${new Date().toLocaleString('id-ID')}] [${sourceLabel}] Gagal melakukan sinkronisasi ${group}/${endpoint} tahun ${year}:`, error);
+            await logEndpointActivity(group, endpoint, `Error`, 0, year);
+          }
+        }
+      }
+    }
+  } finally {
+    isSyncAllRunning = false;
+  }
+};
 
 export const getCronConfig = async () => {
   try {
@@ -152,30 +201,9 @@ export const logEndpointActivity = async (group: string, endpoint: string, statu
 };
 
 export const triggerSyncAll = async () => {
-  const currentYear = new Date().getFullYear();
-  const yearsToSync = [currentYear.toString(), (currentYear - 1).toString()];
-  
   // Do not block the caller, run in background
   setTimeout(async () => {
-    for (const year of yearsToSync) {
-      for (const [group, endpoints] of Object.entries(activeEndpoints)) {
-        if (!endpoints) continue;
-        for (const endpoint of endpoints) {
-          try {
-            if (group === 'dashboard' && endpoint === 'profil-precomputed') {
-              const res = await syncDashboardPrecomputed(year);
-              await logEndpointActivity(group, endpoint, `Success`, res.count, year);
-            } else {
-              const data = await syncEndpointData(group, endpoint, year);
-              await logEndpointActivity(group, endpoint, `Success`, data.length, year);
-            }
-          } catch (error) {
-            console.error(`[${new Date().toLocaleString('id-ID')}] [Manual Sync] Gagal melakukan sinkronisasi ${group}/${endpoint} tahun ${year}:`, error);
-            await logEndpointActivity(group, endpoint, `Error`, 0, year);
-          }
-        }
-      }
-    }
+    await runFullSyncCycle('Manual Sync');
   }, 100);
 };
 
@@ -192,28 +220,7 @@ export const reloadCronJob = async () => {
   if (isMainCronEnabled) {
     currentTask = cron.schedule(currentScheduleStr, async () => {
       console.log(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Memulai sinkronisasi data otomatis dengan jadwal:`, currentScheduleStr);
-      const currentYear = new Date().getFullYear();
-      const yearsToSync = [currentYear.toString(), (currentYear - 1).toString()];
-
-      for (const year of yearsToSync) {
-        for (const [group, endpoints] of Object.entries(activeEndpoints)) {
-          if (!endpoints) continue;
-          for (const endpoint of endpoints) {
-            try {
-              if (group === 'dashboard' && endpoint === 'profil-precomputed') {
-                const res = await syncDashboardPrecomputed(year);
-                await logEndpointActivity(group, endpoint, `Success`, res.count, year);
-              } else {
-                const data = await syncEndpointData(group, endpoint, year);
-                await logEndpointActivity(group, endpoint, `Success`, data.length, year);
-              }
-            } catch (error) {
-              console.error(`[${new Date().toLocaleString('id-ID')}] [Cron Job] Gagal melakukan sinkronisasi ${group}/${endpoint} tahun ${year}:`, error);
-              await logEndpointActivity(group, endpoint, `Error`, 0, year);
-            }
-          }
-        }
-      }
+      await runFullSyncCycle('Cron Job');
     }, {
       timezone: 'Asia/Jakarta'
     });

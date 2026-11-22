@@ -2,28 +2,34 @@
   <ClientOnly>
     <div class="flex flex-col gap-4">
       <!-- Summary Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
-          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Transaksi</div>
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Paket</div>
           <div class="text-2xl font-bold text-[color:hsl(var(--maz-primary))]">
             {{ loading ? '...' : totalAllItems.toLocaleString('id-ID') }}
           </div>
         </div>
         <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+          <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Nilai Pagu</div>
+          <div class="text-xl font-bold text-blue-600 dark:text-blue-400">
+            {{ loading ? '...' : formatRupiah(totalPagu) }}
+          </div>
+        </div>
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
           <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Nilai Realisasi</div>
-          <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+          <div class="text-xl font-bold text-green-600 dark:text-green-400">
             {{ loading ? '...' : formatRupiah(totalBelanja) }}
           </div>
         </div>
         <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
           <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Nilai PDN</div>
-          <div class="text-2xl font-bold text-teal-600 dark:text-teal-400">
+          <div class="text-xl font-bold text-teal-600 dark:text-teal-400">
             {{ loading ? '...' : formatRupiah(totalPdn) }}
           </div>
         </div>
         <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-4 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
           <div class="text-xs text-[color:hsl(var(--maz-muted))] font-medium uppercase tracking-wider mb-1">Total Nilai UMK</div>
-          <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+          <div class="text-xl font-bold text-purple-600 dark:text-purple-400">
             {{ loading ? '...' : formatRupiah(totalUmk) }}
           </div>
         </div>
@@ -207,13 +213,13 @@
             </thead>
             <tbody class="align-top relative">
               <tr v-if="loading && items.length === 0">
-                <td colspan="6" class="py-12 text-center">
+                <td colspan="7" class="py-12 text-center">
                   <MazSpinner color="primary" class="mx-auto" />
                   <p class="text-[color:hsl(var(--maz-muted))] mt-3 text-sm">Memuat data Realisasi Pengadaan...</p>
                 </td>
               </tr>
               <tr v-else-if="items.length === 0 && !loading" class="border-b border-[color:hsl(var(--maz-border))]">
-                <td colspan="6" class="py-12 text-center text-[color:hsl(var(--maz-muted))]">
+                <td colspan="7" class="py-12 text-center text-[color:hsl(var(--maz-muted))]">
                   Tidak ada data yang cocok dengan filter pencarian.
                 </td>
               </tr>
@@ -274,8 +280,14 @@
                       <span class="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800" v-if="item.metode_pengadaan && item.metode_pengadaan !== '-'">
                         {{ item.metode_pengadaan }}
                       </span>
-                      <span class="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800" v-if="item.jenis_pengadaan && item.jenis_pengadaan !== '-'">
-                        {{ item.jenis_pengadaan }}
+                      <span class="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800" v-if="(item.jenis_pengadaan_enriched || item.jenis_pengadaan) && (item.jenis_pengadaan_enriched || item.jenis_pengadaan) !== '-'">
+                        {{ item.jenis_pengadaan_enriched || item.jenis_pengadaan }}
+                      </span>
+                      <span class="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800" v-if="item._has_kaji_ulang">
+                        Kaji Ulang ({{ item.kaji_ulang_count }})
+                      </span>
+                      <span class="px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-mono" v-if="item.mak_list && item.mak_list.length">
+                        MAK: {{ item.mak_list[0] }}
                       </span>
                     </div>
                   </td>
@@ -305,6 +317,10 @@
                       {{ formatRupiah(item.total_nilai) }}
                     </div>
                     <div class="flex flex-col gap-1 text-[11px] font-medium text-[color:hsl(var(--maz-muted))]">
+                      <div class="flex justify-end items-center gap-1" v-if="item.nilai_pagu > 0">
+                        <span>Pagu:</span>
+                        <span class="text-blue-600 dark:text-blue-400 font-semibold">{{ formatRupiah(item.nilai_pagu) }}</span>
+                      </div>
                       <div class="flex justify-end items-center gap-1">
                         <span>PDN:</span>
                         <span :class="item.nilai_pdn > 0 ? 'text-teal-600 dark:text-teal-400 font-bold' : ''">{{ formatRupiah(item.nilai_pdn) }}</span>
@@ -383,8 +399,8 @@
                 <span class="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800" v-if="item.metode_pengadaan && item.metode_pengadaan !== '-'">
                   {{ item.metode_pengadaan }}
                 </span>
-                <span class="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800" v-if="item.jenis_pengadaan && item.jenis_pengadaan !== '-'">
-                  {{ item.jenis_pengadaan }}
+                <span class="px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800" v-if="(item.jenis_pengadaan_enriched || item.jenis_pengadaan) && (item.jenis_pengadaan_enriched || item.jenis_pengadaan) !== '-'">
+                  {{ item.jenis_pengadaan_enriched || item.jenis_pengadaan }}
                 </span>
               </div>
               
@@ -392,6 +408,10 @@
                 <div class="flex justify-between items-center mb-2">
                   <span class="text-xs font-bold text-[color:hsl(var(--maz-muted))]">TOTAL NILAI</span>
                   <span class="text-lg font-black text-[color:hsl(var(--maz-foreground))]">{{ formatRupiah(item.total_nilai) }}</span>
+                </div>
+                <div class="flex justify-between items-center text-[10px] text-[color:hsl(var(--maz-muted))] font-medium mb-1" v-if="item.nilai_pagu > 0">
+                  <span>Nilai Pagu:</span>
+                  <span class="text-blue-600 dark:text-blue-400 font-semibold">{{ formatRupiah(item.nilai_pagu) }}</span>
                 </div>
                 <div class="flex justify-between items-center text-[10px] text-[color:hsl(var(--maz-muted))] font-medium">
                   <div>PDN: <span :class="item.nilai_pdn > 0 ? 'text-teal-600 dark:text-teal-400 font-bold' : ''">{{ formatRupiah(item.nilai_pdn) }}</span></div>
@@ -501,6 +521,7 @@ const loading = ref(true);
 const error = ref(false);
 const items = ref([]);
 const totalAllItems = ref(0);
+const totalPagu = ref(0);
 const totalBelanja = ref(0);
 const totalPdn = ref(0);
 const totalUmk = ref(0);
@@ -591,6 +612,7 @@ const loadData = async () => {
       items.value = res.data;
       totalAllItems.value = res.meta.totalItems;
       totalPages.value = res.meta.totalPages;
+      totalPagu.value = res.meta.totalPagu || 0;
       totalBelanja.value = res.meta.totalNilai || 0;
       totalPdn.value = res.meta.totalPdn || 0;
       totalUmk.value = res.meta.totalUmk || 0;
@@ -692,13 +714,19 @@ const executeExport = async () => {
         'Nama Penyedia': row.nama_penyedia || '-',
         'Nama PPK': row.nama_ppk || '-',
         'Metode Pengadaan': row.metode_pengadaan || '-',
-        'Jenis Pengadaan': row.jenis_pengadaan || '-',
+        'Jenis Pengadaan': row.jenis_pengadaan_enriched || row.jenis_pengadaan || '-',
         'Nama Paket': row.nama_paket || '-',
         'Status Paket': row.status_paket || '-',
         'Tahapan Pengadaan': row.tahapan_pengadaan || '-',
+        'Nilai Pagu (Rp)': row.nilai_pagu || 0,
         'Total Nilai (Rp)': row.total_nilai || 0,
         'Nilai PDN (Rp)': row.nilai_pdn || 0,
-        'Nilai UMK (Rp)': row.nilai_umk || 0
+        'Nilai UMK (Rp)': row.nilai_umk || 0,
+        'Tanggal Transaksi': row.tgl_transaksi || '-',
+        'Kode MAK': Array.isArray(row.mak_list) && row.mak_list.length ? row.mak_list.join(', ') : '-',
+        'Status UMKK': row.penyedia_status_umkk || '-',
+        'NPWP Penyedia': row.penyedia_npwp || '-',
+        'Kaji Ulang RUP': row.kaji_ulang_count || 0
       }));
 
       const ws = utils.json_to_sheet(flatData);
@@ -706,9 +734,10 @@ const executeExport = async () => {
       utils.book_append_sheet(wb, ws, "Realisasi_Pengadaan");
 
       const wscols = [
-        {wch: 5}, {wch: 40}, {wch: 40}, {wch: 15}, {wch: 15}, {wch: 10},
-        {wch: 20}, {wch: 15}, {wch: 30}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 50},
-        {wch: 15}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}
+        {wch: 5}, {wch: 40}, {wch: 40}, {wch: 28}, {wch: 15}, {wch: 10},
+        {wch: 22}, {wch: 15}, {wch: 30}, {wch: 30}, {wch: 20}, {wch: 22}, {wch: 50},
+        {wch: 18}, {wch: 18}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20},
+        {wch: 22}, {wch: 25}, {wch: 16}, {wch: 20}, {wch: 14}
       ];
       ws['!cols'] = wscols;
 
