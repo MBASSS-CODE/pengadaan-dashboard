@@ -155,7 +155,6 @@ server/data/
   * `cronManager.ts`: Master `endpointRegistry`, penjadwalan `node-cron`, logging, dan konfigurasi endpoint aktif.
   * `mergeManager.ts`: Engine penggabungan data untuk 6 dataset *enriched* + `triggerAutoMerge` (*debounce* 5 detik).
   * `realisasiMasterMerge.ts`: Engine penggabungan lintas transaksi menjadi `realisasi_master_{tahun}.json` + *auto-invalidation* berbasis timestamp file.
-  * `realisasiMergeManager.ts`: Versi legacy/alternatif cache realisasi (`server/data/cache/realisasi_{tahun}.json`).
   * `penyediaManager.ts`: Ekstraksi kode penyedia & antrean pemanggilan API detail penyedia.
   * `ppkManager.ts`: Ekstraksi NIP/Nama PPK ter-masking & CRUD master PPK ke MariaDB.
   * `userManager.ts` & `db.ts`: Koneksi pool MariaDB, inisialisasi tabel, dan manajemen user.
