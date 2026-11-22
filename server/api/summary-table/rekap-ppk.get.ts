@@ -1,9 +1,15 @@
 import { getRekapPpkMergedData } from '../../utils/mergeManager';
-import { aggregatePpkMetrics, type PpkPacketDetail, type PpkRupDetail } from '../../utils/rekapPpkMerge';
+import {
+  aggregatePpkMetrics,
+  DEFAULT_ACUAN_SUMBER,
+  type PpkPacketDetail,
+  type PpkRupDetail
+} from '../../utils/rekapPpkMerge';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const tahun = String(query.tahun || new Date().getFullYear());
+  const scopeMode = String(query.scopeMode || 'acuan') === 'all' ? 'all' : 'acuan'; // 'acuan' (default Excel) | 'all'
   const filterType = String(query.filterType || 'semua'); // 'semua' | 'tanggal' | 'triwulan'
   const startDate = String(query.startDate || '');
   const endDate = String(query.endDate || '');
@@ -31,7 +37,7 @@ export default defineEventHandler(async (event) => {
   try {
     const rawData: any[] = await getRekapPpkMergedData(tahun);
 
-    // Collect available filter options across unfiltered dataset
+    // Collect available filter options across entire realisasi dataset
     const sumberSet = new Set<string>();
     const metodeSet = new Set<string>();
     const jenisSet = new Set<string>();
@@ -64,9 +70,17 @@ export default defineEventHandler(async (event) => {
     const selectedPpkList = splitParam(ppkParam);
     const selectedStatusPpkList = splitParam(statusPpkParam);
 
+    // Jika scopeMode = 'acuan' dan user tidak memilih sumberTransaksi khusus, batasi default ke E-Katalog Versi 6.0 (standar Excel)
+    const effectiveSumberList =
+      selectedSumberList.length > 0
+        ? selectedSumberList
+        : scopeMode === 'acuan'
+          ? [DEFAULT_ACUAN_SUMBER]
+          : [];
+
     const hasDateFilter = filterType === 'tanggal' && Boolean(startDate || endDate);
     const hasQuarterFilter = filterType === 'triwulan' && Boolean(selectedQuarter);
-    const hasPacketFilter =
+    const hasCustomPacketFilter =
       selectedSumberList.length > 0 ||
       selectedMetodeList.length > 0 ||
       selectedJenisList.length > 0 ||
@@ -104,52 +118,53 @@ export default defineEventHandler(async (event) => {
       endMs = new Date(yr, mEnd + 1, 0, 23, 59, 59, 999).getTime();
     }
 
-    let processed = rawData;
+    // Selalu re-aggregate dari detail_paket_list agar metrik & detail_paket_list di dialog selalu sinkron dengan scopeMode/filter
+    const processed = rawData.map((ppk) => {
+      const rupList: PpkRupDetail[] = Array.isArray(ppk.detail_rup_list) ? ppk.detail_rup_list : [];
+      const allPackets: PpkPacketDetail[] = Array.isArray(ppk.detail_paket_list) ? ppk.detail_paket_list : [];
 
-    if (hasPacketFilter) {
-      processed = rawData.map((ppk) => {
-        const rupList: PpkRupDetail[] = Array.isArray(ppk.detail_rup_list) ? ppk.detail_rup_list : [];
-        const allPackets: PpkPacketDetail[] = Array.isArray(ppk.detail_paket_list) ? ppk.detail_paket_list : [];
-
-        const filteredPackets = allPackets.filter((pkt) => {
-          if (selectedSumberList.length > 0 && !selectedSumberList.includes(pkt.sumber_transaksi)) {
-            return false;
-          }
-          if (selectedMetodeList.length > 0 && !selectedMetodeList.includes(pkt.metode_pengadaan)) {
-            return false;
-          }
-          if (selectedJenisList.length > 0 && !selectedJenisList.includes(pkt.jenis_pengadaan)) {
-            return false;
-          }
-          if (selectedSumberDanaList.length > 0 && !selectedSumberDanaList.includes(pkt.sumber_dana)) {
-            return false;
-          }
-          if (selectedTahapanList.length > 0) {
-            const label = tahapanLabelMap[pkt.tahapan_rekap] || pkt.tahapan_rekap;
-            if (!selectedTahapanList.includes(label) && !selectedTahapanList.includes(pkt.tahapan_rekap)) {
-              return false;
-            }
-          }
-          if (hasDateFilter || hasQuarterFilter) {
-            if (!pkt._sort_date || pkt._sort_date <= 0) return false;
-            if (pkt._sort_date < startMs || pkt._sort_date > endMs) return false;
-          }
-          return true;
-        });
-
-        const rupLookupMap = new Map<string, PpkRupDetail>();
-        for (const r of rupList) {
-          rupLookupMap.set(r.kd_rup, r);
+      const filteredPackets = allPackets.filter((pkt) => {
+        if (effectiveSumberList.length > 0 && !effectiveSumberList.includes(pkt.sumber_transaksi)) {
+          return false;
         }
-
-        return aggregatePpkMetrics(ppk, rupList, filteredPackets, rupLookupMap);
+        if (selectedMetodeList.length > 0 && !selectedMetodeList.includes(pkt.metode_pengadaan)) {
+          return false;
+        }
+        if (selectedJenisList.length > 0 && !selectedJenisList.includes(pkt.jenis_pengadaan)) {
+          return false;
+        }
+        if (selectedSumberDanaList.length > 0 && !selectedSumberDanaList.includes(pkt.sumber_dana)) {
+          return false;
+        }
+        if (selectedTahapanList.length > 0) {
+          const label = tahapanLabelMap[pkt.tahapan_rekap] || pkt.tahapan_rekap;
+          if (!selectedTahapanList.includes(label) && !selectedTahapanList.includes(pkt.tahapan_rekap)) {
+            return false;
+          }
+        }
+        if (hasDateFilter || hasQuarterFilter) {
+          if (!pkt._sort_date || pkt._sort_date <= 0) return false;
+          if (pkt._sort_date < startMs || pkt._sort_date > endMs) return false;
+        }
+        return true;
       });
-    }
+
+      const rupLookupMap = new Map<string, PpkRupDetail>();
+      for (const r of rupList) {
+        rupLookupMap.set(r.kd_rup, r);
+      }
+
+      return aggregatePpkMetrics(ppk, rupList, filteredPackets, rupLookupMap);
+    });
 
     // Apply PPK-level filters
     const filteredData = processed
       .filter((ppk) => {
-        if (hasPacketFilter && ppk.total_kode_paket === 0 && ppk.ppk_key === 'UNASSIGNED') {
+        if (ppk.ppk_key === 'UNASSIGNED' && ppk.total_kode_paket === 0) {
+          return false;
+        }
+        // Saat mode acuan tanpa filter khusus, hanya tampilkan PPK yang memiliki paket realisasi acuan (12 PPK sesuai Excel)
+        if (!hasCustomPacketFilter && scopeMode === 'acuan' && ppk.total_kode_paket === 0) {
           return false;
         }
         if (unitKerjaParam && unitKerjaParam !== 'ALL' && ppk.unit_kerja !== unitKerjaParam) {
@@ -223,6 +238,7 @@ export default defineEventHandler(async (event) => {
         return acc;
       },
       {
+        scopeMode,
         totalPpk: 0,
         ppkCompleted: 0,
         ppkIncomplete: 0,
@@ -273,6 +289,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
+      scopeMode,
       data: paginatedData,
       summary,
       meta: {
@@ -295,6 +312,7 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     return {
       success: false,
+      scopeMode,
       message: error.message || 'Gagal memuat data Rekap PPK',
       data: [],
       summary: null,

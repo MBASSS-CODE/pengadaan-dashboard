@@ -466,7 +466,8 @@ export const triggerAutoMerge = (tahun: string, trigger: string) => {
       await executeRupSwakelolaMerge(tahun, trigger);
       // 6. Merge E-Purchasing
       await executeEPurchasingMerge(tahun, trigger);
-      // 7. Merge Rekap PPK
+      // 7. Merge Rekap PPK (invalidate cache terlebih dulu agar membaca file terbaru hasil cron/sync)
+      invalidateRekapPpkCache();
       await runRekapPpkMerge(tahun, trigger, appendMergeHistory);
       // 8. Merge Realisasi Master (acuan dashboard/realisasi/table + pengayaan)
       await executeRealisasiMasterMerge(tahun, trigger);

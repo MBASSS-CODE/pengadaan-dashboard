@@ -1,8 +1,8 @@
 <template>
   <ClientOnly>
     <div class="space-y-6">
-      <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div v-for="i in 4" :key="i" class="h-28 bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] animate-pulse"></div>
+      <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div v-for="i in 5" :key="i" class="h-28 bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] animate-pulse"></div>
       </div>
 
       <div v-else-if="error" class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center text-red-600 dark:text-red-400">
@@ -11,7 +11,7 @@
         </svg>
         <p class="font-bold">Gagal Memuat Analitik</p>
         <p class="text-sm mt-1">Terjadi kesalahan saat mengambil ringkasan analitik Rekap PPK.</p>
-        <MazBtn @click="loadAnalytics()" color="danger" size="sm" outline class="mt-4">Coba Lagi</MazBtn>
+        <MazBtn @click="loadAnalytics()" color="destructive" size="sm" outline class="mt-4">Coba Lagi</MazBtn>
       </div>
 
       <div v-else-if="isEmpty" class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-10 text-center">
@@ -27,8 +27,8 @@
       </div>
 
       <div v-else class="space-y-6">
-        <!-- Summary Cards (Matches RealisasiPrivateAnalytics.vue) -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Summary Cards (Aligned with RekapPpkTable.vue) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div class="bg-[color:hsl(var(--maz-background))] p-5 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm hover:shadow-md transition-shadow">
             <div class="flex justify-between items-start mb-2">
               <h3 class="text-sm font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Total PPK &amp; Paket</h3>
@@ -40,11 +40,27 @@
             </div>
             <div class="text-2xl font-black text-[color:hsl(var(--maz-foreground))]">{{ formatNumber(summary.totalPpk) }} PPK</div>
             <div class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">
-              {{ formatNumber(summary.totalKodePaket) }} paket transaksi • {{ summary.totalRupTerealisasiPaket }} / {{ summary.totalRupTerumumkanPaket }} RUP
+              {{ formatNumber(summary.totalKodePaket) }} paket transaksi
             </div>
           </div>
 
-          <div class="bg-[color:hsl(var(--maz-background))] p-5 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm hover:shadow-md transition-shadow">
+          <div class="bg-[color:hsl(var(--maz-background))] p-5 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm hover:shadow-md transition-shadow" :title="formatRupiahExact(summary.totalRupTerealisasiNilai)">
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="text-sm font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">RUP Terealisasi (Acuan)</h3>
+              <div class="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+            </div>
+            <div class="text-2xl font-black text-blue-600 dark:text-blue-400">{{ formatRupiahSingkat(summary.totalRupTerealisasiNilai) }}</div>
+            <div class="w-full bg-[color:hsl(var(--maz-foreground)_/_10%)] rounded-full h-1.5 mt-2">
+              <div class="bg-blue-500 h-1.5 rounded-full" :style="`width: ${Math.min(100, rupTerealisasiPercent)}%`"></div>
+            </div>
+            <div class="text-[11px] text-[color:hsl(var(--maz-muted))] mt-1">{{ summary.totalRupTerealisasiPaket }} dari {{ summary.totalRupTerumumkanPaket }} RUP Terumumkan</div>
+          </div>
+
+          <div class="bg-[color:hsl(var(--maz-background))] p-5 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm hover:shadow-md transition-shadow" :title="formatRupiahExact(summary.totalNilaiRealisasi)">
             <div class="flex justify-between items-start mb-2">
               <h3 class="text-sm font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Total Nilai Realisasi</h3>
               <div class="p-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg">
@@ -216,6 +232,7 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale,
 
 const props = defineProps({
   selectedYear: { type: String, required: true },
+  scopeMode: { type: String, default: 'acuan' },
   filterType: { type: String, default: 'semua' },
   startDate: { type: String, default: '' },
   endDate: { type: String, default: '' },
@@ -263,6 +280,12 @@ const topRealisasiPpk = computed(() =>
     .sort((a, b) => (b.total_nilai_realisasi || 0) - (a.total_nilai_realisasi || 0))
     .slice(0, 12)
 );
+
+const rupTerealisasiPercent = computed(() => {
+  const pagu = Number(summary.value?.totalRupTerumumkanNilai) || 0;
+  const real = Number(summary.value?.totalRupTerealisasiNilai) || 0;
+  return pagu > 0 ? Math.round((real / pagu) * 1000) / 10 : 0;
+});
 
 const topBelumJalanPpk = computed(() =>
   [...items.value]
@@ -417,6 +440,7 @@ const loadAnalytics = async () => {
     const res: any = await $fetch('/api/summary-table/rekap-ppk', {
       params: {
         tahun: props.selectedYear,
+        scopeMode: props.scopeMode,
         filterType: props.filterType,
         startDate: props.startDate,
         endDate: props.endDate,
@@ -442,6 +466,7 @@ const loadAnalytics = async () => {
 watch(
   [
     () => props.selectedYear,
+    () => props.scopeMode,
     () => props.filterType,
     () => props.startDate,
     () => props.endDate,
@@ -459,6 +484,15 @@ onMounted(() => {
 const formatNumber = (num: number) => {
   if (!num) return '0';
   return new Intl.NumberFormat('id-ID').format(num);
+};
+
+const formatRupiahExact = (angka: number) => {
+  if (!angka && angka !== 0) return 'Rp 0';
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0
+  }).format(angka);
 };
 
 const formatRupiahSingkat = (angka: number) => {

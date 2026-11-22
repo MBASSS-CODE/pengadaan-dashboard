@@ -8,7 +8,7 @@
           Merge Rekapitulasi Per PPK
         </h2>
         <p class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">
-          Menggabungkan data RUP (Penyedia &amp; Swakelola), E-Purchasing (V6 &amp; V5), Non-Tender, Tender, Pencatatan Swakelola, Master Satker, History Kaji Ulang, serta Master PPK &amp; Penyedia menjadi metrik per PPK.
+          Menggunakan <strong>Dashboard Realisasi Table</strong> sebagai sumber transaksi kanonik (default acuan E-Katalog &amp; opsi semua sumber Non-E-Katalog), digabungkan dengan RUP (Penyedia &amp; Swakelola), E-Purchasing (V6 &amp; V5), Non-Tender, Tender, Pencatatan Swakelola, Master Satker, History Kaji Ulang, serta Master PPK &amp; Penyedia.
         </p>
       </div>
 
@@ -220,17 +220,18 @@ const lastMerge = ref<any>(null);
 const history = ref<any[]>([]);
 
 const pipelineSteps = computed(() => {
+  const hasRealisasi = prerequisites.value.some((p) => p.endpoint === 'realisasi/table' && p.found);
   const hasRup = prerequisites.value.some((p) => p.endpoint === 'paket-penyedia' && p.found);
   const hasTx = prerequisites.value.some((p) => ['ekatalog', 'tender'].includes(p.group) && p.found);
   const hasMasterPpk = prerequisites.value.some((p) => p.endpoint === 'ppk-master' && p.found);
   const hasOutput = Boolean(lastMerge.value && lastMerge.value.status !== 'failed');
 
   return [
-    { id: 1, title: 'Data RUP', subtitle: 'Penyedia & Swakelola', done: hasRup },
-    { id: 2, title: 'Data Transaksi', subtitle: 'E-Katalog, Tender, Non-Tender', done: hasTx },
-    { id: 3, title: 'Master PPK', subtitle: 'Identitas & NIP PPK', done: hasMasterPpk },
-    { id: 4, title: 'Agregasi PPK', subtitle: 'Per RUP & Tahapan Paket', done: hasOutput },
-    { id: 5, title: 'Dataset Ready', subtitle: 'Rekap PPK Enriched', done: hasOutput }
+    { id: 1, title: 'Realisasi Acuan', subtitle: 'Dashboard Realisasi Table', done: hasRealisasi },
+    { id: 2, title: 'Data RUP', subtitle: 'Penyedia & Swakelola', done: hasRup },
+    { id: 3, title: 'Pengayaan PPK', subtitle: 'E-Katalog, Tender & Master PPK', done: hasTx || hasMasterPpk },
+    { id: 4, title: 'Agregasi 12 PPK', subtitle: 'Acuan Standar + All Sumber', done: hasOutput },
+    { id: 5, title: 'Dataset Ready', subtitle: 'Rekap PPK Enriched v2', done: hasOutput }
   ];
 });
 
