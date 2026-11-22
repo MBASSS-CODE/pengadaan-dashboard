@@ -9,6 +9,7 @@ import {
   loadRekapPpkMergedData,
   invalidateRekapPpkCache
 } from './rekapPpkMerge';
+import { executeRealisasiMasterMerge } from './realisasiMasterMerge';
 
 // ─── In-Memory Cache ────────────────────────────────────────────────────────
 let mergedCache: Record<string, any[]> = {};
@@ -25,6 +26,9 @@ const mergeHistoryPath = path.resolve(dataDir, 'merge_history.json');
 
 // ─── Sources that trigger auto-merge ────────────────────────────────────────
 export const MERGE_SOURCE_ENDPOINTS = [
+  { group: 'dashboard', endpoint: 'realisasi/table', label: 'Dashboard Realisasi Table', required: false },
+  { group: 'dashboard', endpoint: 'realisasi/summary', label: 'Dashboard Realisasi Summary', required: false },
+  { group: 'dashboard', endpoint: 'realisasi/penyedia/per-sumber', label: 'Dashboard Realisasi Penyedia Per Sumber', required: false },
   { group: 'tender', endpoint: 'non-tender-pengumuman', label: 'Non-Tender Pengumuman', required: true },
   { group: 'rup', endpoint: 'paket-penyedia', label: 'Paket Penyedia RUP', required: true },
   { group: 'rup', endpoint: 'master-satker', label: 'Master Satker', required: false },
@@ -464,6 +468,8 @@ export const triggerAutoMerge = (tahun: string, trigger: string) => {
       await executeEPurchasingMerge(tahun, trigger);
       // 7. Merge Rekap PPK
       await runRekapPpkMerge(tahun, trigger, appendMergeHistory);
+      // 8. Merge Realisasi Master (acuan dashboard/realisasi/table + pengayaan)
+      await executeRealisasiMasterMerge(tahun, trigger);
     } catch (error) {
       console.error(`[Auto-Merge] Failed for year ${tahun}:`, error);
     } finally {
