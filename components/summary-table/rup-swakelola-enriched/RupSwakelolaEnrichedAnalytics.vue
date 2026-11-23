@@ -265,6 +265,10 @@ const props = defineProps({
   year: {
     type: String,
     required: true
+  },
+  selectedSatker: {
+    type: String,
+    default: null
   }
 });
 
@@ -382,7 +386,7 @@ const loadStatsAndAnalytics = async () => {
   error.value = false;
   try {
     const res = await $fetch('/api/summary-table/rup-swakelola-analytics-summary', {
-      params: { tahun: props.year }
+      params: { tahun: props.year, satker: props.selectedSatker || undefined }
     });
     
     if (res.success && res.summary) {
@@ -411,7 +415,7 @@ const loadStatsAndAnalytics = async () => {
   }
 };
 
-watch(() => props.year, () => {
+watch([() => props.year, () => props.selectedSatker], () => {
   loadStatsAndAnalytics();
 });
 

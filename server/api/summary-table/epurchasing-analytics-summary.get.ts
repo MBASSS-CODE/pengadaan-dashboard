@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
     const satker = query.satker as string;
     if (satker && data) {
-      data = data.filter((item: any) => String(item.kd_satker) === satker);
+      data = data.filter((item: any) => String(item.kd_satker ?? item.kode_satker ?? '') === satker);
     }
 
     if (!data || !Array.isArray(data)) {

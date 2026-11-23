@@ -50,8 +50,8 @@
     <ClientOnly>
       <Transition name="fade" mode="out-in">
         <div :key="activeTab">
-          <EpurchasingEnrichedAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" />
-          <EpurchasingEnrichedTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" />
+          <EpurchasingEnrichedAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" :selected-satker="selectedSatker" />
+          <EpurchasingEnrichedTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" :selected-satker="selectedSatker" />
         </div>
       </Transition>
     </ClientOnly>
@@ -60,6 +60,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useSatkerFilter } from '~/composables/useSatkerFilter';
 import EpurchasingEnrichedAnalytics from '~/components/summary-table/epurchasing-enriched/EpurchasingEnrichedAnalytics.vue';
 import EpurchasingEnrichedTable from '~/components/summary-table/epurchasing-enriched/EpurchasingEnrichedTable.vue';
 
@@ -72,6 +73,7 @@ const availableYears = [
 ].map(y => ({ label: y, value: y }));
 
 const selectedYear = ref(currentYear.toString());
+const { selectedSatker, satkerOptions } = useSatkerFilter(selectedYear);
 </script>
 
 <style scoped>

@@ -51,8 +51,8 @@
     <ClientOnly>
       <Transition name="fade" mode="out-in">
         <div :key="activeTab">
-          <PencatatanNonTenderEnrichedAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" />
-          <PencatatanNonTenderEnrichedTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" />
+          <PencatatanNonTenderEnrichedAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" :selected-satker="selectedSatker" />
+          <PencatatanNonTenderEnrichedTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" :selected-satker="selectedSatker" />
         </div>
       </Transition>
     </ClientOnly>
@@ -61,6 +61,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useSatkerFilter } from '~/composables/useSatkerFilter';
 import PencatatanNonTenderEnrichedAnalytics from '~/components/summary-table/pencatatan-nontender-enriched/PencatatanNonTenderEnrichedAnalytics.vue';
 import PencatatanNonTenderEnrichedTable from '~/components/summary-table/pencatatan-nontender-enriched/PencatatanNonTenderEnrichedTable.vue';
 
@@ -73,6 +74,7 @@ const availableYears = [
 ].map(y => ({ label: y, value: y }));
 
 const selectedYear = ref(currentYear.toString());
+const { selectedSatker, satkerOptions } = useSatkerFilter(selectedYear);
 
 </script>
 
