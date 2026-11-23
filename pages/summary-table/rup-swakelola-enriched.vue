@@ -49,8 +49,8 @@
     <ClientOnly>
       <Transition name="fade" mode="out-in">
         <div :key="activeTab">
-          <RupSwakelolaEnrichedAnalytics v-if="activeTab === 'analytics'" :year="selectedYear" />
-          <RupSwakelolaEnrichedTable v-else-if="activeTab === 'table'" :year="selectedYear" />
+          <RupSwakelolaEnrichedAnalytics v-if="activeTab === 'analytics'" :year="selectedYear" :selected-satker="selectedSatker" />
+          <RupSwakelolaEnrichedTable v-else-if="activeTab === 'table'" :year="selectedYear" :selected-satker="selectedSatker" />
         </div>
       </Transition>
     </ClientOnly>
@@ -59,12 +59,14 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useSatkerFilter } from '~/composables/useSatkerFilter';
 import RupSwakelolaEnrichedAnalytics from '~/components/summary-table/rup-swakelola-enriched/RupSwakelolaEnrichedAnalytics.vue';
 import RupSwakelolaEnrichedTable from '~/components/summary-table/rup-swakelola-enriched/RupSwakelolaEnrichedTable.vue';
 
 const currentYear = new Date().getFullYear();
 const availableYears = [currentYear.toString(), (currentYear - 1).toString()].map(y => ({ label: y, value: y }));
 const selectedYear = ref(currentYear.toString());
+const { selectedSatker, satkerOptions } = useSatkerFilter(selectedYear);
 const activeTab = ref('analytics');
 </script>
 

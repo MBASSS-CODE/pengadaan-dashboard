@@ -321,9 +321,10 @@ import { utils, writeFile } from 'xlsx';
 import EpurchasingEnrichedDetailDialog from './EpurchasingEnrichedDetailDialog.vue';
 
 const props = defineProps({
-  selectedYear: { type: String, required: true }
+  selectedYear: { type: String, required: true },
+  selectedSatker: { type: String, default: null }
 });
-const { selectedYear } = toRefs(props);
+const { selectedYear, selectedSatker } = toRefs(props);
 
 const loading = ref(true);
 const error = ref(false);
@@ -360,6 +361,7 @@ const loadData = async () => {
   try {
     const params = {
       tahun: selectedYear.value,
+      satker: selectedSatker.value || undefined,
       page: currentPage.value,
       limit: itemsPerPage.value,
       search: searchQuery.value,
@@ -402,7 +404,7 @@ const debouncedLoadData = (() => {
 })();
 
 watch([currentPage, itemsPerPage], () => { loadData(); });
-watch(() => selectedYear, () => { currentPage.value = 1; loadData(); });
+watch([() => selectedYear.value, () => selectedSatker.value], () => { currentPage.value = 1; loadData(); });
 
 const onSearch = () => { currentPage.value = 1; debouncedLoadData(); };
 const onFilterChange = () => { currentPage.value = 1; loadData(); };
@@ -449,6 +451,7 @@ const executeExport = async () => {
   try {
     const params = {
       tahun: selectedYear.value,
+      satker: selectedSatker.value || undefined,
       page: 1,
       limit: 100000 // limit besar untuk mengambil seluruh data
     };
@@ -491,7 +494,7 @@ const executeExport = async () => {
       ];
       ws['!cols'] = wscols;
 
-      const filename = `EPurchasing_Enriched_${selectedYear}${exportMode.value === 'filtered' ? '_Filtered' : ''}.xlsx`;
+      const filename = `EPurchasing_Enriched_${selectedYear.value}${exportMode.value === 'filtered' ? '_Filtered' : ''}.xlsx`;
       writeFile(wb, filename);
       exportModal.value = false;
     }

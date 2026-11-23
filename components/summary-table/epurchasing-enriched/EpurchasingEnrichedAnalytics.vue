@@ -152,14 +152,16 @@ import { Bar, Doughnut, Line } from 'vue-chartjs';
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, PointElement, LineElement);
 
-const { selectedYear } = defineProps({ selectedYear: {
+const props = defineProps({
+  selectedYear: {
     type: String,
     required: true
   },
   selectedSatker: {
     type: String,
     default: null
-  } });
+  }
+});
 
 const loading = ref(true);
 const error = ref(false);
@@ -351,7 +353,10 @@ const loadAnalytics = async () => {
   isEmpty.value = false;
   
   try {
-    const params = { tahun: props.selectedYear };
+    const params = {
+      tahun: props.selectedYear,
+      satker: props.selectedSatker || undefined
+    };
 
     const res = await $fetch('/api/summary-table/epurchasing-analytics-summary', {
       params
@@ -369,7 +374,7 @@ const loadAnalytics = async () => {
   }
 };
 
-watch(() => props.selectedYear, () => {
+watch([() => props.selectedYear, () => props.selectedSatker], () => {
   loadAnalytics();
 });
 
