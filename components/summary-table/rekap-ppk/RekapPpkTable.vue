@@ -551,13 +551,14 @@ import RekapPpkDetailDialog from './RekapPpkDetailDialog.vue';
 
 const props = defineProps({
   selectedYear: { type: String, required: true },
+  scopeMode: { type: String, default: 'acuan' },
   filterType: { type: String, default: 'semua' },
   startDate: { type: String, default: '' },
   endDate: { type: String, default: '' },
   selectedQuarter: { type: String, default: 'TW 1' }
 });
 
-const { selectedYear, filterType, startDate, endDate, selectedQuarter } = toRefs(props);
+const { selectedYear, scopeMode, filterType, startDate, endDate, selectedQuarter } = toRefs(props);
 
 const loading = ref(true);
 const error = ref(false);
@@ -625,6 +626,7 @@ const loadData = async () => {
   try {
     const params: Record<string, any> = {
       tahun: selectedYear.value,
+      scopeMode: scopeMode.value,
       filterType: filterType.value,
       startDate: startDate.value,
       endDate: endDate.value,
@@ -681,7 +683,7 @@ watch([selectedPpk, selectedSumber, selectedMetode, selectedTahapan, selectedSta
   loadData();
 });
 
-watch([selectedYear, filterType, startDate, endDate, selectedQuarter], () => {
+watch([selectedYear, scopeMode, filterType, startDate, endDate, selectedQuarter], () => {
   currentPage.value = 1;
   loadData();
 });
@@ -722,6 +724,7 @@ const executeExport = async () => {
   try {
     const params: Record<string, any> = {
       tahun: selectedYear.value,
+      scopeMode: scopeMode.value,
       page: 1,
       limit: 10000
     };
@@ -766,12 +769,36 @@ const executeExport = async () => {
       ];
 
       const csvRows = rowsToExport.map((ppk) => headers.map((h) => escapeCsvField(ppk[h])).join(','));
+      const exportSummary = res?.summary;
+      if (exportSummary && rowsToExport.length > 0) {
+        const totalRow: Record<string, any> = {
+          nama: '',
+          role: '',
+          nama_instansi: '',
+          nama_satuan_kerja: '',
+          nilai_rup: exportSummary.totalRupTerealisasiNilai ?? 0,
+          paket_rup: exportSummary.totalRupTerealisasiPaket ?? 0,
+          list_kode_rup: '',
+          total_kode_paket: exportSummary.totalKodePaket ?? 0,
+          list_kode_paket: '',
+          nilai_pemilihan_berlangsung: exportSummary.nilaiPemilihanBerlangsung || 0,
+          paket_pemilihan_berlangsung: exportSummary.paketPemilihanBerlangsung || 0,
+          nilai_pemilihan_selesai: exportSummary.nilaiPemilihanSelesai || 0,
+          paket_pemilihan_selesai: exportSummary.paketPemilihanSelesai || 0,
+          nilai_kontrak: exportSummary.nilaiKontrak ?? 0,
+          paket_kontrak: exportSummary.paketKontrak ?? 0,
+          nilai_selesai: exportSummary.nilaiSelesai ?? 0,
+          paket_selesai: exportSummary.paketSelesai ?? 0
+        };
+        csvRows.push(headers.map((h) => escapeCsvField(totalRow[h])).join(','));
+      }
       const csvContent = '\uFEFF' + [headers.join(','), ...csvRows].join('\r\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Rekap_PPK_Acuan_${selectedYear.value}${exportMode.value === 'filtered' ? '_Filtered' : ''}.csv`;
+      const scopeTag = scopeMode.value === 'all' ? 'SemuaSumber' : 'Acuan';
+      link.download = `Rekap_PPK_${scopeTag}_${selectedYear.value}${exportMode.value === 'filtered' ? '_Filtered' : ''}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

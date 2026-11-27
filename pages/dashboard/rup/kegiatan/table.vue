@@ -4,6 +4,6 @@
     endpoint="rup/kegiatan/table"
     title="RUP Kegiatan Table"
     subtitle="Tabel data kegiatan Rencana Umum Pengadaan"
-    :params="['tahun', 'kd_klpd', 'kd_satker']"
+    :params="['tahun', 'jenis', 'instansi']"
   />
 </template>

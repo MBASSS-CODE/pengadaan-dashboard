@@ -23,9 +23,9 @@ const endpointPath = computed(() => slug.value);
 
 const defaultParams = computed(() => {
   if (slug.value === 'realisasi/penyedia/per-sumber') {
-    return ['tahun', 'kd_satker'];
+    return ['tahun', 'instansi'];
   }
-  return ['tahun', 'kd_klpd', 'kd_satker'];
+  return ['tahun', 'jenis', 'instansi'];
 });
 
 const pageTitle = computed(() => {

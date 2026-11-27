@@ -4,6 +4,6 @@
     endpoint="realisasi-rup/summary"
     title="Realisasi RUP Summary"
     subtitle="Ringkasan data realisasi RUP"
-    :params="['tahun', 'kd_klpd', 'kd_satker']"
+    :params="['tahun', 'jenis', 'instansi']"
   />
 </template>

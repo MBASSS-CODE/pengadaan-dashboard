@@ -349,6 +349,10 @@ const props = defineProps({
   year: {
     type: String,
     required: true
+  },
+  selectedSatker: {
+    type: String,
+    default: null
   }
 });
 
@@ -465,6 +469,7 @@ const loadData = async () => {
     const res = await $fetch('/api/data/merged/rup-swakelola-enriched', {
       params: {
         tahun: props.year,
+        satker: props.selectedSatker || undefined,
         page: currentPage.value,
         limit: itemsPerPage.value,
         search: searchQuery.value || undefined,
@@ -503,7 +508,7 @@ const loadData = async () => {
   }
 };
 
-watch(() => props.year, () => {
+watch([() => props.year, () => props.selectedSatker], () => {
   resetFilters();
 });
 
@@ -517,6 +522,7 @@ const executeExport = async () => {
   try {
     const params = {
       tahun: props.year,
+      satker: props.selectedSatker || undefined,
       page: 1,
       limit: 100000 // limit besar untuk mengambil seluruh data
     };

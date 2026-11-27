@@ -1,3 +1,4 @@
+import { getDataDir } from './dataDir';
 import fs from 'fs/promises';
 import path from 'path';
 import { pool } from './db';
@@ -9,6 +10,17 @@ let ppkCache: any[] | null = null;
  * Load PPK master data from Database
  */
 export const loadPpkMaster = async (): Promise<any[]> => {
+  if (process.env.USE_DEMO_DATA === 'true') {
+    try {
+      const raw = await fs.readFile(path.resolve(getDataDir(), 'ppk_master.json'), 'utf-8');
+      ppkCache = JSON.parse(raw);
+      return ppkCache || [];
+    } catch (e) {
+      console.error('Failed to load PPK Master from JSON:', e);
+      return [];
+    }
+  }
+
   try {
     const [rows] = await pool.query('SELECT * FROM ppk_master');
     ppkCache = rows as any[];
@@ -73,10 +85,10 @@ export const deletePpkMaster = async (nip_nama_masked: string): Promise<void> =>
  */
 export const extractUniquePpk = async (tahun: string): Promise<string[]> => {
   const sources = [
-    path.resolve(process.cwd(), `server/data/rup/paket-penyedia_${tahun}.json`),
-    path.resolve(process.cwd(), `server/data/rup/paket-swakelola_${tahun}.json`),
-    path.resolve(process.cwd(), `server/data/tender/pencatatan-non-tender_${tahun}.json`),
-    path.resolve(process.cwd(), `server/data/tender/pencatatan-swakelola_${tahun}.json`)
+    path.resolve(getDataDir(), `rup/paket-penyedia_${tahun}.json`),
+    path.resolve(getDataDir(), `rup/paket-swakelola_${tahun}.json`),
+    path.resolve(getDataDir(), `tender/pencatatan-non-tender_${tahun}.json`),
+    path.resolve(getDataDir(), `tender/pencatatan-swakelola_${tahun}.json`)
   ];
 
   const allPpk = new Set<string>();
@@ -115,7 +127,7 @@ export const invalidatePpkCache = () => {
  * Check if RUP penyedia file exists for a given year
  */
 export const checkRupExists = async (tahun: string): Promise<boolean> => {
-  const filePath = path.resolve(process.cwd(), `server/data/rup/paket-penyedia_${tahun}.json`);
+  const filePath = path.resolve(getDataDir(), `rup/paket-penyedia_${tahun}.json`);
   try {
     await fs.access(filePath);
     return true;

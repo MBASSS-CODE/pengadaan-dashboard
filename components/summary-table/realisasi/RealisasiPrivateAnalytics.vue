@@ -4,7 +4,7 @@
       <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div v-for="i in 4" :key="i" class="h-28 bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] animate-pulse"></div>
       </div>
-      
+
       <div v-else-if="error" class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center text-red-600 dark:text-red-400">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -22,77 +22,213 @@
         </div>
         <h3 class="text-xl font-bold text-[color:hsl(var(--maz-foreground))] mb-2">Belum Ada Data Analitik</h3>
         <p class="text-sm text-[color:hsl(var(--maz-muted))] max-w-md mx-auto mb-6">
-          Grafik dan ringkasan akan muncul di sini setelah Anda melakukan integrasi data.
+          Grafik dan ringkasan akan muncul di sini setelah sinkronisasi data Dashboard Realisasi selesai.
         </p>
       </div>
 
       <div v-else class="space-y-6">
-        <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Row 1: 4 Main KPI Cards (Acuan realisasi/summary & realisasi/table) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="bg-[color:hsl(var(--maz-background))] p-5 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm hover:shadow-md transition-shadow">
             <div class="flex justify-between items-start mb-2">
-              <h3 class="text-sm font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Total Transaksi</h3>
+              <h3 class="text-xs font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Total Paket Realisasi</h3>
               <div class="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
               </div>
             </div>
-            <div class="text-2xl font-black text-[color:hsl(var(--maz-foreground))]">{{ formatNumber(summary.totalPesanan) }}</div>
+            <div class="text-2xl font-black text-[color:hsl(var(--maz-foreground))]">{{ formatNumber(summary.totalPesanan) }} Paket</div>
+            <div class="text-[11px] text-[color:hsl(var(--maz-muted))] mt-2 flex flex-wrap items-center gap-2">
+              <span>{{ formatNumber(summary.enrichmentStats?.uniqueRupCount || 0) }} Kode RUP unik</span>
+              <span v-if="serahTerimaCount > 0" class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">
+                {{ formatNumber(serahTerimaCount) }} Serah Terima
+              </span>
+            </div>
           </div>
-          
+
           <div class="bg-[color:hsl(var(--maz-background))] p-5 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm hover:shadow-md transition-shadow">
             <div class="flex justify-between items-start mb-2">
-              <h3 class="text-sm font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Total Nilai Realisasi</h3>
+              <h3 class="text-xs font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Total Nilai Realisasi</h3>
               <div class="p-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
-            <div class="text-2xl font-black text-[color:hsl(var(--maz-foreground))]">{{ formatRupiahSingkat(summary.totalNilai) }}</div>
+            <div class="text-2xl font-black text-[color:hsl(var(--maz-foreground))]" :title="formatRupiahFull(summary.totalNilai)">
+              {{ formatRupiahSingkat(summary.totalNilai) }}
+            </div>
+            <div class="w-full bg-[color:hsl(var(--maz-foreground)_/_10%)] rounded-full h-1.5 mt-2">
+              <div class="bg-green-500 h-1.5 rounded-full" :style="`width: ${Math.min(100, summary.persentaseTerhadapPagu || 0)}%`"></div>
+            </div>
+            <div class="text-[11px] text-[color:hsl(var(--maz-muted))] mt-1.5">
+              {{ summary.persentaseTerhadapPagu || 0 }}% dari Pagu Paket ({{ formatRupiahSingkat(summary.totalPagu) }})
+            </div>
           </div>
 
           <div class="bg-[color:hsl(var(--maz-background))] p-5 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm hover:shadow-md transition-shadow">
             <div class="flex justify-between items-start mb-2">
-              <h3 class="text-sm font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Total Nilai PDN</h3>
+              <h3 class="text-xs font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Total Nilai PDN</h3>
               <div class="p-2 bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 rounded-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
             </div>
-            <div class="text-2xl font-black text-[color:hsl(var(--maz-foreground))]">{{ formatRupiahSingkat(summary.totalPdn) }}</div>
+            <div class="text-2xl font-black text-[color:hsl(var(--maz-foreground))]" :title="formatRupiahFull(summary.totalPdn)">
+              {{ formatRupiahSingkat(summary.totalPdn) }}
+            </div>
             <div class="w-full bg-[color:hsl(var(--maz-foreground)_/_10%)] rounded-full h-1.5 mt-2">
-              <div class="bg-teal-500 h-1.5 rounded-full" :style="`width: ${Math.round(summary.totalPdn / (summary.totalNilai || 1) * 100)}%`"></div>
+              <div class="bg-teal-500 h-1.5 rounded-full" :style="`width: ${pdnPercent}%`"></div>
+            </div>
+            <div class="text-[11px] text-[color:hsl(var(--maz-muted))] mt-1.5">
+              {{ pdnPercent }}% dari Realisasi • {{ formatNumber(summary.paketPdnCount || 0) }} Paket PDN
             </div>
           </div>
-          
+
           <div class="bg-[color:hsl(var(--maz-background))] p-5 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm hover:shadow-md transition-shadow">
             <div class="flex justify-between items-start mb-2">
-              <h3 class="text-sm font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Total Nilai UMK</h3>
+              <h3 class="text-xs font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Total Nilai UMK</h3>
               <div class="p-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
             </div>
-            <div class="text-2xl font-black text-[color:hsl(var(--maz-foreground))]">{{ formatRupiahSingkat(summary.totalUmk) }}</div>
+            <div class="text-2xl font-black text-[color:hsl(var(--maz-foreground))]" :title="formatRupiahFull(summary.totalUmk)">
+              {{ formatRupiahSingkat(summary.totalUmk) }}
+            </div>
             <div class="w-full bg-[color:hsl(var(--maz-foreground)_/_10%)] rounded-full h-1.5 mt-2">
-              <div class="bg-purple-500 h-1.5 rounded-full" :style="`width: ${Math.round(summary.totalUmk / (summary.totalNilai || 1) * 100)}%`"></div>
+              <div class="bg-purple-500 h-1.5 rounded-full" :style="`width: ${umkPercent}%`"></div>
+            </div>
+            <div class="text-[11px] text-[color:hsl(var(--maz-muted))] mt-1.5">
+              {{ umkPercent }}% dari Realisasi • {{ formatNumber(summary.paketUmkCount || 0) }} Paket UMK
             </div>
           </div>
         </div>
 
-        <!-- 1. Trend Transaksi Bulanan -->
-        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
-          <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6">Tren Realisasi Pengadaan Bulanan (Berdasarkan Nilai)</h3>
-          <div class="w-full h-[350px]">
-            <Bar v-if="trendChartData" :data="trendChartData" :options="barOptions" />
+        <!-- Row 2: 4 Enrichment Insights Cards (Gabungan RUP, Anggaran/MAK, Kaji Ulang, PPK, Penyedia) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-[color:hsl(var(--maz-background))] p-4 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm">
+            <div class="text-[11px] font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Integrasi RUP &amp; MAK</div>
+            <div class="text-xl font-extrabold text-[color:hsl(var(--maz-foreground))] mt-1">
+              {{ formatNumber(summary.enrichmentStats?.rupMatchedCount || 0) }} / {{ formatNumber(summary.totalPesanan) }}
+              <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">terhubung RUP</span>
+            </div>
+            <div class="text-[11px] text-[color:hsl(var(--maz-muted))] mt-1">
+              {{ formatNumber(summary.enrichmentStats?.uniqueMakCount || 0) }} Kode MAK • {{ formatNumber(summary.enrichmentStats?.anggaranMatchedCount || 0) }} paket ber-MAK
+            </div>
+          </div>
+
+          <div class="bg-[color:hsl(var(--maz-background))] p-4 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm">
+            <div class="text-[11px] font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Kaji Ulang &amp; SPP RUP</div>
+            <div class="text-xl font-extrabold text-[color:hsl(var(--maz-foreground))] mt-1">
+              {{ formatNumber(summary.enrichmentStats?.kajiUlangPaketCount || 0) }}
+              <span class="text-xs font-medium text-amber-600 dark:text-amber-400">paket direvisi</span>
+            </div>
+            <div class="text-[11px] text-[color:hsl(var(--maz-muted))] mt-1">
+              {{ formatNumber(summary.enrichmentStats?.totalKajiUlangCount || 0) }} riwayat kaji ulang • {{ formatNumber(summary.enrichmentStats?.sppCount || 0) }} paket ber-SPP
+            </div>
+          </div>
+
+          <div class="bg-[color:hsl(var(--maz-background))] p-4 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm">
+            <div class="text-[11px] font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Keterlibatan PPK</div>
+            <div class="text-xl font-extrabold text-[color:hsl(var(--maz-foreground))] mt-1">
+              {{ formatNumber(summary.enrichmentStats?.uniquePpkCount || 0) }}
+              <span class="text-xs font-medium text-blue-600 dark:text-blue-400">PPK aktif</span>
+            </div>
+            <div class="text-[11px] text-[color:hsl(var(--maz-muted))] mt-1">
+              {{ formatNumber(summary.enrichmentStats?.ppkCompletedCount || 0) }} paket profil PPK terverifikasi
+            </div>
+          </div>
+
+          <div class="bg-[color:hsl(var(--maz-background))] p-4 rounded-xl border border-[color:hsl(var(--maz-border))] shadow-sm">
+            <div class="text-[11px] font-semibold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider">Keterlibatan Penyedia</div>
+            <div class="text-xl font-extrabold text-[color:hsl(var(--maz-foreground))] mt-1">
+              {{ formatNumber(summary.enrichmentStats?.uniquePenyediaCount || 0) }}
+              <span class="text-xs font-medium text-purple-600 dark:text-purple-400">penyedia unik</span>
+            </div>
+            <div class="text-[11px] text-[color:hsl(var(--maz-muted))] mt-1">
+              {{ formatNumber(summary.enrichmentStats?.penyediaCompletedCount || 0) }} paket diperkaya NPWP / UMKK
+            </div>
           </div>
         </div>
 
-        <!-- 2. Sumber Transaksi & Sumber Dana -->
+        <!-- Row 3: Trend Transaksi Bulanan -->
+        <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider">
+              Tren Realisasi Pengadaan Bulanan (Nilai Rp &amp; Jumlah Paket)
+            </h3>
+            <span class="text-xs text-[color:hsl(var(--maz-muted))]">Berdasarkan tanggal transaksi / pembuatan paket</span>
+          </div>
+          <div class="w-full h-[350px]">
+            <Bar v-if="trendChartData" :data="trendChartData" :options="trendBarOptions" />
+          </div>
+        </div>
+
+        <!-- Row 4: Pagu vs Realisasi per Sumber + Tahapan & Penyedia per Sumber -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col">
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6">
+              Pagu vs Realisasi, PDN &amp; UMK per Sumber Transaksi
+            </h3>
+            <div class="w-full h-[320px]">
+              <Bar v-if="paguVsRealisasiChartData" :data="paguVsRealisasiChartData" :options="groupedBarOptions" />
+            </div>
+          </div>
+
+          <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col gap-5">
+            <div>
+              <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-3">
+                Distribusi Tahapan Pengadaan
+              </h3>
+              <div class="space-y-3" v-if="summary.tahapanPengadaan?.length">
+                <div v-for="t in summary.tahapanPengadaan" :key="t.label" class="space-y-1">
+                  <div class="flex justify-between text-xs">
+                    <span class="font-semibold text-[color:hsl(var(--maz-foreground))]">{{ t.label }} ({{ formatNumber(t.count) }} paket)</span>
+                    <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ formatRupiahSingkat(t.total) }}</span>
+                  </div>
+                  <div class="w-full bg-[color:hsl(var(--maz-foreground)_/_8%)] rounded-full h-2">
+                    <div
+                      class="bg-emerald-500 h-2 rounded-full"
+                      :style="`width: ${Math.max(2, Math.round((t.total / (summary.totalNilai || 1)) * 100))}%`"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="summary.penyediaPerSumber?.length" class="pt-3 border-t border-[color:hsl(var(--maz-border))]">
+              <h4 class="text-xs font-bold text-[color:hsl(var(--maz-muted))] uppercase tracking-wider mb-3">
+                Penyedia &amp; Paket per Sumber (API Realisasi Penyedia)
+              </h4>
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                  <thead class="text-[11px] uppercase text-[color:hsl(var(--maz-muted))] border-b border-[color:hsl(var(--maz-border))]">
+                    <tr>
+                      <th class="py-2 pr-2">Sumber Transaksi</th>
+                      <th class="py-2 px-2 text-right">Penyedia</th>
+                      <th class="py-2 px-2 text-right">Paket</th>
+                      <th class="py-2 pl-2 text-right">Nilai Realisasi</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-[color:hsl(var(--maz-border))]">
+                    <tr v-for="ps in summary.penyediaPerSumber" :key="ps.sumber_transaksi">
+                      <td class="py-2 pr-2 font-semibold text-[color:hsl(var(--maz-foreground))]">{{ ps.sumber_transaksi }}</td>
+                      <td class="py-2 px-2 text-right">{{ formatNumber(ps.jumlah_penyedia) }}</td>
+                      <td class="py-2 px-2 text-right">{{ formatNumber(ps.jumlah_paket) }}</td>
+                      <td class="py-2 pl-2 text-right font-bold text-[color:hsl(var(--maz-primary))]">{{ formatRupiahSingkat(ps.total_nilai) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 5: Sumber Transaksi & Sumber Dana -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col">
             <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Sumber Transaksi (Nilai Rp)</h3>
@@ -108,7 +244,7 @@
           </div>
         </div>
 
-        <!-- 3. Metode dan Jenis Pengadaan -->
+        <!-- Row 6: Metode dan Jenis Pengadaan (diperkaya RUP) -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col">
             <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Metode Pengadaan (Nilai Rp)</h3>
@@ -117,23 +253,28 @@
             </div>
           </div>
           <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex flex-col">
-            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Jenis Pengadaan (Nilai Rp)</h3>
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6 text-center">Jenis Pengadaan (Diperkaya RUP)</h3>
             <div class="flex-grow flex items-center justify-center min-h-[300px]">
               <Doughnut v-if="jenisChartData" :data="jenisChartData" :options="doughnutOptions" />
             </div>
           </div>
         </div>
 
-        <!-- 4. Top 10 Pihak Terkait -->
+        <!-- Row 7: Top 10 Pihak Terkait -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Top 10 PPK -->
           <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
-            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6">Top 10 PPK (Berdasarkan Nilai)</h3>
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6">Top 10 PPK (Berdasarkan Nilai Realisasi)</h3>
             <div class="space-y-4" v-if="summary.topPpk && summary.topPpk.length > 0">
               <div v-for="(item, index) in summary.topPpk" :key="index" class="relative">
-                <div class="flex justify-between items-end mb-1 z-10 relative">
-                  <span class="text-xs font-semibold text-[color:hsl(var(--maz-foreground))] truncate max-w-[65%]" :title="item.label">{{ index + 1 }}. {{ item.label }}</span>
-                  <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">{{ formatRupiahSingkat(item.total) }}</span>
+                <div class="flex justify-between items-end mb-1 z-10 relative gap-2">
+                  <div class="min-w-0">
+                    <div class="text-xs font-semibold text-[color:hsl(var(--maz-foreground))] truncate" :title="item.label">{{ index + 1 }}. {{ item.label }}</div>
+                    <div class="text-[10px] text-[color:hsl(var(--maz-muted))] truncate" v-if="item.jabatan || item.count">
+                      {{ item.count || 0 }} paket<span v-if="item.jabatan"> • {{ item.jabatan }}</span>
+                    </div>
+                  </div>
+                  <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 shrink-0">{{ formatRupiahSingkat(item.total) }}</span>
                 </div>
                 <div class="w-full bg-[color:hsl(var(--maz-foreground)_/_5%)] rounded-full h-2">
                   <div class="bg-emerald-500 h-2 rounded-full" :style="`width: ${Math.max(1, (item.total / summary.topPpk[0].total) * 100)}%`"></div>
@@ -142,15 +283,21 @@
             </div>
             <div v-else class="text-center text-[color:hsl(var(--maz-muted))] py-10 text-sm">Belum ada data PPK</div>
           </div>
-          
+
           <!-- Top 10 Penyedia -->
           <div class="bg-[color:hsl(var(--maz-background))] rounded-xl border border-[color:hsl(var(--maz-border))] p-6 shadow-[0_4px_15px_rgba(0,0,0,0.05)]">
-            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6">Top 10 Penyedia (Berdasarkan Nilai)</h3>
+            <h3 class="text-sm font-bold text-[color:hsl(var(--maz-foreground))] uppercase tracking-wider mb-6">Top 10 Penyedia (Berdasarkan Nilai Realisasi)</h3>
             <div class="space-y-4" v-if="summary.topPenyedia && summary.topPenyedia.length > 0">
               <div v-for="(item, index) in summary.topPenyedia" :key="index" class="relative">
-                <div class="flex justify-between items-end mb-1 z-10 relative">
-                  <span class="text-xs font-semibold text-[color:hsl(var(--maz-foreground))] truncate max-w-[65%]" :title="item.label">{{ index + 1 }}. {{ item.label }}</span>
-                  <span class="text-xs font-bold text-blue-600 dark:text-blue-400">{{ formatRupiahSingkat(item.total) }}</span>
+                <div class="flex justify-between items-end mb-1 z-10 relative gap-2">
+                  <div class="min-w-0">
+                    <div class="text-xs font-semibold text-[color:hsl(var(--maz-foreground))] truncate" :title="item.label">{{ index + 1 }}. {{ item.label }}</div>
+                    <div class="text-[10px] text-[color:hsl(var(--maz-muted))] flex items-center gap-1.5">
+                      <span>{{ item.count || 0 }} paket</span>
+                      <span v-if="item.status_umkk" class="px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold">{{ item.status_umkk }}</span>
+                    </div>
+                  </div>
+                  <span class="text-xs font-bold text-blue-600 dark:text-blue-400 shrink-0">{{ formatRupiahSingkat(item.total) }}</span>
                 </div>
                 <div class="w-full bg-[color:hsl(var(--maz-foreground)_/_5%)] rounded-full h-2">
                   <div class="bg-blue-500 h-2 rounded-full" :style="`width: ${Math.max(1, (item.total / summary.topPenyedia[0].total) * 100)}%`"></div>
@@ -160,7 +307,6 @@
             <div v-else class="text-center text-[color:hsl(var(--maz-muted))] py-10 text-sm">Belum ada data Penyedia</div>
           </div>
         </div>
-
       </div>
     </div>
   </ClientOnly>
@@ -169,7 +315,7 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue';
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, PointElement, LineElement } from 'chart.js';
-import { Bar, Doughnut, Line } from 'vue-chartjs';
+import { Bar, Doughnut } from 'vue-chartjs';
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement, PointElement, LineElement);
 
@@ -187,24 +333,38 @@ const isEmpty = ref(true);
 const summary = ref({
   totalPesanan: 0,
   totalNilai: 0,
+  totalPagu: 0,
   totalPdn: 0,
   totalUmk: 0,
+  paketPdnCount: 0,
+  paketUmkCount: 0,
+  persentaseTerhadapPagu: 0,
+  selisihPaguRealisasi: 0,
+  enrichmentStats: {},
   trend: [],
   sumberTransaksi: [],
   metodePengadaan: [],
   jenisPengadaan: [],
   sumberDana: [],
+  tahapanPengadaan: [],
+  statusPaket: [],
+  penyediaPerSumber: [],
   topPpk: [],
   topPenyedia: []
 });
 
-// Chart Colors
+const pdnPercent = computed(() => Math.round(((summary.value.totalPdn || 0) / (summary.value.totalNilai || 1)) * 100));
+const umkPercent = computed(() => Math.round(((summary.value.totalUmk || 0) / (summary.value.totalNilai || 1)) * 100));
+const serahTerimaCount = computed(() => {
+  const row = summary.value.tahapanPengadaan?.find(t => String(t.label).toLowerCase().includes('serah terima'));
+  return row ? row.count : 0;
+});
+
 const colors = [
-  '#3b82f6', '#10b981', '#f59e0b', '#ef4444', 
-  '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', 
+  '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+  '#8b5cf6', '#ec4899', '#14b8a6', '#f97316',
   '#6366f1', '#84cc16'
 ];
-
 const bgColors = colors.map(c => c + 'cc');
 
 const trendChartData = computed(() => {
@@ -213,10 +373,44 @@ const trendChartData = computed(() => {
     labels: summary.value.trend.map(i => i.label.substring(0, 3)),
     datasets: [
       {
-        label: 'Nilai Transaksi (Rp)',
+        label: 'Nilai Realisasi (Rp)',
         backgroundColor: '#10b981',
         borderRadius: 4,
         data: summary.value.trend.map(i => i.total)
+      }
+    ]
+  };
+});
+
+const paguVsRealisasiChartData = computed(() => {
+  if (!summary.value.sumberTransaksi?.length) return null;
+  const list = summary.value.sumberTransaksi;
+  return {
+    labels: list.map(i => i.label),
+    datasets: [
+      {
+        label: 'Nilai Pagu',
+        backgroundColor: '#94a3b8cc',
+        borderRadius: 4,
+        data: list.map(i => i.pagu || 0)
+      },
+      {
+        label: 'Nilai Realisasi',
+        backgroundColor: '#10b981cc',
+        borderRadius: 4,
+        data: list.map(i => i.total || 0)
+      },
+      {
+        label: 'Nilai PDN',
+        backgroundColor: '#14b8a6cc',
+        borderRadius: 4,
+        data: list.map(i => i.pdn || 0)
+      },
+      {
+        label: 'Nilai UMK',
+        backgroundColor: '#8b5cf6cc',
+        borderRadius: 4,
+        data: list.map(i => i.umk || 0)
       }
     ]
   };
@@ -274,15 +468,35 @@ const sumberDanaChartData = computed(() => {
   };
 });
 
-// Options
-const barOptions = {
+const trendBarOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
     legend: { display: false },
     tooltip: {
       callbacks: {
-        label: (context) => formatRupiahSingkat(context.raw)
+        label: (context) => {
+          const item = summary.value.trend[context.dataIndex];
+          return ` ${formatRupiahSingkat(context.raw)} (${item?.count || 0} paket)`;
+        }
+      }
+    }
+  },
+  scales: {
+    y: {
+      ticks: { callback: (val) => formatRupiahSingkat(val) }
+    }
+  }
+};
+
+const groupedBarOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { position: 'top', labels: { boxWidth: 12, padding: 14 } },
+    tooltip: {
+      callbacks: {
+        label: (ctx) => ` ${ctx.dataset.label}: ${formatRupiahSingkat(ctx.raw)}`
       }
     }
   },
@@ -305,7 +519,7 @@ const doughnutOptions = {
       callbacks: {
         label: (context) => {
           const raw = context.raw;
-          const sum = context.chart._metasets[context.datasetIndex].total;
+          const sum = context.chart._metasets[context.datasetIndex].total || 1;
           const percent = ((raw / sum) * 100).toFixed(1) + '%';
           return ` ${context.label}: ${formatRupiahSingkat(raw)} (${percent})`;
         }
@@ -319,9 +533,9 @@ const loadAnalytics = async () => {
   loading.value = true;
   error.value = false;
   isEmpty.value = false;
-  
+
   try {
-    const params = { 
+    const params = {
       tahun: props.selectedYear,
       filterType: props.filterType,
       startDate: props.startDate,
@@ -332,7 +546,7 @@ const loadAnalytics = async () => {
     const res = await $fetch('/api/summary-table/realisasi-analytics-private', {
       params
     });
-    
+
     if (res.success && res.summary && res.summary.totalPesanan > 0) {
       summary.value = res.summary;
     } else {
@@ -356,6 +570,11 @@ onMounted(() => {
 const formatNumber = (num) => {
   if (!num) return '0';
   return new Intl.NumberFormat('id-ID').format(num);
+};
+
+const formatRupiahFull = (angka) => {
+  if (!angka && angka !== 0) return '-';
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
 };
 
 const formatRupiahSingkat = (angka) => {

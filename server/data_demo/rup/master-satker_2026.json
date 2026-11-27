@@ -1,0 +1,37 @@
+[
+  {
+    "kd_satker": "428632",
+    "nama_satker": "Dinas Perabotan / Rumah Tangga Tanjung",
+    "status_satker": "Aktif",
+    "jenis_satker": "OPD",
+    "alamat": "Jr. Latupono no 98"
+  },
+  {
+    "kd_satker": "434271",
+    "nama_satker": "Dinas Pakaian Sumenep",
+    "status_satker": "Aktif",
+    "jenis_satker": "OPD",
+    "alamat": "Gg. Tami no 57"
+  },
+  {
+    "kd_satker": "422851",
+    "nama_satker": "Dinas Mainan Indramayu",
+    "status_satker": "Aktif",
+    "jenis_satker": "OPD",
+    "alamat": "Kpg. Ilsa no 1"
+  },
+  {
+    "kd_satker": "993417",
+    "nama_satker": "Dinas Elektronik Garut",
+    "status_satker": "Aktif",
+    "jenis_satker": "OPD",
+    "alamat": "Ki. Fabian no 35"
+  },
+  {
+    "kd_satker": "858912",
+    "nama_satker": "Dinas Perangkat Lunak Tilamuta",
+    "status_satker": "Aktif",
+    "jenis_satker": "OPD",
+    "alamat": "Ds. Prasetyo no 25"
+  }
+]

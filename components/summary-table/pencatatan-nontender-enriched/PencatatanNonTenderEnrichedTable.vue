@@ -294,6 +294,10 @@ const props = defineProps({
   selectedYear: {
     type: String,
     required: true
+  },
+  selectedSatker: {
+    type: String,
+    default: null
   }
 });
 
@@ -364,6 +368,7 @@ const loadData = async (force = false) => {
     const response = await $fetch('/api/data/merged/pencatatan-nontender-enriched', {
       params: { 
         tahun: props.selectedYear,
+          satker: props.selectedSatker || undefined,
         page: currentPage.value,
         limit: itemsPerPage.value,
         search: searchQuery.value || undefined,
@@ -444,6 +449,7 @@ const executeExport = async () => {
   try {
     const params = {
       tahun: props.selectedYear,
+          satker: props.selectedSatker || undefined,
       page: 1,
       limit: 100000 // limit besar untuk mengambil seluruh data
     };

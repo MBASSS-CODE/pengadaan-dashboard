@@ -14,6 +14,17 @@
           size="sm"
           class="w-32"
         />
+        <div class="h-6 w-px bg-[color:hsl(var(--maz-border))]"></div>
+        <span class="text-sm font-medium text-[color:hsl(var(--maz-muted))] whitespace-nowrap">Satker:</span>
+        <MazSelect
+          v-model="selectedSatker"
+          :options="satkerOptions"
+          size="sm"
+          search
+          placeholder="Semua Satker"
+          class="w-64"
+          clearable
+        />
       </div>
     </div>
 
@@ -39,8 +50,8 @@
     <ClientOnly>
       <Transition name="fade" mode="out-in">
         <div :key="activeTab">
-          <NonTenderEnrichedAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" />
-          <NonTenderEnrichedTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" />
+          <NonTenderEnrichedAnalytics v-if="activeTab === 'analytics'" :selected-year="selectedYear" :selected-satker="selectedSatker" />
+          <NonTenderEnrichedTable v-else-if="activeTab === 'table'" :selected-year="selectedYear" :selected-satker="selectedSatker" />
         </div>
       </Transition>
     </ClientOnly>
@@ -49,6 +60,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useSatkerFilter } from '~/composables/useSatkerFilter';
 import NonTenderEnrichedAnalytics from '~/components/summary-table/non-tender-enriched/NonTenderEnrichedAnalytics.vue';
 import NonTenderEnrichedTable from '~/components/summary-table/non-tender-enriched/NonTenderEnrichedTable.vue';
 
@@ -61,6 +73,7 @@ const availableYears = [
 ].map(y => ({ label: y, value: y }));
 
 const selectedYear = ref(currentYear.toString());
+const { selectedSatker, satkerOptions } = useSatkerFilter(selectedYear);
 </script>
 
 <style scoped>

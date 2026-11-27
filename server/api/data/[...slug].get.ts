@@ -58,6 +58,7 @@ export default defineEventHandler(async (event) => {
   delete extraParams.filterStatusTender;
   delete extraParams.filterMtdPemilihan;
   delete extraParams.filterSatker;
+  delete extraParams.kd_satker;
   delete extraParams.filterPemenang;
   delete extraParams.filterStatus;
   delete extraParams.filterShipmentStatus;
@@ -122,10 +123,11 @@ export default defineEventHandler(async (event) => {
       filtered = filtered.filter((item: any) => item.mtd_pemilihan === filterMtdPemilihan);
     }
 
-    // Filter: nama_satker atau kd_satker
+    // Filter: nama_satker, nama_satuan_kerja, atau kd_satker
     if (filterSatker && filterSatker !== 'ALL') {
       filtered = filtered.filter((item: any) => 
         item.nama_satker === filterSatker ||
+        item.nama_satuan_kerja === filterSatker ||
         String(item.kd_satker) === filterSatker ||
         String(item.kd_satker_str) === filterSatker
       );
@@ -169,7 +171,7 @@ export default defineEventHandler(async (event) => {
     const uniqueStatusNontender = [...new Set(filtered.map((item: any) => item.status_nontender).filter(Boolean))].sort();
     const uniqueStatusTender = [...new Set(filtered.map((item: any) => item.status_tender).filter(Boolean))].sort();
     const uniqueMtdPemilihan = [...new Set(filtered.map((item: any) => item.mtd_pemilihan).filter(Boolean))].sort();
-    const uniqueSatker = [...new Set(filtered.map((item: any) => item.nama_satker).filter(Boolean))].sort();
+    const uniqueSatker = [...new Set(filtered.map((item: any) => item.nama_satker || item.nama_satuan_kerja).filter(Boolean))].sort();
     const uniqueStatus = [...new Set(filtered.map((item: any) => item.status).filter(Boolean))].sort();
     const uniqueShipmentStatus = [...new Set(filtered.map((item: any) => item.shipment_status).filter(Boolean))].sort();
     const uniqueFundingSource = [...new Set(filtered.map((item: any) => item.funding_source).filter(Boolean))].sort();

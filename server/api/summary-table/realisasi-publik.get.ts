@@ -1,15 +1,4 @@
-import path from 'path';
-import fs from 'fs/promises';
-import { getRealisasiMasterData } from '../../utils/realisasiMasterMerge';
-
-export const readJsonSafe = async (filePath: string): Promise<any[]> => {
-  try {
-    const raw = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(raw) || [];
-  } catch {
-    return [];
-  }
-};
+import { getRealisasiMasterData, getRealisasiOfficialSummary } from '../../utils/realisasiMasterMerge';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -18,9 +7,11 @@ export default defineEventHandler(async (event) => {
   const limit = parseInt(query.limit as string) || 50;
 
   try {
-    const unifiedData = await getRealisasiMasterData(tahun);
+    const [unifiedData, officialSummary] = await Promise.all([
+      getRealisasiMasterData(tahun),
+      getRealisasiOfficialSummary(tahun)
+    ]);
 
-    // Handle empty data
     if (!unifiedData || unifiedData.length === 0) {
       return {
         success: true,
@@ -30,6 +21,7 @@ export default defineEventHandler(async (event) => {
           totalPages: 0,
           currentPage: page,
           totalNilai: 0,
+          totalPagu: 0,
           totalPdn: 0,
           totalUmk: 0
         },
@@ -41,43 +33,49 @@ export default defineEventHandler(async (event) => {
     }
 
     let filteredData = [...unifiedData];
+    let hasActiveFilter = false;
 
-    // Filter logic
     if (query.search) {
+      hasActiveFilter = true;
       const search = (query.search as string).toLowerCase();
-      filteredData = filteredData.filter(item => 
+      filteredData = filteredData.filter(item =>
         (item.nama_paket && item.nama_paket.toLowerCase().includes(search)) ||
-        (item.kode_rup && String(item.kode_rup).includes(search)) ||
-        (item.kode_paket && String(item.kode_paket).includes(search))
+        (item.kode_rup && String(item.kode_rup).toLowerCase().includes(search)) ||
+        (item.kode_paket && String(item.kode_paket).toLowerCase().includes(search))
       );
     }
-    
+
     if (query.sumberTransaksi) {
+      hasActiveFilter = true;
       const sources = (query.sumberTransaksi as string).split(',');
       filteredData = filteredData.filter(item => sources.includes(item.sumber_transaksi));
     }
 
     if (query.metodePengadaan) {
+      hasActiveFilter = true;
       const metode = (query.metodePengadaan as string).split(',');
       filteredData = filteredData.filter(item => metode.includes(item.metode_pengadaan));
     }
 
-    // Sort descending by _sort_date if exists, or just leave it
-    filteredData.sort((a, b) => (b._sort_date || 0) - (a._sort_date || 0));
+    filteredData.sort((a, b) => {
+      const diff = (b._sort_date || 0) - (a._sort_date || 0);
+      return diff !== 0 ? diff : (a._original_index || 0) - (b._original_index || 0);
+    });
 
-    // Extract unique filter options
     const sumberSet = new Set<string>();
     const metodeSet = new Set<string>();
-    
+
     let totalNilai = 0;
+    let totalPagu = 0;
     let totalPdn = 0;
     let totalUmk = 0;
 
     for (const item of filteredData) {
       if (item.sumber_transaksi) sumberSet.add(item.sumber_transaksi);
       if (item.metode_pengadaan && item.metode_pengadaan !== '-') metodeSet.add(item.metode_pengadaan);
-      
+
       totalNilai += Number(item.total_nilai) || 0;
+      totalPagu += Number(item.nilai_pagu) || 0;
       totalPdn += Number(item.nilai_pdn) || 0;
       totalUmk += Number(item.nilai_umk) || 0;
     }
@@ -87,11 +85,14 @@ export default defineEventHandler(async (event) => {
       metodePengadaan: Array.from(metodeSet).sort()
     };
 
-    // Pagination
-    const totalItems = filteredData.length;
-    const totalPages = Math.ceil(totalItems / limit);
-    
-    // Only apply pagination if not exporting all
+    const totalItems = !hasActiveFilter && officialSummary?.jumlah_paket
+      ? officialSummary.jumlah_paket
+      : filteredData.length;
+    const effectiveTotalNilai = !hasActiveFilter && officialSummary?.total_nilai
+      ? officialSummary.total_nilai
+      : totalNilai;
+    const totalPages = Math.ceil(filteredData.length / limit) || 1;
+
     let paginatedData = filteredData;
     if (limit < 100000) {
       const startIndex = (page - 1) * limit;
@@ -99,8 +100,38 @@ export default defineEventHandler(async (event) => {
       paginatedData = filteredData.slice(startIndex, endIndex);
     }
 
-    // Hapus field sensitif (nama_ppk, nama_penyedia) dan internal (_sort_date) untuk publik
-    const safeData = paginatedData.map(({ nama_ppk, nama_penyedia, _sort_date, ...rest }) => rest);
+    // Sanitasi field sensitif (PPK, Penyedia, kontak, dan properti internal) untuk endpoint publik
+    const safeData = paginatedData.map(
+      ({
+        nama_ppk,
+        ppk_nip_asli,
+        ppk_nip_masked,
+        ppk_jabatan,
+        ppk_unit_kerja,
+        ppk_telepon,
+        ppk_email,
+        _ppk_completed,
+        nama_penyedia,
+        penyedia_kode,
+        penyedia_npwp,
+        penyedia_alamat,
+        penyedia_telepon,
+        penyedia_email,
+        penyedia_jenis_perusahaan,
+        penyedia_bentuk_usaha,
+        penyedia_status_umkk,
+        penyedia_nib,
+        _penyedia_completed,
+        tx_pemenang_detail,
+        tx_realisasi_list,
+        _sort_date,
+        _original_index,
+        ...rest
+      }) => ({
+        ...rest,
+        jenis_pengadaan: rest.jenis_pengadaan_enriched || rest.jenis_pengadaan || '-'
+      })
+    );
 
     return {
       success: true,
@@ -109,7 +140,8 @@ export default defineEventHandler(async (event) => {
         totalItems,
         totalPages,
         currentPage: page,
-        totalNilai,
+        totalNilai: effectiveTotalNilai,
+        totalPagu,
         totalPdn,
         totalUmk
       },

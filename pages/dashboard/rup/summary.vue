@@ -4,6 +4,6 @@
     endpoint="rup/summary"
     title="RUP Summary"
     subtitle="Ringkasan data Rencana Umum Pengadaan"
-    :params="['tahun', 'kd_klpd', 'kd_satker']"
+    :params="['tahun', 'jenis', 'instansi']"
   />
 </template>

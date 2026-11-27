@@ -8,7 +8,7 @@
           </svg>
           Integrasi Data Realisasi Master
         </h2>
-        <p class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">Menggabungkan seluruh transaksi E-Purchasing, Tender, Non-Tender, dan Swakelola beserta RUP-nya menjadi satu sumber kebenaran (Single Source of Truth).</p>
+        <p class="text-xs text-[color:hsl(var(--maz-muted))] mt-1">Menggunakan data acuan resmi Dashboard Realisasi (Table &amp; Summary) lalu melengkapinya dengan detail RUP, Anggaran/MAK, Kaji Ulang, E-Katalog, Tender, Non-Tender, Pencatatan, serta Master PPK &amp; Penyedia.</p>
       </div>
       <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div class="flex items-center gap-2">
@@ -68,6 +68,9 @@
             <span><strong>Trigger:</strong> {{ mergeStatus.lastMerge.trigger }}</span>
             <span><strong>Durasi:</strong> {{ mergeStatus.lastMerge.duration_ms }}ms</span>
             <span><strong>Total:</strong> {{ mergeStatus.lastMerge.result?.total_records }} records</span>
+            <span v-if="mergeStatus.lastMerge.result?.rup_matched !== undefined"><strong>RUP Match:</strong> {{ mergeStatus.lastMerge.result.rup_matched }}</span>
+            <span v-if="mergeStatus.lastMerge.result?.ppk_completed !== undefined"><strong>PPK Lengkap:</strong> {{ mergeStatus.lastMerge.result.ppk_completed }}</span>
+            <span v-if="mergeStatus.lastMerge.result?.penyedia_completed !== undefined"><strong>Penyedia Lengkap:</strong> {{ mergeStatus.lastMerge.result.penyedia_completed }}</span>
             <span>
               <strong>Status:</strong>
               <span :class="mergeStatus.lastMerge.status === 'success' ? 'text-green-600' : 'text-red-600'">{{ mergeStatus.lastMerge.status }}</span>

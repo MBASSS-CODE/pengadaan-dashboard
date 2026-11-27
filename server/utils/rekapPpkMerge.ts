@@ -7,26 +7,56 @@ import { loadPenyediaMaster } from './penyediaManager';
 const dataDir = path.resolve(process.cwd(), 'server/data');
 const mergedDir = path.resolve(dataDir, 'merged');
 
+export const REKAP_PPK_SCHEMA_VERSION = 2;
+export const DEFAULT_ACUAN_SUMBER = 'E-Katalog Versi 6.0';
+
 let rekapPpkCache: Record<string, any[]> = {};
-const autoRefreshedYears = new Set<string>();
+const rekapPpkBuildMtime: Record<string, number> = {};
 
 export const invalidateRekapPpkCache = () => {
   rekapPpkCache = {};
-  autoRefreshedYears.clear();
+  for (const key of Object.keys(rekapPpkBuildMtime)) {
+    delete rekapPpkBuildMtime[key];
+  }
 };
 
-const readJsonSafe = async (filePath: string): Promise<any[] | null> => {
+const readJsonRawSafe = async <T = any>(filePath: string): Promise<T | null> => {
   try {
     const raw = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(raw);
+    return JSON.parse(raw) as T;
   } catch {
     return null;
   }
 };
 
+const readDataArraySafe = async (filePath: string): Promise<any[]> => {
+  const parsed = await readJsonRawSafe<any>(filePath);
+  if (!parsed) return [];
+  if (Array.isArray(parsed)) return parsed;
+  if (Array.isArray(parsed.data)) return parsed.data;
+  return [];
+};
+
 const normalizeText = (val?: string | null): string => {
   if (!val) return '';
   return String(val).replace(/\s+/g, ' ').trim();
+};
+
+const stripAcademicTitle = (name?: string | null): string => {
+  if (!name) return '';
+  // Hapus gelar di belakang koma, misal "Nisa Nurrela, A.Md." -> "Nisa Nurrela"
+  return normalizeText(String(name).split(',')[0]);
+};
+
+const normalizeNameKey = (name?: string | null): string => {
+  return stripAcademicTitle(name).toLowerCase();
+};
+
+const matchesMaskedName = (maskedName?: string | null, fullName?: string | null): boolean => {
+  const mWords = normalizeText(maskedName).toLowerCase().split(' ').filter(Boolean);
+  const fWords = normalizeNameKey(fullName).split(' ').filter(Boolean);
+  if (mWords.length === 0 || mWords.length !== fWords.length) return false;
+  return mWords.every((mw, idx) => mw.length === fWords[idx].length && mw[0] === fWords[idx][0]);
 };
 
 const isRupTerumumkanAktif = (r: any): boolean => {
@@ -36,6 +66,24 @@ const isRupTerumumkanAktif = (r: any): boolean => {
     r.status_aktif_rup === true &&
     r.status_delete_rup !== true
   );
+};
+
+const mapTahapanRekapFromRealisasi = (
+  tahapanPengadaan?: string,
+  statusPaket?: string
+): PpkPacketDetail['tahapan_rekap'] => {
+  const t = String(tahapanPengadaan || '').toLowerCase();
+  const s = String(statusPaket || '').toLowerCase();
+  if (t.includes('serah terima') || t === 'selesai' || t.includes('paket selesai') || s === 'completed') {
+    return 'selesai';
+  }
+  if (t.includes('pemilihan selesai') || t.includes('evaluasi') || t.includes('penetapan')) {
+    return 'pemilihan_selesai';
+  }
+  if (t.includes('pemilihan berlangsung') || t.includes('pengumuman') || t.includes('negosiasi')) {
+    return 'pemilihan_berlangsung';
+  }
+  return 'kontrak';
 };
 
 export interface RekapPpkSourceCheck {
@@ -49,6 +97,7 @@ export interface RekapPpkSourceCheck {
 
 export const checkRekapPpkPrerequisitesRaw = async (tahun: string) => {
   const sources = [
+    { group: 'dashboard', endpoint: 'realisasi/table', label: 'Dashboard Realisasi Table (Acuan)', required: true },
     { group: 'rup', endpoint: 'paket-penyedia', label: 'RUP Paket Penyedia', required: true },
     { group: 'rup', endpoint: 'paket-swakelola', label: 'RUP Paket Swakelola', required: false },
     { group: 'ekatalog', endpoint: 'paket-e-purchasing', label: 'E-Purchasing (V6)', required: false },
@@ -73,9 +122,8 @@ export const checkRekapPpkPrerequisitesRaw = async (tahun: string) => {
       const stat = await fs.stat(filePath);
       if (stat.isFile()) {
         found = true;
-        const parsed: any = await readJsonSafe(filePath);
-        if (Array.isArray(parsed)) count = parsed.length;
-        else if (parsed?.data && Array.isArray(parsed.data)) count = parsed.data.length;
+        const rows = await readDataArraySafe(filePath);
+        count = rows.length;
       }
     } catch {
       // file not found
@@ -162,7 +210,7 @@ export interface PpkRupDetail {
 
 /**
  * Pure aggregation helper: computes summary metrics for a PPK record from its RUPs and filtered packets.
- * Used both during merge generation and during dynamic runtime filtering (e.g. by sumberTransaksi or tanggal).
+ * Used both during merge generation and during dynamic runtime filtering (e.g. by scopeMode, sumberTransaksi, or tanggal).
  */
 export const aggregatePpkMetrics = (
   baseProfile: any,
@@ -252,6 +300,8 @@ export const aggregatePpkMetrics = (
   const listKodePaketArr = Array.from(uniqueKodePaket);
 
   return {
+    _schema_version: REKAP_PPK_SCHEMA_VERSION,
+
     // 17 Kolom Standar CSV Acuan
     nama: baseProfile.nama,
     role: 'PPK',
@@ -297,6 +347,39 @@ export const aggregatePpkMetrics = (
   };
 };
 
+const getSourcePathsForYear = (tahun: string): string[] => [
+  path.resolve(dataDir, `dashboard/realisasi/table_${tahun}.json`),
+  path.resolve(dataDir, `rup/paket-penyedia_${tahun}.json`),
+  path.resolve(dataDir, `rup/paket-swakelola_${tahun}.json`),
+  path.resolve(dataDir, `rup/history-kaji-ulang_${tahun}.json`),
+  path.resolve(dataDir, `rup/master-satker_${tahun}.json`),
+  path.resolve(dataDir, `ekatalog/paket-e-purchasing_${tahun}.json`),
+  path.resolve(dataDir, `ekatalog-archive/paket-e-purchasing_${tahun}.json`),
+  path.resolve(dataDir, `tender/non-tender-pengumuman_${tahun}.json`),
+  path.resolve(dataDir, `tender/pencatatan-non-tender_${tahun}.json`),
+  path.resolve(dataDir, `tender/pencatatan-non-tender-realisasi_${tahun}.json`),
+  path.resolve(dataDir, `tender/pengumuman_${tahun}.json`),
+  path.resolve(dataDir, `tender/pencatatan-swakelola_${tahun}.json`)
+];
+
+const getLatestSourceMtime = async (tahun: string): Promise<number> => {
+  let latest = 0;
+  const stats = await Promise.all(
+    getSourcePathsForYear(tahun).map(async (p) => {
+      try {
+        const s = await fs.stat(p);
+        return s.isFile() ? s.mtimeMs : 0;
+      } catch {
+        return 0;
+      }
+    })
+  );
+  for (const m of stats) {
+    if (m > latest) latest = m;
+  }
+  return latest;
+};
+
 export const runRekapPpkMerge = async (
   tahun: string,
   trigger: string = 'manual',
@@ -325,21 +408,21 @@ export const runRekapPpkMerge = async (
       return failResult;
     }
 
-    // Load all raw files
-    const rupPenyedia: any[] = (await readJsonSafe(path.join(dataDir, 'rup', `paket-penyedia_${tahun}.json`))) || [];
-    const rupSwakelola: any[] = (await readJsonSafe(path.join(dataDir, 'rup', `paket-swakelola_${tahun}.json`))) || [];
-    const masterSatker: any[] = (await readJsonSafe(path.join(dataDir, 'rup', `master-satker_${tahun}.json`))) || [];
-    const historyKajiUlang: any[] = (await readJsonSafe(path.join(dataDir, 'rup', `history-kaji-ulang_${tahun}.json`))) || [];
+    // Load canonical realisasi table + detail raw sources
+    const dashboardRealisasi = await readDataArraySafe(path.join(dataDir, 'dashboard', 'realisasi', `table_${tahun}.json`));
+    const rupPenyedia = await readDataArraySafe(path.join(dataDir, 'rup', `paket-penyedia_${tahun}.json`));
+    const rupSwakelola = await readDataArraySafe(path.join(dataDir, 'rup', `paket-swakelola_${tahun}.json`));
+    const masterSatker = await readDataArraySafe(path.join(dataDir, 'rup', `master-satker_${tahun}.json`));
+    const historyKajiUlang = await readDataArraySafe(path.join(dataDir, 'rup', `history-kaji-ulang_${tahun}.json`));
 
-    const ekatalogV6: any[] = (await readJsonSafe(path.join(dataDir, 'ekatalog', `paket-e-purchasing_${tahun}.json`))) || [];
-    const ekatalogV5Raw: any = await readJsonSafe(path.join(dataDir, 'ekatalog-archive', `paket-e-purchasing_${tahun}.json`));
-    const ekatalogV5: any[] = Array.isArray(ekatalogV5Raw) ? ekatalogV5Raw : (ekatalogV5Raw?.data || []);
+    const ekatalogV6 = await readDataArraySafe(path.join(dataDir, 'ekatalog', `paket-e-purchasing_${tahun}.json`));
+    const ekatalogV5 = await readDataArraySafe(path.join(dataDir, 'ekatalog-archive', `paket-e-purchasing_${tahun}.json`));
 
-    const nonTenderPengumuman: any[] = (await readJsonSafe(path.join(dataDir, 'tender', `non-tender-pengumuman_${tahun}.json`))) || [];
-    const pctNonTender: any[] = (await readJsonSafe(path.join(dataDir, 'tender', `pencatatan-non-tender_${tahun}.json`))) || [];
-    const pctNonTenderReal: any[] = (await readJsonSafe(path.join(dataDir, 'tender', `pencatatan-non-tender-realisasi_${tahun}.json`))) || [];
-    const pengumumanTender: any[] = (await readJsonSafe(path.join(dataDir, 'tender', `pengumuman_${tahun}.json`))) || [];
-    const pctSwakelola: any[] = (await readJsonSafe(path.join(dataDir, 'tender', `pencatatan-swakelola_${tahun}.json`))) || [];
+    const nonTenderPengumuman = await readDataArraySafe(path.join(dataDir, 'tender', `non-tender-pengumuman_${tahun}.json`));
+    const pctNonTender = await readDataArraySafe(path.join(dataDir, 'tender', `pencatatan-non-tender_${tahun}.json`));
+    const pctNonTenderReal = await readDataArraySafe(path.join(dataDir, 'tender', `pencatatan-non-tender-realisasi_${tahun}.json`));
+    const pengumumanTender = await readDataArraySafe(path.join(dataDir, 'tender', `pengumuman_${tahun}.json`));
+    const pctSwakelola = await readDataArraySafe(path.join(dataDir, 'tender', `pencatatan-swakelola_${tahun}.json`));
 
     const ppkMaster = await loadPpkMaster();
     const penyediaMaster = await loadPenyediaMaster();
@@ -367,10 +450,79 @@ export const runRekapPpkMerge = async (
       }
     }
 
+    // Index raw transactions for enrichment & unmasked E-Katalog nama_ppk lookup
+    const ekV6Map = new Map<string, any>();
+    const ekDisplayNameByNorm = new Map<string, string>();
+    for (const item of ekatalogV6) {
+      const id = String(item.order_id || '');
+      if (id) ekV6Map.set(id, item);
+      const rawNamaPpk = normalizeText(item.nama_ppk);
+      if (rawNamaPpk) {
+        const nk = normalizeNameKey(rawNamaPpk);
+        if (nk && !ekDisplayNameByNorm.has(nk)) {
+          ekDisplayNameByNorm.set(nk, rawNamaPpk);
+        }
+      }
+    }
+
+    const ekV5Map = new Map<string, any>();
+    for (const item of ekatalogV5) {
+      const id = String(item.kd_paket || item.no_paket || '');
+      if (id) ekV5Map.set(id, item);
+    }
+
+    const pctNonTenderMap = new Map<string, any>();
+    for (const item of pctNonTender) {
+      const id = String(item.kd_nontender_pct || '');
+      if (id) pctNonTenderMap.set(id, item);
+    }
+
+    const nonTenderMap = new Map<string, any>();
+    for (const item of nonTenderPengumuman) {
+      const id = String(item.kd_nontender || '');
+      if (id) nonTenderMap.set(id, item);
+    }
+
+    const tenderMap = new Map<string, any>();
+    for (const item of pengumumanTender) {
+      const id = String(item.kd_tender || '');
+      if (id) tenderMap.set(id, item);
+    }
+
+    const pctSwakelolaMap = new Map<string, any>();
+    for (const item of pctSwakelola) {
+      const id = String(item.kd_swakelola_pct || '');
+      if (id) pctSwakelolaMap.set(id, item);
+    }
+
+    // Build PPK lookup maps (by masked string, lowercase masked, NIP, and normalized unmasked name)
     const ppkMap = new Map<string, any>();
     const ppkMapLower = new Map<string, any>();
+    const ppkByNameKey = new Map<string, any>();
+    const ppkEntryList: any[] = [];
+
     const registerPpkEntry = (maskedStr: string | null | undefined, entry: any) => {
       if (!entry || !entry.nama_lengkap) return;
+      const nameKey = normalizeNameKey(entry.nama_lengkap);
+      if (nameKey) {
+        const existing = ppkByNameKey.get(nameKey);
+        if (!existing || (!existing.jabatan && entry.jabatan) || (!existing.nip_asli && entry.nip_asli)) {
+          const mergedEntry = {
+            ...existing,
+            ...entry,
+            nip_asli: entry.nip_asli || existing?.nip_asli || '',
+            jabatan: entry.jabatan || existing?.jabatan || '',
+            unit_kerja: entry.unit_kerja || existing?.unit_kerja || '',
+            telepon: entry.telepon || existing?.telepon || '',
+            email: entry.email || existing?.email || '',
+            nip_nama_masked: entry.nip_nama_masked || existing?.nip_nama_masked || ''
+          };
+          ppkByNameKey.set(nameKey, mergedEntry);
+          if (!ppkEntryList.some(e => normalizeNameKey(e.nama_lengkap) === nameKey)) {
+            ppkEntryList.push(mergedEntry);
+          }
+        }
+      }
       if (maskedStr) {
         const norm = normalizeText(maskedStr);
         if (norm) {
@@ -401,9 +553,7 @@ export const runRekapPpkMerge = async (
       if (p.npwp) penyediaMap.set(String(p.npwp).replace(/[^a-zA-Z0-9]/g, ''), p);
     }
 
-    // Fallback: Enrich PPK & Penyedia from existing merged datasets on disk (when MariaDB unavailable/empty)
-    const packetRealisasiFallbackMap = new Map<string, any>();
-    const rupPpkFallbackByCode = new Map<string, string>();
+    // Fallback: Enrich PPK & Penyedia from existing merged datasets on disk (when MariaDB unavailable)
     const mergedFallbacks = [
       `rup-penyedia-enriched_${tahun}.json`,
       `rup-swakelola-enriched_${tahun}.json`,
@@ -412,8 +562,7 @@ export const runRekapPpkMerge = async (
       `pencatatan-nontender-enriched_${tahun}.json`
     ];
     for (const fname of mergedFallbacks) {
-      const rows = (await readJsonSafe(path.join(mergedDir, fname))) || [];
-      if (!Array.isArray(rows)) continue;
+      const rows = await readDataArraySafe(path.join(mergedDir, fname));
       for (const row of rows) {
         if (row.ppk_nama_lengkap) {
           const entry = {
@@ -430,7 +579,6 @@ export const runRekapPpkMerge = async (
           const combinedMasked = nipPart && namaPart ? `${nipPart} - ${namaPart}` : (nipPart || namaPart);
           registerPpkEntry(row.nip_nama_ppk, entry);
           registerPpkEntry(combinedMasked, entry);
-          if (row.kd_rup) rupPpkFallbackByCode.set(String(row.kd_rup), row.ppk_nama_lengkap);
         }
         if (row.kode_penyedia && row.penyedia_nama) {
           if (!penyediaMap.has(String(row.kode_penyedia))) {
@@ -456,13 +604,18 @@ export const runRekapPpkMerge = async (
       }
     }
 
-    const realisasiMasterRows = (await readJsonSafe(path.join(mergedDir, `realisasi_master_${tahun}.json`))) || [];
-    if (Array.isArray(realisasiMasterRows)) {
-      for (const rm of realisasiMasterRows) {
-        if (rm.kode_paket) packetRealisasiFallbackMap.set(String(rm.kode_paket), rm);
-        if (rm.kode_rup && rm.nama_ppk && rm.nama_ppk !== '-') {
-          rupPpkFallbackByCode.set(String(rm.kode_rup), rm.nama_ppk);
-        }
+    // Register unmasked E-Katalog nama_ppk entries so masked matching still works without MariaDB/merged fallbacks
+    for (const [nk, dispName] of ekDisplayNameByNorm.entries()) {
+      if (!ppkByNameKey.has(nk)) {
+        registerPpkEntry(null, {
+          nama_lengkap: dispName,
+          nip_asli: '',
+          jabatan: '',
+          unit_kerja: '',
+          telepon: '',
+          email: '',
+          nip_nama_masked: ''
+        });
       }
     }
 
@@ -475,46 +628,92 @@ export const runRekapPpkMerge = async (
       }
     }
 
-    const defaultInstansi = rupPenyedia[0]?.nama_klpd?.toUpperCase() || 'KEMENTERIAN PENDAYAGUNAAN APARATUR NEGARA DAN REFORMASI BIROKRASI';
-    const defaultSatker = rupPenyedia[0]?.nama_satker || 'MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA';
+    const defaultInstansi = rupPenyedia[0]?.nama_klpd?.toUpperCase() ||
+      dashboardRealisasi[0]?.nama_instansi?.toUpperCase() ||
+      'KEMENTERIAN PENDAYAGUNAAN APARATUR NEGARA DAN REFORMASI BIROKRASI';
+    const defaultSatker = rupPenyedia[0]?.nama_satker ||
+      'MENTERI NEGARA PENDAYAGUNAAN APARATUR NEGARA';
 
     const getSatkerName = (kdSatker: any, fallback?: string) => {
       const s = satkerMap.get(String(kdSatker || ''));
-      return s?.nama_satker || fallback || defaultSatker;
+      if (s?.nama_satker) return s.nama_satker;
+      // Clean trailing " - 427950" suffix from dashboard/realisasi if master satker doesn't use it
+      const cleaned = normalizeText(fallback).replace(/\s*-\s*\d{4,}$/, '');
+      return cleaned || defaultSatker;
     };
 
     const getPenyediaDetails = (kode?: string, npwp?: string, fallbackName: string = '-') => {
       const cleanNpwp = npwp ? String(npwp).replace(/[^a-zA-Z0-9]/g, '') : '';
       const p = (kode ? penyediaMap.get(String(kode)) : null) || (cleanNpwp ? penyediaMap.get(cleanNpwp) : null);
       return {
-        nama_penyedia: p?.nama_penyedia || fallbackName || '-',
+        nama_penyedia: fallbackName && fallbackName !== '-' ? fallbackName : (p?.nama_penyedia || '-'),
         status_umkk: p?.status_umkk ?? null
       };
     };
 
-    const resolvePpk = (nip?: string, nama?: string, rawMasked?: string) => {
+    const resolvePpk = (nip?: string, nama?: string, rawMasked?: string, isUnmaskedHint: boolean = false) => {
       const cleanNip = normalizeText(nip);
       const cleanNama = normalizeText(nama);
       const cleanRaw = normalizeText(rawMasked);
       const maskedKey = cleanNip && cleanNama ? `${cleanNip} - ${cleanNama}` : (cleanNip || cleanNama || cleanRaw);
 
-      const p =
-        (cleanRaw && (ppkMap.get(cleanRaw) || ppkMapLower.get(cleanRaw.toLowerCase()))) ||
-        (maskedKey && (ppkMap.get(maskedKey) || ppkMapLower.get(maskedKey.toLowerCase()))) ||
-        (cleanNip && ppkMap.get(cleanNip));
+      // 1. Direct lookup via exact unmasked name (for E-Katalog item.nama_ppk)
+      let p: any = null;
+      if (cleanNama && (isUnmaskedHint || !cleanNama.includes('*'))) {
+        const nk = normalizeNameKey(cleanNama);
+        if (nk) p = ppkByNameKey.get(nk) || null;
+      }
+
+      // 2. Lookup via masked key / NIP
+      if (!p) {
+        p =
+          (cleanRaw && (ppkMap.get(cleanRaw) || ppkMapLower.get(cleanRaw.toLowerCase()))) ||
+          (maskedKey && (ppkMap.get(maskedKey) || ppkMapLower.get(maskedKey.toLowerCase()))) ||
+          (cleanNip && !cleanNip.includes('*') && ppkMap.get(cleanNip)) ||
+          null;
+      }
+
+      // 3. Fallback: match masked name pattern against known canonical unmasked PPK names (from E-Katalog / Master)
+      if (!p && cleanNama && cleanNama.includes('*')) {
+        p = ppkEntryList.find(candidate => matchesMaskedName(cleanNama, candidate.nama_lengkap)) || null;
+      }
 
       if (p && p.nama_lengkap) {
-        const canonicalKey = p.nip_asli ? `NIP:${normalizeText(p.nip_asli)}` : `NAME:${normalizeText(p.nama_lengkap).toLowerCase()}`;
+        const nk = normalizeNameKey(p.nama_lengkap);
+        const enrichedMeta = (nk ? ppkByNameKey.get(nk) : null) || p;
+        // Gunakan nama tampilan persis dari E-Katalog (acuan Excel) jika tersedia, else nama_lengkap
+        const displayName = (cleanNama && (isUnmaskedHint || !cleanNama.includes('*')))
+          ? cleanNama
+          : (ekDisplayNameByNorm.get(nk) || enrichedMeta.nama_lengkap || p.nama_lengkap);
+        const canonicalKey = enrichedMeta.nip_asli
+          ? `NIP:${normalizeText(enrichedMeta.nip_asli)}`
+          : `NAME:${nk}`;
+
         return {
           ppk_key: canonicalKey,
-          nip_nama_masked: maskedKey || p.nip_nama_masked,
-          nama: p.nama_lengkap,
-          nip_asli: p.nip_asli || '',
-          jabatan: p.jabatan || '',
-          unit_kerja: p.unit_kerja || '',
-          telepon: p.telepon || '',
-          email: p.email || '',
-          is_ppk_completed: true
+          nip_nama_masked: maskedKey || enrichedMeta.nip_nama_masked || '',
+          nama: displayName,
+          nip_asli: enrichedMeta.nip_asli || '',
+          jabatan: enrichedMeta.jabatan || '',
+          unit_kerja: enrichedMeta.unit_kerja || '',
+          telepon: enrichedMeta.telepon || '',
+          email: enrichedMeta.email || '',
+          is_ppk_completed: Boolean(enrichedMeta.nip_asli || enrichedMeta.jabatan || ppkMaster.some(m => normalizeNameKey(m.nama_lengkap) === nk))
+        };
+      }
+
+      if (cleanNama && !cleanNama.includes('*')) {
+        const nk = normalizeNameKey(cleanNama);
+        return {
+          ppk_key: `NAME:${nk}`,
+          nip_nama_masked: maskedKey,
+          nama: cleanNama,
+          nip_asli: '',
+          jabatan: '',
+          unit_kerja: '',
+          telepon: '',
+          email: '',
+          is_ppk_completed: false
         };
       }
 
@@ -567,12 +766,15 @@ export const runRekapPpkMerge = async (
       return ppkGroups.get(resolved.ppk_key)!;
     };
 
-    // 1. Index RUP Penyedia & RUP Swakelola per PPK
+    // 1. Index RUP Penyedia & RUP Swakelola per PPK (skip deleted/empty RUPs BEFORE creating any PPK group!)
     for (const r of rupPenyedia) {
-      const resolved = resolvePpk(r.nip_ppk, r.nama_ppk);
-      const group = ensurePpkGroup(resolved, r.nama_klpd, r.nama_satker);
       const kdRup = String(r.kd_rup || '');
       if (!kdRup || r.status_delete_rup === true) continue;
+      if (!r.nip_ppk && !r.nama_ppk) continue;
+
+      const resolved = resolvePpk(r.nip_ppk, r.nama_ppk);
+      if (resolved.ppk_key === 'UNASSIGNED') continue;
+      const group = ensurePpkGroup(resolved, r.nama_klpd, r.nama_satker);
 
       group.rupMap.set(kdRup, {
         kd_rup: kdRup,
@@ -594,10 +796,13 @@ export const runRekapPpkMerge = async (
     }
 
     for (const r of rupSwakelola) {
-      const resolved = resolvePpk(r.nip_ppk, r.nama_ppk);
-      const group = ensurePpkGroup(resolved, r.nama_klpd, r.nama_satker);
       const kdRup = String(r.kd_rup || '');
       if (!kdRup || r.status_delete_rup === true) continue;
+      if (!r.nip_ppk && !r.nama_ppk) continue;
+
+      const resolved = resolvePpk(r.nip_ppk, r.nama_ppk);
+      if (resolved.ppk_key === 'UNASSIGNED') continue;
+      const group = ensurePpkGroup(resolved, r.nama_klpd, r.nama_satker);
 
       group.rupMap.set(kdRup, {
         kd_rup: kdRup,
@@ -618,282 +823,147 @@ export const runRekapPpkMerge = async (
       });
     }
 
-    const addPacketToPpk = (resolved: ReturnType<typeof resolvePpk>, instansi: string | undefined, satker: string | undefined, pkt: PpkPacketDetail) => {
-      const group = ensurePpkGroup(resolved, instansi, satker);
+    // 2. Process EVERY package from canonical `dashboard/realisasi/table_{tahun}.json`
+    for (const dt of dashboardRealisasi) {
+      const kodePaket = String(dt.kode_paket || '');
+      const kdRup = String(dt.kode_rup || '');
+      const sumber = String(dt.sumber_transaksi || '');
+      const rup = rupPenyediaMap.get(kdRup) || rupSwakelolaMap.get(kdRup) || null;
+
+      let resolved: ReturnType<typeof resolvePpk>;
+      let sortDateMs = 0;
+      let satkerName = getSatkerName(rup?.kd_satker, dt.nama_satuan_kerja);
+      let namaPenyedia = dt.nama_penyedia || '-';
+
+      if (sumber === DEFAULT_ACUAN_SUMBER) {
+        const ek = ekV6Map.get(kodePaket);
+        if (ek?.nama_ppk) {
+          // Acuan Excel: prioritaskan nama_ppk pelaksana langsung dari data E-Katalog
+          resolved = resolvePpk(undefined, ek.nama_ppk, undefined, true);
+        } else {
+          resolved = resolvePpk(ek?.rup_nip_ppk || rup?.nip_ppk, ek?.rup_nama_ppk || rup?.nama_ppk);
+        }
+        if (ek?.order_date) {
+          const ms = new Date(ek.order_date).getTime();
+          if (!Number.isNaN(ms)) sortDateMs = ms;
+        }
+        if (ek) {
+          satkerName = getSatkerName(ek.kode_satker, ek.nama_satker || satkerName);
+          if (!namaPenyedia || namaPenyedia === '-') {
+            namaPenyedia = getPenyediaDetails(ek.kode_penyedia, '', '').nama_penyedia;
+          }
+        }
+      } else if (sumber === 'E-Katalog Versi 5.0') {
+        const ek5 = ekV5Map.get(kodePaket);
+        resolved = resolvePpk(ek5?.ppk_nip || rup?.nip_ppk, rup?.nama_ppk, ek5?.jabatan_ppk);
+        if (ek5?.tanggal_buat_paket) {
+          const ms = new Date(ek5.tanggal_buat_paket).getTime();
+          if (!Number.isNaN(ms)) sortDateMs = ms;
+        }
+      } else if (sumber === 'Pencatatan Non Tender') {
+        const tx = pctNonTenderMap.get(kodePaket);
+        resolved = resolvePpk(tx?.nip_ppk || rup?.nip_ppk, tx?.nama_ppk || rup?.nama_ppk);
+        if (tx?.tgl_buat_paket) {
+          const ms = new Date(tx.tgl_buat_paket).getTime();
+          if (!Number.isNaN(ms)) sortDateMs = ms;
+        }
+      } else if (sumber === 'Non Tender') {
+        const tx = nonTenderMap.get(kodePaket);
+        resolved = resolvePpk(tx?.nip_ppk || rup?.nip_ppk, tx?.nama_ppk || rup?.nama_ppk, tx?.nip_nama_ppk);
+        if (tx?.tgl_buat_paket) {
+          const ms = new Date(tx.tgl_buat_paket).getTime();
+          if (!Number.isNaN(ms)) sortDateMs = ms;
+        }
+      } else if (sumber === 'Tender') {
+        const tx = tenderMap.get(kodePaket);
+        resolved = resolvePpk(tx?.nip_ppk || rup?.nip_ppk, tx?.nama_ppk || rup?.nama_ppk);
+        if (tx?.tgl_buat_paket) {
+          const ms = new Date(tx.tgl_buat_paket).getTime();
+          if (!Number.isNaN(ms)) sortDateMs = ms;
+        }
+      } else if (sumber === 'Pencatatan Swakelola') {
+        const tx = pctSwakelolaMap.get(kodePaket);
+        resolved = resolvePpk(tx?.nip_ppk || rup?.nip_ppk, tx?.nama_ppk || rup?.nama_ppk);
+        if (tx?.tgl_buat_paket) {
+          const ms = new Date(tx.tgl_buat_paket).getTime();
+          if (!Number.isNaN(ms)) sortDateMs = ms;
+        }
+        if (!namaPenyedia || namaPenyedia === '-') namaPenyedia = 'SWAKELOLA';
+      } else {
+        resolved = resolvePpk(rup?.nip_ppk, rup?.nama_ppk);
+      }
+
+      // Sesuai aturan RUP Acuan Excel: jika RUP ada di master RUP harus Terumumkan+Aktif,
+      // jika RUP tidak lagi ada di master (terarsip/hilang) gunakan flag terumumkan=true dengan pagu dari tabel realisasi.
+      const rupTerumumkan = rup ? isRupTerumumkanAktif(rup) : Boolean(kdRup);
+      const rupPagu = rup ? (Number(rup.pagu) || Number(dt.nilai_pagu) || 0) : (Number(dt.nilai_pagu) || 0);
+      const totalNilai = Number(dt.total_nilai) || 0;
+      const nilaiPdn = Number(dt.nilai_pdn) || 0;
+      const nilaiUmk = Number(dt.nilai_umk) || 0;
+
+      const pkt: PpkPacketDetail = {
+        kode_paket: kodePaket,
+        kode_rup: kdRup,
+        nama_paket: dt.nama_paket || rup?.nama_paket || '-',
+        sumber_transaksi: sumber || '-',
+        metode_pengadaan: dt.metode_pengadaan || rup?.metode_pengadaan || '-',
+        jenis_pengadaan: dt.jenis_pengadaan || rup?.jenis_pengadaan || '-',
+        sumber_dana: dt.sumber_dana || '-',
+        nama_penyedia: namaPenyedia || '-',
+        status_paket: dt.status_paket || '-',
+        tahapan_pengadaan: dt.tahapan_pengadaan || '-',
+        tahapan_rekap: mapTahapanRekapFromRealisasi(dt.tahapan_pengadaan, dt.status_paket),
+        total_nilai: totalNilai,
+        nilai_pdn: nilaiPdn,
+        nilai_umk: nilaiUmk,
+        rup_pagu: rupPagu,
+        rup_terumumkan: rupTerumumkan,
+        _sort_date: sortDateMs
+      };
+
+      const group = ensurePpkGroup(resolved, dt.nama_instansi || rup?.nama_klpd, satkerName);
       group.pakets.push(pkt);
-      if (pkt.kode_rup && group.rupMap.has(pkt.kode_rup)) {
-        const rDetail = group.rupMap.get(pkt.kode_rup)!;
+
+      if (kdRup && group.rupMap.has(kdRup)) {
+        const rDetail = group.rupMap.get(kdRup)!;
         rDetail.transaksi_count += 1;
-        rDetail.transaksi_nilai += pkt.total_nilai;
+        rDetail.transaksi_nilai += totalNilai;
       }
-    };
-
-    // 2. Process E-Katalog V6
-    const ekatIgnoredStatuses = new Set(['CANCELLED', 'CANCELLED_ON_NEGOTIATION', 'CANCELLED_ON_REVIEW', 'DRAFT']);
-    for (const item of ekatalogV6) {
-      if (ekatIgnoredStatuses.has(item.status)) continue;
-
-      const kdRup = String(item.rup_code || '');
-      const rup = rupPenyediaMap.get(kdRup) || {};
-      const rmFallback = packetRealisasiFallbackMap.get(String(item.order_id || ''));
-      const resolved = resolvePpk(item.rup_nip_ppk || rup.nip_ppk, item.rup_nama_ppk || rup.nama_ppk);
-      const penyedia = getPenyediaDetails(item.kode_penyedia, '', rmFallback?.nama_penyedia || '');
-
-      const nilai = Number(item.total) || 0;
-      const isPdn = String(item.flag_minikom).toLowerCase() === 'ya' || String(item.flag_minikom).toLowerCase() === 'true';
-      const isUmk = Boolean(
-        (penyedia.status_umkk && penyedia.status_umkk !== 'Non-UMKM' && penyedia.status_umkk !== 'Tidak Diketahui') ||
-        (rmFallback && Number(rmFallback.nilai_umk) > 0)
-      );
-
-      let tahapanRekap: PpkPacketDetail['tahapan_rekap'] = 'kontrak';
-      let tahapanPengadaan = 'Kontrak';
-      if (item.status === 'WAITING_SELLER_CONFIRMATION') {
-        tahapanRekap = 'pemilihan_berlangsung';
-        tahapanPengadaan = 'Pemilihan Berlangsung';
-      } else if (
-        item.status === 'COMPLETED' ||
-        item.status === 'PAYMENT_OUTSIDE_SYSTEM' ||
-        (item.status === 'ON_PROCESS' && item.shipment_status === 'COMPLETED')
-      ) {
-        tahapanRekap = 'selesai';
-        tahapanPengadaan = 'Serah Terima / Selesai';
-      }
-
-      addPacketToPpk(resolved, rup.nama_klpd, getSatkerName(item.kode_satker, item.nama_satker), {
-        kode_paket: String(item.order_id || ''),
-        kode_rup: kdRup,
-        nama_paket: rup.nama_paket || item.rup_name || '-',
-        sumber_transaksi: 'E-Katalog Versi 6.0',
-        metode_pengadaan: rup.metode_pengadaan || 'E-Purchasing',
-        jenis_pengadaan: rup.jenis_pengadaan || '-',
-        sumber_dana: item.funding_source || '-',
-        nama_penyedia: penyedia.nama_penyedia || '-',
-        status_paket: item.status || '-',
-        tahapan_pengadaan: tahapanPengadaan,
-        tahapan_rekap: tahapanRekap,
-        total_nilai: nilai,
-        nilai_pdn: isPdn ? nilai : 0,
-        nilai_umk: isUmk ? nilai : 0,
-        rup_pagu: Number(rup.pagu) || 0,
-        rup_terumumkan: isRupTerumumkanAktif(rup),
-        _sort_date: item.order_date ? new Date(item.order_date).getTime() : 0
-      });
     }
 
-    // 3. Process E-Katalog Archive V5
-    for (const item of ekatalogV5) {
-      const statusStr = String(item.paket_status_str || item.status_paket || '').toLowerCase();
-      if (statusStr.includes('batal')) continue;
-
-      const kdRup = String(item.kd_rup || '');
-      const rup = rupPenyediaMap.get(kdRup) || {};
-      const resolved = resolvePpk(item.ppk_nip || rup.nip_ppk, rup.nama_ppk, item.jabatan_ppk);
-      const penyedia = getPenyediaDetails(item.kd_penyedia, '', '');
-      const nilai = Number(item.total_harga) || 0;
-      const isUmk = Boolean(penyedia.status_umkk && penyedia.status_umkk !== 'Non-UMKM' && penyedia.status_umkk !== 'Tidak Diketahui');
-      const isSelesai = item.paket_status_str === 'Paket Selesai' || item.status_paket === 'selesai' || statusStr.includes('selesai');
-
-      addPacketToPpk(resolved, rup.nama_klpd, getSatkerName(item.satker_id, item.nama_satker), {
-        kode_paket: String(item.kd_paket || item.no_paket || ''),
-        kode_rup: kdRup,
-        nama_paket: item.nama_paket || rup.nama_paket || '-',
-        sumber_transaksi: 'E-Katalog Versi 5.0',
-        metode_pengadaan: rup.metode_pengadaan || 'E-Purchasing',
-        jenis_pengadaan: rup.jenis_pengadaan || '-',
-        sumber_dana: item.nama_sumber_dana || '-',
-        nama_penyedia: penyedia.nama_penyedia || '-',
-        status_paket: isSelesai ? 'COMPLETED' : 'ON PROCESS',
-        tahapan_pengadaan: isSelesai ? 'Serah Terima' : 'Kontrak',
-        tahapan_rekap: isSelesai ? 'selesai' : 'kontrak',
-        total_nilai: nilai,
-        nilai_pdn: nilai,
-        nilai_umk: isUmk ? nilai : 0,
-        rup_pagu: Number(rup.pagu) || 0,
-        rup_terumumkan: isRupTerumumkanAktif(rup),
-        _sort_date: item.tanggal_buat_paket ? new Date(item.tanggal_buat_paket).getTime() : 0
-      });
-    }
-
-    // 4. Process Pencatatan Non-Tender
-    for (const item of pctNonTender) {
-      const statusPaket = String(item.status_nontender_pct_ket || item.status_nontender_pct || '-').toUpperCase();
-      if (statusPaket.includes('BATAL')) continue;
-
-      const kdRup = String(item.kd_rup || '');
-      const rup = rupPenyediaMap.get(kdRup) || {};
-      const resolved = resolvePpk(item.nip_ppk || rup.nip_ppk, item.nama_ppk || rup.nama_ppk);
-      const reals = pctNonTenderRealMap.get(String(item.kd_nontender_pct)) || [];
-
-      let namaPenyedia = '-';
-      let isUmk = Boolean(item.nilai_umk_pct > 0 || rup.status_ukm === 'UKM' || rup.status_ukm === 'Ya');
-      if (reals.length > 0) {
-        const real = reals[0];
-        const p = getPenyediaDetails('', real.npwp_penyedia, real.nama_penyedia);
-        namaPenyedia = p.nama_penyedia || real.nama_penyedia || '-';
-        if (p.status_umkk && p.status_umkk !== 'Non-UMKM') isUmk = true;
-      }
-
-      const realisasiNilai = Number(item.total_realisasi) || 0;
-      const nilai = realisasiNilai || Number(item.pagu) || 0;
-      const isPdn = Boolean(item.nilai_pdn_pct > 0 || rup.status_pdn === 'PDN' || rup.status_pdn === 'Ya');
-      const isSelesai = statusPaket.includes('SELESAI');
-
-      addPacketToPpk(resolved, item.nama_klpd, getSatkerName(item.kd_satker, item.nama_satker), {
-        kode_paket: String(item.kd_nontender_pct || ''),
-        kode_rup: kdRup,
-        nama_paket: item.nama_paket || '-',
-        sumber_transaksi: 'Pencatatan Non Tender',
-        metode_pengadaan: item.mtd_pemilihan || '-',
-        jenis_pengadaan: item.kategori_pengadaan || rup.jenis_pengadaan || '-',
-        sumber_dana: item.sumber_dana || '-',
-        nama_penyedia: namaPenyedia,
-        status_paket: statusPaket,
-        tahapan_pengadaan: statusPaket,
-        tahapan_rekap: isSelesai ? 'selesai' : 'kontrak',
-        total_nilai: nilai,
-        nilai_pdn: isPdn ? nilai : 0,
-        nilai_umk: isUmk ? nilai : 0,
-        rup_pagu: Number(rup.pagu) || 0,
-        rup_terumumkan: isRupTerumumkanAktif(rup),
-        _sort_date: item.tgl_buat_paket ? new Date(item.tgl_buat_paket).getTime() : 0
-      });
-    }
-
-    // 5. Process Non-Tender Pengumuman
-    for (const item of nonTenderPengumuman) {
-      const statusLower = String(item.status_nontender || '').toLowerCase();
-      if (statusLower.includes('batal') || statusLower.includes('gagal')) continue;
-
-      const kdRup = String(item.kd_rup || '');
-      const rup = rupPenyediaMap.get(kdRup) || {};
-      const resolved = resolvePpk(item.nip_ppk || rup.nip_ppk, item.nama_ppk || rup.nama_ppk, item.nip_nama_ppk);
-      const nilai = Number(item.pagu) || Number(item.anggaran_total) || Number(item.hps) || 0;
-      const isPdn = rup.status_pdn === 'PDN' || rup.status_pdn === 'Ya';
-      const isUmk = rup.status_ukm === 'UKM' || rup.status_ukm === 'Ya';
-
-      let tahapanRekap: PpkPacketDetail['tahapan_rekap'] = 'pemilihan_berlangsung';
-      if (item.status_nontender === 'Selesai') tahapanRekap = 'selesai';
-      else if (statusLower.includes('kontrak')) tahapanRekap = 'kontrak';
-
-      addPacketToPpk(resolved, item.nama_klpd, getSatkerName(item.kd_satker, item.nama_satker), {
-        kode_paket: String(item.kd_nontender || ''),
-        kode_rup: kdRup,
-        nama_paket: item.nama_paket || '-',
-        sumber_transaksi: 'Non Tender',
-        metode_pengadaan: item.mtd_pemilihan || '-',
-        jenis_pengadaan: item.jenis_pengadaan || rup.jenis_pengadaan || '-',
-        sumber_dana: item.sumber_dana || '-',
-        nama_penyedia: item.nama_penyedia || item.pemenang || '-',
-        status_paket: String(item.status_nontender || 'BERLANGSUNG').toUpperCase(),
-        tahapan_pengadaan: String(item.status_nontender || 'Pemilihan').toUpperCase(),
-        tahapan_rekap: tahapanRekap,
-        total_nilai: nilai,
-        nilai_pdn: isPdn ? nilai : 0,
-        nilai_umk: isUmk ? nilai : 0,
-        rup_pagu: Number(rup.pagu) || 0,
-        rup_terumumkan: isRupTerumumkanAktif(rup),
-        _sort_date: item.tgl_buat_paket ? new Date(item.tgl_buat_paket).getTime() : 0
-      });
-    }
-
-    // 6. Process Pengumuman Tender
-    for (const item of pengumumanTender) {
-      const statusLower = String(item.status_tender || '').toLowerCase();
-      if (statusLower.includes('batal') || statusLower.includes('gagal')) continue;
-
-      const kdRup = String(item.kd_rup || '');
-      const rup = rupPenyediaMap.get(kdRup) || {};
-      const resolved = resolvePpk(item.nip_ppk || rup.nip_ppk, item.nama_ppk || rup.nama_ppk);
-      const nilai = Number(item.pagu) || Number(item.hps) || 0;
-      const isPdn = rup.status_pdn === 'PDN' || rup.status_pdn === 'Ya';
-      const isUmk = rup.status_ukm === 'UKM' || rup.status_ukm === 'Ya';
-
-      let tahapanRekap: PpkPacketDetail['tahapan_rekap'] = 'pemilihan_berlangsung';
-      if (item.status_tender === 'Selesai') tahapanRekap = 'selesai';
-      else if (statusLower.includes('kontrak')) tahapanRekap = 'kontrak';
-
-      addPacketToPpk(resolved, item.nama_klpd, getSatkerName(item.kd_satker, item.nama_satker), {
-        kode_paket: String(item.kd_tender || ''),
-        kode_rup: kdRup,
-        nama_paket: item.nama_paket || '-',
-        sumber_transaksi: 'Tender',
-        metode_pengadaan: item.mtd_pemilihan || 'Tender',
-        jenis_pengadaan: item.jenis_pengadaan || rup.jenis_pengadaan || '-',
-        sumber_dana: item.sumber_dana || '-',
-        nama_penyedia: '-',
-        status_paket: String(item.status_tender || 'BERLANGSUNG').toUpperCase(),
-        tahapan_pengadaan: String(item.status_tender || 'Pemilihan').toUpperCase(),
-        tahapan_rekap: tahapanRekap,
-        total_nilai: nilai,
-        nilai_pdn: isPdn ? nilai : 0,
-        nilai_umk: isUmk ? nilai : 0,
-        rup_pagu: Number(rup.pagu) || 0,
-        rup_terumumkan: isRupTerumumkanAktif(rup),
-        _sort_date: item.tgl_buat_paket ? new Date(item.tgl_buat_paket).getTime() : 0
-      });
-    }
-
-    // 7. Process Pencatatan Swakelola
-    for (const item of pctSwakelola) {
-      const statusPaket = String(item.status_swakelola_pct_ket || item.status_swakelola_pct || '-').toUpperCase();
-      if (statusPaket.includes('BATAL')) continue;
-
-      const kdRup = String(item.kd_rup || '');
-      const rup = rupSwakelolaMap.get(kdRup) || {};
-      const resolved = resolvePpk(item.nip_ppk || rup.nip_ppk, item.nama_ppk || rup.nama_ppk);
-      const realisasiNilai = Number(item.total_realisasi) || 0;
-      const nilai = realisasiNilai || Number(item.pagu) || 0;
-      const isPdn = Boolean(item.nilai_pdn_pct > 0 || rup.status_pdn === 'PDN' || rup.status_pdn === 'Ya');
-      const isSelesai = statusPaket.includes('SELESAI');
-
-      addPacketToPpk(resolved, item.nama_klpd, getSatkerName(item.kd_satker, item.nama_satker), {
-        kode_paket: String(item.kd_swakelola_pct || ''),
-        kode_rup: kdRup,
-        nama_paket: item.nama_paket || '-',
-        sumber_transaksi: 'Pencatatan Swakelola',
-        metode_pengadaan: 'Swakelola',
-        jenis_pengadaan: item.tipe_swakelola_nama || item.tipe_swakelola || 'Swakelola',
-        sumber_dana: item.sumber_dana || '-',
-        nama_penyedia: 'SWAKELOLA',
-        status_paket: statusPaket,
-        tahapan_pengadaan: statusPaket,
-        tahapan_rekap: isSelesai ? 'selesai' : 'kontrak',
-        total_nilai: nilai,
-        nilai_pdn: isPdn ? nilai : 0,
-        nilai_umk: 0,
-        rup_pagu: Number(rup.pagu) || 0,
-        rup_terumumkan: isRupTerumumkanAktif(rup),
-        _sort_date: item.tgl_buat_paket ? new Date(item.tgl_buat_paket).getTime() : 0
-      });
-    }
-
-    // Build final merged array per PPK
+    // Build final merged array per PPK (default top-level metrics = E-Katalog Acuan Standar, while storing all packets in detail_paket_list)
     const anomalies: string[] = [];
     let ppkCompletedCount = 0;
     let ppkIncompleteCount = 0;
-    let totalPakets = 0;
+    let totalPaketsAll = 0;
+    let totalPaketsAcuan = 0;
 
     const mergedData = Array.from(ppkGroups.values()).map(g => {
       const rupList = Array.from(g.rupMap.values()).sort((a, b) => b.pagu - a.pagu);
-      const paketsSorted = g.pakets.sort((a, b) => b._sort_date - a._sort_date);
-      totalPakets += paketsSorted.length;
+      const allPaketsSorted = [...g.pakets].sort((a, b) => b._sort_date - a._sort_date);
+      const acuanPaketsSorted = allPaketsSorted.filter(p => p.sumber_transaksi === DEFAULT_ACUAN_SUMBER);
+
+      totalPaketsAll += allPaketsSorted.length;
+      totalPaketsAcuan += acuanPaketsSorted.length;
 
       if (g.profile.is_ppk_completed) {
         ppkCompletedCount++;
       } else if (g.profile.ppk_key !== 'UNASSIGNED') {
         ppkIncompleteCount++;
-        anomalies.push(`PPK "${g.profile.nip_nama_masked}" belum dilengkapi di Master PPK (${paketsSorted.length} paket, ${rupList.length} RUP)`);
+        anomalies.push(`PPK "${g.profile.nama || g.profile.nip_nama_masked}" belum dilengkapi di Master PPK (${acuanPaketsSorted.length} paket acuan)`);
       } else {
-        anomalies.push(`${paketsSorted.length} paket transaksi tidak memiliki atribut PPK di data sumber`);
+        anomalies.push(`${allPaketsSorted.length} paket transaksi tidak memiliki atribut PPK di data sumber`);
       }
 
-      return aggregatePpkMetrics(g.profile, rupList, paketsSorted, g.rupMap);
+      const aggregated = aggregatePpkMetrics(g.profile, rupList, acuanPaketsSorted, g.rupMap);
+      // Simpan seluruh paket (termasuk non-E-Katalog) untuk kebutuhan toggle/filter dinamis di API
+      aggregated.detail_paket_list = allPaketsSorted;
+      return aggregated;
     });
 
-    // Sort descending by total_nilai_transaksi then total_rup_terumumkan_nilai
+    // Sort descending by total_nilai_realisasi then total_rup_terumumkan_nilai
     mergedData.sort((a, b) =>
-      (b.total_nilai_transaksi - a.total_nilai_transaksi) ||
+      (b.total_nilai_realisasi - a.total_nilai_realisasi) ||
       (b.total_rup_terumumkan_nilai - a.total_rup_terumumkan_nilai)
     );
 
@@ -903,8 +973,10 @@ export const runRekapPpkMerge = async (
     await fs.writeFile(outputPath, JSON.stringify(mergedData, null, 2), 'utf-8');
 
     rekapPpkCache[`rekap_ppk_enriched_${tahun}`] = mergedData;
+    rekapPpkBuildMtime[`rekap_ppk_enriched_${tahun}`] = Date.now();
 
     const totalSourceRecords =
+      dashboardRealisasi.length +
       rupPenyedia.length +
       rupSwakelola.length +
       ekatalogV6.length +
@@ -926,8 +998,10 @@ export const runRekapPpkMerge = async (
       records_output: mergedData.length,
       ppk_matched: ppkCompletedCount,
       ppk_unmatched: ppkIncompleteCount,
-      total_pakets: totalPakets,
+      total_pakets: totalPaketsAcuan,
+      total_pakets_all: totalPaketsAll,
       sources: {
+        dashboard_realisasi: { found: dashboardRealisasi.length > 0, count: dashboardRealisasi.length },
         rup_penyedia: { found: rupPenyedia.length > 0, count: rupPenyedia.length },
         ekatalog_v6: { found: ekatalogV6.length > 0, count: ekatalogV6.length },
         non_tender: { found: nonTenderPengumuman.length > 0, count: nonTenderPengumuman.length },
@@ -940,13 +1014,14 @@ export const runRekapPpkMerge = async (
         total_ppk: mergedData.length,
         ppk_completed: ppkCompletedCount,
         ppk_incomplete: ppkIncompleteCount,
-        total_pakets: totalPakets
+        total_pakets: totalPaketsAcuan,
+        total_pakets_all: totalPaketsAll
       },
       anomalies
     };
 
     if (appendHistoryFn) await appendHistoryFn(result);
-    console.log(`[Merge Rekap PPK] Selesai: ${mergedData.length} PPK (${totalPakets} paket) dalam ${result.duration_ms}ms (trigger: ${trigger})`);
+    console.log(`[Merge Rekap PPK] Selesai: ${mergedData.length} PPK (${totalPaketsAcuan} paket acuan / ${totalPaketsAll} total realisasi) dalam ${result.duration_ms}ms (trigger: ${trigger})`);
     return result;
   } catch (error: any) {
     console.error('[Merge Rekap PPK] Error:', error);
@@ -971,31 +1046,49 @@ export const loadRekapPpkMergedData = async (
   appendHistoryFn?: (entry: any) => Promise<void>
 ): Promise<any[]> => {
   const cacheKey = `rekap_ppk_enriched_${tahun}`;
-  if (rekapPpkCache[cacheKey]) return rekapPpkCache[cacheKey];
-
   const filePath = path.resolve(mergedDir, `rekap-ppk-enriched_${tahun}.json`);
-  const data = await readJsonSafe(filePath);
-  if (data && Array.isArray(data) && data.length > 0) {
-    // Auto-refresh once per session if disk file has masked PPKs despite enriched/master data potentially resolving them
-    const hasUnresolvedMaskedPpk = data.some((d: any) => d.ppk_key !== 'UNASSIGNED' && !d.is_ppk_completed);
-    if (hasUnresolvedMaskedPpk && !autoRefreshedYears.has(tahun)) {
-      autoRefreshedYears.add(tahun);
-      await runRekapPpkMerge(tahun, 'auto_ppk_refresh', appendHistoryFn);
-      const refreshed = await readJsonSafe(filePath);
-      if (refreshed && Array.isArray(refreshed) && refreshed.length > 0) {
-        rekapPpkCache[cacheKey] = refreshed;
-        return refreshed;
-      }
+  const latestSrcMtime = await getLatestSourceMtime(tahun);
+
+  // Cek apakah RAM cache masih fresh terhadap file sumber terbaru (dari cron / manual sync)
+  if (rekapPpkCache[cacheKey] && rekapPpkCache[cacheKey].length > 0) {
+    const cachedAt = rekapPpkBuildMtime[cacheKey] || 0;
+    if (latestSrcMtime <= cachedAt && rekapPpkCache[cacheKey][0]?._schema_version === REKAP_PPK_SCHEMA_VERSION) {
+      return rekapPpkCache[cacheKey];
     }
-    rekapPpkCache[cacheKey] = data;
-    return data;
   }
 
-  // Auto-generate if missing
-  await runRekapPpkMerge(tahun, 'auto', appendHistoryFn);
-  const generated = await readJsonSafe(filePath);
+  let needsRegenerate = false;
+  let diskMtime = 0;
+  try {
+    const outStat = await fs.stat(filePath);
+    diskMtime = outStat.mtimeMs;
+    if (latestSrcMtime > diskMtime) {
+      needsRegenerate = true;
+    }
+  } catch {
+    needsRegenerate = true;
+  }
+
+  if (!needsRegenerate) {
+    const data = await readJsonRawSafe<any[]>(filePath);
+    if (
+      data &&
+      Array.isArray(data) &&
+      data.length > 0 &&
+      data[0]?._schema_version === REKAP_PPK_SCHEMA_VERSION
+    ) {
+      rekapPpkCache[cacheKey] = data;
+      rekapPpkBuildMtime[cacheKey] = diskMtime || Date.now();
+      return data;
+    }
+  }
+
+  // Auto-generate atau rebuild otomatis saat skema baru / data sumber diperbarui cron job
+  await runRekapPpkMerge(tahun, 'auto_sync_refresh', appendHistoryFn);
+  const generated = await readJsonRawSafe<any[]>(filePath);
   if (generated && Array.isArray(generated)) {
     rekapPpkCache[cacheKey] = generated;
+    rekapPpkBuildMtime[cacheKey] = Date.now();
     return generated;
   }
   return [];

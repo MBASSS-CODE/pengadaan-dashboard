@@ -1,5 +1,4 @@
-import { getRealisasiMasterMergeStatus } from '../../utils/realisasiMasterMerge';
-import { checkMergePrerequisites } from '../../utils/mergeManager';
+import { getRealisasiMasterMergeStatus, checkRealisasiMasterPrerequisites } from '../../utils/realisasiMasterMerge';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -7,7 +6,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const statusData = await getRealisasiMasterMergeStatus(tahun);
-    const prereq = await checkMergePrerequisites(tahun);
+    const prereq = await checkRealisasiMasterPrerequisites(tahun);
 
     return {
       success: true,

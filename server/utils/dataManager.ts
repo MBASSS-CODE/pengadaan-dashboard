@@ -1,3 +1,4 @@
+import { getDataDir } from './dataDir';
 import fs from 'fs/promises';
 import path from 'path';
 import { isMergeSourceEndpoint, triggerAutoMerge } from './mergeManager';
@@ -70,8 +71,8 @@ const fetchWithRetry = async (url: string, options: any = {}, context: string = 
         `[${new Date().toLocaleString('id-ID')}] [${context}] Percobaan ${attempt}/${MAX_RETRIES} gagal [${errorType}]: ${error.message || error}`
       );
 
-      // Jangan retry jika error bukan timeout/network (misal: 401 Unauthorized, 404 Not Found)
-      if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
+      // Jangan retry jika error client permanen (4xx), kecuali 408 (Request Timeout) & 429 (Too Many Requests / Rate Limit)
+      if (error.statusCode && error.statusCode >= 400 && error.statusCode < 500 && error.statusCode !== 408 && error.statusCode !== 429) {
         console.error(`[${new Date().toLocaleString('id-ID')}] [${context}] Client error ${error.statusCode}, tidak akan di-retry.`);
         throw error;
       }
@@ -95,7 +96,7 @@ const fetchWithRetry = async (url: string, options: any = {}, context: string = 
  */
 export const syncEndpointData = async (group: string, endpoint: string, tahun: string, extraParams: any = {}) => {
   // Khusus grup dashboard profil-precomputed, alihkan ke syncDashboardPrecomputed
-  if (group === 'dashboard' && (endpoint === 'profil-precomputed' || endpoint === 'profil/precomputed')) {
+  if (group === 'dashboard' && endpoint === 'profil-precomputed') {
     const res = await syncDashboardPrecomputed(tahun);
     return [{ success: true, count: res.count }];
   }
@@ -103,26 +104,37 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
   const config = useRuntimeConfig();
   const token = config.apiDataToken;
   const kodeKlpd = config.apiDataKodeKlpd || 'K22';
+  const apiJenis = config.apiDataJenis || '1';
 
   let hasMore = true;
   let cursor = "";
   let allData: any[] = [];
+  let pageCount = 0;
+  const seenCursors = new Set<string>();
 
-  let fetchSuccess = false;
+  let fetchComplete = false;
   let lastError: any = null;
 
   console.log(`[${new Date().toLocaleString('id-ID')}] Starting sync for ${group}/${endpoint}...`);
 
   while (hasMore) {
     try {
+      pageCount++;
       // Menyusun param untuk log agar Anda bisa melihat URL aslinya
       const requestParams: any = {
-        tahun,
-        ...extraParams
+        tahun
       };
 
-      // Pastikan kode_klpd dan kd_klpd tersedia jika relevan
-      if (endpoint !== 'realisasi/penyedia/per-sumber') {
+      if (group === 'dashboard') {
+        const instansiVal = extraParams?.instansi || extraParams?.kd_klpd || extraParams?.kode_klpd || kodeKlpd;
+        requestParams.instansi = instansiVal;
+
+        // Semua endpoint dashboard memerlukan parameter jenis, kecuali realisasi/penyedia/per-sumber
+        if (endpoint !== 'realisasi/penyedia/per-sumber') {
+          requestParams.jenis = extraParams?.jenis || apiJenis;
+        }
+      } else {
+        Object.assign(requestParams, extraParams);
         const klpdVal = requestParams.kd_klpd || requestParams.kode_klpd || kodeKlpd;
         requestParams.kd_klpd = klpdVal;
         requestParams.kode_klpd = klpdVal;
@@ -133,7 +145,7 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
       const queryString = new URLSearchParams(requestParams).toString();
       const targetUrl = `${BASE_URL}/${group}/${endpoint}?${queryString}`;
       
-      console.log(`[${new Date().toLocaleString('id-ID')}] [Backend API Hit] Menghubungi: ${targetUrl}`);
+      console.log(`[${new Date().toLocaleString('id-ID')}] [Backend API Hit] (Page ${pageCount}) Menghubungi: ${targetUrl}`);
 
       const response: any = await fetchWithRetry(`/${group}/${endpoint}`, {
         baseURL: BASE_URL,
@@ -147,26 +159,36 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
           ...requestParams,
           cursor: cursor || undefined // Send undefined if empty so it doesn't appear in query
         }
-      }, `sync:${group}/${endpoint}`);
+      }, `sync:${group}/${endpoint}:p${pageCount}`);
       
-      console.log(`[${new Date().toLocaleString('id-ID')}] [Backend API Response] Data diterima dari ${endpoint}:`, JSON.stringify(response, null, 2).substring(0, 1000) + '... (terpotong agar terminal tidak penuh)');
-
-      fetchSuccess = true;
+      if (pageCount === 1) {
+        console.log(`[${new Date().toLocaleString('id-ID')}] [Backend API Response] Data diterima dari ${endpoint}:`, JSON.stringify(response, null, 2).substring(0, 1000) + '... (terpotong agar terminal tidak penuh)');
+      }
 
       // Adjust based on the actual API structure (mendukung array, single summary object, pagination result)
       let items: any[] = [];
+      const primaryData = (
+        response?.data &&
+        typeof response.data === 'object' &&
+        !Array.isArray(response.data) &&
+        response.data.data !== undefined &&
+        Object.keys(response.data).every((k) => ['data', 'meta', 'success', 'message', 'status'].includes(k))
+      )
+        ? response.data.data
+        : response?.data;
+
       if (Array.isArray(response)) {
         items = response;
-      } else if (Array.isArray(response.data)) {
-        items = response.data;
+      } else if (Array.isArray(primaryData)) {
+        items = primaryData;
       } else if (Array.isArray(response.list)) {
         items = response.list;
       } else if (Array.isArray(response.result)) {
         items = response.result;
       } else if (Array.isArray(response.rows)) {
         items = response.rows;
-      } else if (response.data && typeof response.data === 'object') {
-        items = [response.data];
+      } else if (primaryData && typeof primaryData === 'object') {
+        items = [primaryData];
       } else if (response && typeof response === 'object') {
         const cleanObj = { ...response };
         delete cleanObj.meta;
@@ -180,38 +202,46 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
 
       allData = [...allData, ...items];
 
-      // Check has_more logic, supporting meta object from new API standard
-      const isHasMore = response.meta?.has_more ?? response.has_more;
+      // Check has_more logic across root and nested meta objects
+      const metaObj = response?.meta ?? response?.data?.meta ?? response?.pagination;
+      const isHasMore = metaObj?.has_more ?? response?.has_more;
+      const nextCursor = metaObj?.cursor || metaObj?.next_cursor || response?.next_cursor || response?.cursor || '';
       
       if (isHasMore === false || isHasMore === 'false') {
         hasMore = false;
+        fetchComplete = true;
+      } else if (!nextCursor) {
+        // Tidak ada cursor lanjutan -> pagination selesai
+        hasMore = false;
+        fetchComplete = true;
+      } else if (seenCursors.has(String(nextCursor))) {
+        console.warn(`[${new Date().toLocaleString('id-ID')}] [Pagination Guard] Cursor berulang terdeteksi untuk ${group}/${endpoint}, menghentikan loop.`);
+        hasMore = false;
+        fetchComplete = true;
       } else {
-        // Retrieve the next cursor
-        cursor = response.meta?.cursor || response.next_cursor || response.cursor;
-        if (!cursor) {
-          // Fallback to prevent infinite loop if has_more is true but no cursor is returned
-          hasMore = false; 
-        }
+        seenCursors.add(String(nextCursor));
+        cursor = String(nextCursor);
+        // Jeda singkat antar halaman untuk menghindari rate-limit INAPROC
+        await sleep(120);
       }
     } catch (error: any) {
-      console.error(`[${new Date().toLocaleString('id-ID')}] Error fetching data for ${group}/${endpoint}:`, error);
+      console.error(`[${new Date().toLocaleString('id-ID')}] Error fetching data for ${group}/${endpoint} (page ${pageCount}):`, error);
       lastError = error;
-      hasMore = false; // Stop loop on error
+      hasMore = false;
+      fetchComplete = false;
     }
   }
 
-  // Only write to file if at least one fetch succeeded, to avoid wiping out cache with empty arrays
-  if (fetchSuccess) {
-    // Ensure directory exists
-    const dirPath = path.resolve(process.cwd(), `server/data/${group}`);
-    // Tambahkan tahun ke nama file agar tidak bentrok
-    const filePath = path.resolve(dirPath, `${endpoint}_${tahun}.json`);
-    
+  const dirPath = path.resolve(getDataDir(), `${group}`);
+  const filePath = path.resolve(dirPath, `${endpoint}_${tahun}.json`);
+
+  // Hanya timpa cache disk & RAM jika SELURUH halaman cursor selesai tanpa error.
+  // Mencegah bug terpotong menjadi 100 baris apabila halaman ke-2+ mengalami error/timeout.
+  if (fetchComplete && !lastError) {
     try {
       await fs.mkdir(path.dirname(filePath), { recursive: true });
-      // Write to JSON file
       await fs.writeFile(filePath, JSON.stringify(allData, null, 2), 'utf-8');
-      console.log(`[${new Date().toLocaleString('id-ID')}] Successfully synced ${allData.length} records to ${filePath}`);
+      console.log(`[${new Date().toLocaleString('id-ID')}] Successfully synced ${allData.length} records (${pageCount} pages) to ${filePath}`);
     } catch (fsError) {
       console.warn(`[${new Date().toLocaleString('id-ID')}] Could not write cache to file in production:`, fsError);
     }
@@ -232,19 +262,17 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
         console.error(`[${new Date().toLocaleString('id-ID')}] [DataManager] Gagal memicu ekstraksi penyedia:`, err);
       });
     }
-  } else if (allData.length === 0 && lastError) {
-    // Jika gagal fetch ke INAPROC (misal IP ditolak / timeout), coba gunakan cache lokal jika ada
-    const dirPath = path.resolve(process.cwd(), `server/data/${group}`);
-    const filePath = path.resolve(dirPath, `${endpoint}_${tahun}.json`);
-    try {
-      const fileData = await fs.readFile(filePath, 'utf-8');
-      const parsedData = JSON.parse(fileData);
-      console.warn(`[${new Date().toLocaleString('id-ID')}] [Fallback Cache] Memakai data cache tersimpan untuk ${group}/${endpoint} karena koneksi ke API gagal`);
-      return parsedData;
-    } catch (_) {
-      const errMsg = lastError?.data?.error || lastError?.message || 'Gagal terhubung ke API INAPROC';
-      throw new Error(`[INAPROC API Error] ${errMsg}`);
-    }
+
+    return allData;
+  }
+
+  // Jika pagination gagal di tengah jalan (misal di page 2 setelah 100 data), pertahankan cache lengkap lama
+  if (lastError) {
+    console.warn(
+      `[${new Date().toLocaleString('id-ID')}] [Partial Sync Guard] Sinkronisasi ${group}/${endpoint} terhenti di halaman ${pageCount} (terkumpul ${allData.length} data parsial). Cache lama dipertahankan agar data tidak terpotong.`
+    );
+    const errMsg = lastError?.data?.error || lastError?.message || 'Gagal terhubung ke API INAPROC';
+    throw new Error(`[INAPROC API Error] ${errMsg}`);
   }
 
   return allData;
@@ -255,7 +283,7 @@ export const syncEndpointData = async (group: string, endpoint: string, tahun: s
  */
 export const getEndpointData = async (group: string, endpoint: string, tahun: string, extraParams: any = {}, forceRefresh: boolean = false) => {
   const cacheKey = `${group}_${endpoint}_${tahun}`;
-  const dirPath = path.resolve(process.cwd(), `server/data/${group}`);
+  const dirPath = path.resolve(getDataDir(), `${group}`);
   const filePath = path.resolve(dirPath, `${endpoint}_${tahun}.json`);
   
   if (!forceRefresh) {
@@ -276,9 +304,9 @@ export const getEndpointData = async (group: string, endpoint: string, tahun: st
       
       return parsedData;
     } catch (error: any) {
-      if (group === 'dashboard' && (endpoint === 'profil/precomputed' || endpoint === 'profil-precomputed')) {
+      if (group === 'dashboard' && endpoint === 'profil-precomputed') {
         try {
-          const fallbackData = await getDashboardPrecomputed(tahun, 'K22');
+          const fallbackData = await getDashboardPrecomputed(tahun, useRuntimeConfig().apiDataKodeKlpd || 'K22');
           if (fallbackData) {
             const arr = Array.isArray(fallbackData) ? fallbackData : [fallbackData];
             memoryCache[cacheKey] = arr;
@@ -369,7 +397,7 @@ export const getDashboardPrecomputed = async (tahun: string, instansi: string, j
     const token = config.apiDataToken;
 
     const response: any = await fetchWithRetry('https://data.inaproc.id/api/v1/dashboard/profil/precomputed', {
-      params: { tahun, instansi, jenis, view, eselon, satker },
+      params: { tahun, instansi, jenis: jenis || config.apiDataJenis || '1', view, eselon, satker },
       headers: {
         'Authorization': `Bearer ${token}`,
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -402,6 +430,7 @@ export const syncDashboardPrecomputed = async (tahun: string, instansiParam?: st
   const config = useRuntimeConfig();
   const token = config.apiDataToken;
   const instansi = instansiParam || config.apiDataKodeKlpd || 'K22';
+  const jenis = config.apiDataJenis || '1';
   const dirPath = path.resolve(process.cwd(), 'server/data');
 
   console.log(`[${new Date().toLocaleString('id-ID')}] [Dashboard Sync] Memulai sinkronisasi precomputed data untuk ${tahun} - ${instansi}...`);
@@ -410,15 +439,15 @@ export const syncDashboardPrecomputed = async (tahun: string, instansiParam?: st
   const targets = [
     // 1. Publik / Instansi aggregate
     {
-      params: { tahun, instansi, jenis: '1', view: 'Nilai' },
+      params: { tahun, instansi, jenis, view: 'Nilai' },
       filePath: getPrecomputedFilePath(dirPath, tahun, instansi),
-      cacheKeyPrefix: `dashboard_precomputed_${tahun}_${instansi}_1_Nilai`
+      cacheKeyPrefix: `dashboard_precomputed_${tahun}_${instansi}_${jenis}_Nilai`
     },
     // 2. Satker internal (427950)
     {
-      params: { tahun, instansi, jenis: '1', eselon: '00', satker: '427950' },
+      params: { tahun, instansi, jenis, eselon: '00', satker: '427950' },
       filePath: getPrecomputedFilePath(dirPath, tahun, instansi, '427950'),
-      cacheKeyPrefix: `dashboard_precomputed_${tahun}_${instansi}_1_undefined_00_427950`
+      cacheKeyPrefix: `dashboard_precomputed_${tahun}_${instansi}_${jenis}_undefined_00_427950`
     }
   ];
 
@@ -464,7 +493,7 @@ export const syncDashboardPrecomputed = async (tahun: string, instansiParam?: st
  * Get overall system statistics for cache and JSON storage
  */
 export const getSystemStats = async () => {
-  const dirPath = path.resolve(process.cwd(), 'server/data');
+  const dirPath = getDataDir();
   
   let totalFiles = 0;
   let totalSize = 0;
