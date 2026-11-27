@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { isMergeSourceEndpoint, triggerAutoMerge } from './mergeManager';
 import { extractAndSavePenyedia } from './penyediaManager';
+import { inaprocFetch } from './inaprocFetch';
 
 // In-memory cache
 const memoryCache: Record<string, any> = {};
@@ -49,9 +50,9 @@ const fetchWithRetry = async (url: string, options: any = {}, context: string = 
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const response = await $fetch(url, {
+      const response = await inaprocFetch(url, {
         ...options,
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+        timeoutMs: FETCH_TIMEOUT_MS,
       });
 
       // Validate: pastikan response bukan HTML timeout page
