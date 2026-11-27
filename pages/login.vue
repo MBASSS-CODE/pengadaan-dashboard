@@ -221,7 +221,9 @@ const handleLogin = async () => {
       userRole.value = response.user.role;
       const userName = useCookie('user_name');
       userName.value = response.user.username;
-      router.push('/dashboard');
+      const mustChangePassword = useCookie('must_change_password');
+      mustChangePassword.value = response.mustChangePassword ? 'true' : null;
+      router.push(response.mustChangePassword ? '/change-password' : '/dashboard');
     }
   } catch (error) {
     errorMessage.value = error.data?.statusMessage || 'Username atau password salah';

@@ -87,13 +87,14 @@ Konfigurasi runtime dibaca di `nuxt.config.ts` (`runtimeConfig`) dan langsung da
 | `DB_HOST_PROD`, `DB_USER_PROD`, `DB_PASSWORD_PROD`, `DB_NAME_PROD` | Kredensial MariaDB saat `NODE_ENV === 'production'` | `server/utils/db.ts` |
 | `INAPROC_PROXY_URL` | URL SOCKS5 proxy lokal untuk routing request API INAPROC lewat SSH tunnel (contoh: `socks5://127.0.0.1:10808`). **Jangan diaktifkan di production Hostinger.** | `server/utils/inaprocFetch.ts` |
 | `USE_DEMO_DATA` | Jika `'true'`, memakai folder `server/data_demo` alih-alih `server/data` | `server/utils/dataDir.ts`, `penyediaManager.ts`, `ppkManager.ts` |
+| `DEFAULT_DEV_USERNAME`, `DEFAULT_DEV_PASSWORD` | Kredensial akun bootstrap awal role `developer` (default: `developer` / `developer123`, wajib diganti saat login pertama) | `server/utils/userManager.ts`, `login.post.ts`, `change-password.post.ts` |
 
 ### C. Skema Database MariaDB (`server/utils/db.ts`)
 Tabel otomatis dibuat oleh fungsi `initDB()` jika belum ada:
 
 1. **`users`** (dikelola oleh `server/utils/userManager.ts`):
-   * `id` (`VARCHAR(255) PK`), `username` (`VARCHAR(255) UNIQUE`), `passwordHash` (`VARCHAR(255)`), `role` (`VARCHAR(50)`).
-   * *Catatan:* Jika tabel kosong saat startup, `ensureDefaultUser()` otomatis membuat akun default `admin`.
+   * `id` (`VARCHAR(255) PK`), `username` (`VARCHAR(255) UNIQUE`), `passwordHash` (`VARCHAR(255)`), `role` (`VARCHAR(50)`: `developer` \| `admin` \| `user`), `must_change_password` (`TINYINT(1)`).
+   * *Catatan:* Saat startup, `ensureDefaultUser()` otomatis membuat akun `admin` jika tabel kosong dan akun `developer` awal (dengan `must_change_password = 1`) jika belum ada user ber-role `developer`. Saat login dengan password default, pengguna wajib menggantinya di `/change-password`.
 2. **`ppk_master`** (dikelola oleh `server/utils/ppkManager.ts`):
    * `id` (`INT AUTO_INCREMENT PK`), `nip_nama_masked` (`VARCHAR(255) UNIQUE`), `nama_lengkap`, `nip_asli`, `jabatan`, `unit_kerja`, `telepon`, `email`, `created_at`, `updated_at`.
    * Digunakan untuk melengkapi nama/NIP PPK yang di-masking oleh API INAPROC.
@@ -149,7 +150,7 @@ server/data/
 ### B. Lokasi File Logic Backend (`server/`)
 * **`server/plugins/cron.ts`:** Inisialisasi startup (`loadEndpointsConfig()`, `reloadCronJob()`), serta memicu `triggerSyncAll()` otomatis jika data wajib tahun berjalan belum tersedia.
 * **`server/plugins/initMergeRealisasi.ts`:** Otomatis menjalankan `executeRealisasiMasterMerge(currentYear, 'startup')` di latar belakang saat server menyala.
-* **`server/middleware/auth.ts`:** Penjaga seluruh rute `/api/*` (validasi JWT cookie `auth_token`, kecuali daftar `publicApiPaths`).
+* **`server/middleware/auth.ts`:** Penjaga seluruh rute `/api/*` (validasi JWT cookie `auth_token`, penegakan ganti password default `mustChangePassword`, serta RBAC role `developer`/`admin`/`user`, kecuali daftar `publicApiPaths`).
 * **`server/utils/`:**
   * `dataManager.ts`: Penarikan API INAPROC, retry/timeout, 3-tier cache, dan dashboard precomputed.
   * `cronManager.ts`: Master `endpointRegistry`, penjadwalan `node-cron`, logging, dan konfigurasi endpoint aktif.
@@ -164,9 +165,10 @@ server/data/
 * **`pages/rup/`, `pages/tender/`, `pages/ekatalog/`:** Halaman penampil **raw data** murni dari API.
 * **`pages/summary-table/`:** Halaman penampil **enriched / merged data** lengkap dengan analitik & dialog detail (komponen di `components/summary-table/`).
 * **`pages/admin/`:** Halaman administrasi: `system.vue` (cron, sync, backup/import, toggle endpoint), `data-merge.vue` (kontrol merge manual & log anomali via komponen `components/admin/Merge*.vue`), `ppk-master.vue`, `penyedia-master.vue`.
-* **`pages/users/index.vue`:** Manajemen pengguna (khusus role `admin`).
-* **`components/layout/menu.ts` & `layouts/default.vue`:** Konfigurasi navigasi sidebar dan pengecekan `endpointActive`.
-* **`middleware/auth.global.ts`:** Guard navigasi sisi client berdasarkan cookie `is_logged_in` dan `user_role`.
+* **`pages/users/index.vue`:** Manajemen pengguna (role `admin` dan `developer`; hanya `developer` yang dapat melihat, membuat, mengedit, atau menghapus akun `developer`).
+* **`pages/change-password.vue`:** Halaman wajib ganti password ketika akun `developer` terdeteksi masih memakai password default.
+* **`components/layout/menu.ts` & `layouts/default.vue`:** Konfigurasi navigasi sidebar berbasis `allowedRoles` (`developer`, `admin`, `user`) dan pengecekan `endpointActive`.
+* **`middleware/auth.global.ts`:** Guard navigasi sisi client berdasarkan cookie `is_logged_in`, `user_role`, dan `must_change_password` (memblokir akses DATA API & `/admin/system` bagi non-developer).
 
 ---
 

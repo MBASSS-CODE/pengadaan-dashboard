@@ -21,10 +21,12 @@
           <tbody>
             <tr v-for="user in users" :key="user.id">
               <td>{{ user.username }}</td>
-              <td><span class="role-badge">{{ user.role }}</span></td>
+              <td><span class="role-badge" :class="`role-${user.role}`">{{ user.role }}</span></td>
               <td class="action-column">
-                <MazBtn size="sm" color="info" @click="editUser(user)" class="btn-action">Edit</MazBtn>
-                <MazBtn size="sm" color="danger" @click="confirmDelete(user)" class="btn-action">Hapus</MazBtn>
+                <template v-if="user.role !== 'developer' || isCurrentUserDeveloper">
+                  <MazBtn size="sm" color="info" @click="editUser(user)" class="btn-action">Edit</MazBtn>
+                  <MazBtn size="sm" color="danger" @click="confirmDelete(user)" class="btn-action">Hapus</MazBtn>
+                </template>
               </td>
             </tr>
             <tr v-if="users.length === 0">
@@ -53,6 +55,7 @@
         <div class="form-group">
           <label class="form-label">Role</label>
           <select v-model="userForm.role" class="form-select">
+            <option v-if="isCurrentUserDeveloper" value="developer">Developer</option>
             <option value="admin">Administrator</option>
             <option value="user">User Biasa</option>
           </select>
@@ -68,14 +71,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { isDeveloper } from '~/shared/utils/roles';
+
+const currentUserRole = useCookie('user_role');
+const isCurrentUserDeveloper = computed(() => isDeveloper(currentUserRole.value));
 
 const users = ref([]);
 const loading = ref(true);
 const userDialog = ref(false);
-const userForm = ref({});
+const userForm = ref({ role: 'user' });
 const submitted = ref(false);
-const router = useRouter();
 
 const loadUsers = async () => {
   loading.value = true;
@@ -93,7 +99,7 @@ const loadUsers = async () => {
 };
 
 const openNew = () => {
-  userForm.value = {};
+  userForm.value = { role: 'user' };
   submitted.value = false;
   userDialog.value = true;
 };
@@ -237,6 +243,16 @@ onMounted(() => loadUsers());
   border-radius: 2rem;
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+.role-badge.role-developer {
+  background-color: rgba(139, 92, 246, 0.16);
+  color: #7c3aed;
+}
+
+.role-badge.role-user {
+  background-color: hsl(var(--maz-foreground) / 10%);
+  color: hsl(var(--maz-muted));
 }
 
 .empty-state {

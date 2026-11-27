@@ -1,6 +1,6 @@
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { findUserByUsername } from '../../utils/userManager';
+import { findUserByUsername, getDefaultDevCredentials } from '../../utils/userManager';
+import { issueAuthSessionCookies } from '../../utils/authSession';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -20,33 +20,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'Username atau password salah' });
   }
 
-  const config = useRuntimeConfig();
-  
-  // Create JWT token
-  const token = jwt.sign(
-    { id: user.id, username: user.username, role: user.role }, 
-    config.jwtSecret || 'default_secret_key_change_me',
-    { expiresIn: '1d' }
-  );
+  const devCreds = getDefaultDevCredentials();
+  const mustChangePassword =
+    user.role === 'developer' &&
+    (Boolean(user.must_change_password) || bcrypt.compareSync(devCreds.password, user.passwordHash));
 
-  // Set HTTP Only Cookie untuk keamanan backend
-  setCookie(event, 'auth_token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 // 1 day
-  });
-
-  // Set Public Cookie penanda untuk middleware Vue frontend (karena JWT HttpOnly tidak terbaca JS)
-  setCookie(event, 'is_logged_in', 'true', {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 
-  });
+  issueAuthSessionCookies(event, user, mustChangePassword);
 
   return {
     success: true,
+    mustChangePassword,
     user: {
       id: user.id,
       username: user.username,

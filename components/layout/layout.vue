@@ -18,7 +18,7 @@
                 <!-- Menu tanpa parent (standalone, e.g. Dashboard) -->
                 <template v-for="item in standaloneMenuItems" :key="item.path">
                     <NuxtLink 
-                        v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
+                        v-if="canAccessMenuItem(item) && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
                         :to="item.path" 
                         class="nav-item mb-2" 
                         @click="closeSidebar"
@@ -71,7 +71,7 @@
                             <template v-if="group.items">
                                 <template v-for="item in group.items" :key="item.path">
                                     <NuxtLink 
-                                        v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
+                                        v-if="canAccessMenuItem(item, group) && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
                                         :to="item.path" 
                                         class="nav-item" 
                                         @click="closeSidebar"
@@ -113,7 +113,7 @@
                                     <div v-show="!isSubGroupCollapsed(group.label, sub.label)" class="nav-subgroup-items">
                                         <template v-for="item in sub.items" :key="item.path">
                                             <NuxtLink 
-                                                v-if="(!item.adminOnly || userRole === 'admin') && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
+                                                v-if="canAccessMenuItem(item, group) && (!item.endpointActive || isEndpointActive(item.endpointActive))" 
                                                 :to="item.path" 
                                                 class="nav-item nav-sub-item" 
                                                 @click="closeSidebar"
@@ -187,6 +187,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { menuGroups, standaloneMenuItems } from './menu';
+import { hasAllowedRole, isDeveloper } from '~/shared/utils/roles';
 
 const router = useRouter();
 const route = useRoute();
@@ -251,7 +252,9 @@ watch(() => route.path, (newPath) => {
 
 const displayUserName = computed(() => {
     if (userName.value) return userName.value;
-    return userRole.value === 'admin' ? 'Admin' : 'User';
+    if (userRole.value === 'developer') return 'Developer';
+    if (userRole.value === 'admin') return 'Admin';
+    return 'User';
 });
 
 const displayAvatar = computed(() => {
@@ -259,10 +262,20 @@ const displayAvatar = computed(() => {
 });
 
 const displayUserRole = computed(() => {
-    return userRole.value === 'admin' ? 'Administrator' : 'Standard User';
+    if (userRole.value === 'developer') return 'Developer';
+    if (userRole.value === 'admin') return 'Administrator';
+    return 'Standard User';
 });
 
-const { data: endpointConfig } = useAsyncData('endpoints-config', () => $fetch('/api/admin/endpoints-config'));
+const { data: endpointConfig } = useAsyncData(
+    'endpoints-config',
+    () => (isDeveloper(userRole.value) ? $fetch('/api/admin/endpoints-config') : Promise.resolve(null)),
+    { watch: [userRole] }
+);
+
+const canAccessMenuItem = (item, group = null) => {
+    return hasAllowedRole(userRole.value, item.allowedRoles ?? group?.allowedRoles);
+};
 
 const isEndpointActive = (endpoint) => {
     // If config hasn't loaded yet, assume active to avoid UI flicker
@@ -279,16 +292,19 @@ const isEndpointActive = (endpoint) => {
 };
 
 const isGroupVisible = (group) => {
+    if (!hasAllowedRole(userRole.value, group.allowedRoles)) {
+        return false;
+    }
     if (group.items && group.items.length > 0) {
         return group.items.some(item => 
-            (!item.adminOnly || userRole.value === 'admin') && 
+            canAccessMenuItem(item, group) && 
             (!item.endpointActive || isEndpointActive(item.endpointActive))
         );
     }
     if (group.subGroups && group.subGroups.length > 0) {
         return group.subGroups.some(sub => 
             sub.items.some(item => 
-                (!item.adminOnly || userRole.value === 'admin') && 
+                canAccessMenuItem(item, group) && 
                 (!item.endpointActive || isEndpointActive(item.endpointActive))
             )
         );
@@ -332,16 +348,18 @@ const closeSidebar = () => {
 
 const handleLogout = async () => {
     try {
+        await $fetch('/api/auth/logout', { method: 'POST' });
+    } catch (error) {
+        console.error('Logout error:', error);
+    } finally {
         const isLoggedIn = useCookie('is_logged_in');
         const roleCookie = useCookie('user_role');
         const nameCookie = useCookie('user_name');
-        isLoggedIn.value = null; // Hapus cookie
+        const mustChangePassword = useCookie('must_change_password');
+        isLoggedIn.value = null;
         roleCookie.value = null;
         nameCookie.value = null;
-        // Optional: Call the backend logout API if it exists
-        // await $fetch('/api/auth/logout', { method: 'POST' });
-    } catch (error) {
-        console.error('Logout error:', error);
+        mustChangePassword.value = null;
     }
     
     // Redirect user to the login page

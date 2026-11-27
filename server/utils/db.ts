@@ -35,9 +35,17 @@ export const initDB = async () => {
         id VARCHAR(255) PRIMARY KEY,
         username VARCHAR(255) UNIQUE NOT NULL,
         passwordHash VARCHAR(255) NOT NULL,
-        role VARCHAR(50) NOT NULL
+        role VARCHAR(50) NOT NULL,
+        must_change_password TINYINT(1) NOT NULL DEFAULT 0
       )
     `);
+
+    // Ensure must_change_password column exists on existing users tables
+    try {
+      await connection.query('ALTER TABLE users ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0');
+    } catch (e) {
+      // Ignore column already exists errors
+    }
 
     // Create ppk_master table if it doesn't exist
     await connection.query(`
