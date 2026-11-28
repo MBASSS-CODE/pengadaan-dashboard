@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { getUsers, updateUser } from '../../utils/userManager';
-import { isAdminOrDeveloper, isDeveloper, isValidRole } from '../../../shared/utils/roles';
+import { loadPpkMaster } from '../../utils/ppkManager';
+import { isAdminOrDeveloper, isDeveloper, isPpk, isValidRole } from '../../../shared/utils/roles';
 
 export default defineEventHandler(async (event) => {
   const actorRole = event.context.user?.role as string | undefined;
@@ -10,7 +11,7 @@ export default defineEventHandler(async (event) => {
 
   const id = getRouterParam(event, 'id');
   const body = await readBody(event);
-  const { username, password, role } = body || {};
+  const { username, password, role, ppk_master_id, must_change_password } = body || {};
 
   const users = await getUsers();
   const userToUpdate = users.find(u => u.id === id);
@@ -48,6 +49,22 @@ export default defineEventHandler(async (event) => {
     userToUpdate.role = role;
   }
 
+  if (isPpk(userToUpdate.role)) {
+    const candidatePpkId = ppk_master_id !== undefined ? ppk_master_id : userToUpdate.ppk_master_id;
+    const parsedId = Number(candidatePpkId);
+    if (!candidatePpkId || !Number.isFinite(parsedId)) {
+      throw createError({ statusCode: 400, statusMessage: 'Akun PPK wajib terhubung ke data Master PPK' });
+    }
+    const ppkList = await loadPpkMaster();
+    const ppkExists = ppkList.some((p: any) => Number(p.id) === parsedId);
+    if (!ppkExists) {
+      throw createError({ statusCode: 400, statusMessage: 'Data PPK tidak ditemukan di Master PPK' });
+    }
+    userToUpdate.ppk_master_id = parsedId;
+  } else {
+    userToUpdate.ppk_master_id = null;
+  }
+
   if (username) {
     const existing = users.find(u => u.username === username && u.id !== id);
     if (existing) {
@@ -58,6 +75,11 @@ export default defineEventHandler(async (event) => {
 
   if (password) {
     userToUpdate.passwordHash = bcrypt.hashSync(password, 10);
+  }
+
+  if (must_change_password !== undefined) {
+    userToUpdate.must_change_password = must_change_password ? 1 : 0;
+  } else if (password) {
     userToUpdate.must_change_password = 0;
   }
 

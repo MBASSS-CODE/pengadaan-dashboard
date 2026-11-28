@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { findUserById, getDefaultDevCredentials, updateUserPassword } from '../../utils/userManager';
 import { issueAuthSessionCookies } from '../../utils/authSession';
+import { getDefaultHomePath } from '../../../shared/utils/roles';
 
 export default defineEventHandler(async (event) => {
   const sessionUser = event.context.user as { id?: string } | undefined;
@@ -49,6 +50,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     success: true,
+    redirectTo: getDefaultHomePath(dbUser.role),
     message: 'Password berhasil diperbarui'
   };
 });

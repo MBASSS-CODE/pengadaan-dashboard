@@ -138,6 +138,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCookie, useHead } from '#imports';
+import { getDefaultHomePath } from '~/shared/utils/roles';
 
 useHead({
   script: [
@@ -223,7 +224,11 @@ const handleLogin = async () => {
       userName.value = response.user.username;
       const mustChangePassword = useCookie('must_change_password');
       mustChangePassword.value = response.mustChangePassword ? 'true' : null;
-      router.push(response.mustChangePassword ? '/change-password' : '/dashboard');
+      router.push(
+        response.mustChangePassword
+          ? '/change-password'
+          : getDefaultHomePath(response.user.role)
+      );
     }
   } catch (error) {
     errorMessage.value = error.data?.statusMessage || 'Username atau password salah';

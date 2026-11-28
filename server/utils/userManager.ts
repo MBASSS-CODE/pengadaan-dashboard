@@ -9,6 +9,7 @@ export interface User {
   passwordHash: string;
   role: UserRole | string;
   must_change_password?: number | boolean;
+  ppk_master_id?: number | null;
 }
 
 export const getDefaultDevCredentials = () => ({
@@ -79,15 +80,29 @@ export const findUserByUsername = async (username: string): Promise<User | undef
 
 export const createUser = async (user: User): Promise<void> => {
   await pool.query(
-    'INSERT INTO users (id, username, passwordHash, role, must_change_password) VALUES (?, ?, ?, ?, ?)',
-    [user.id, user.username, user.passwordHash, user.role, user.must_change_password ? 1 : 0]
+    'INSERT INTO users (id, username, passwordHash, role, must_change_password, ppk_master_id) VALUES (?, ?, ?, ?, ?, ?)',
+    [
+      user.id,
+      user.username,
+      user.passwordHash,
+      user.role,
+      user.must_change_password ? 1 : 0,
+      user.ppk_master_id ?? null
+    ]
   );
 };
 
 export const updateUser = async (user: User): Promise<void> => {
   await pool.query(
-    'UPDATE users SET username = ?, passwordHash = ?, role = ?, must_change_password = ? WHERE id = ?',
-    [user.username, user.passwordHash, user.role, user.must_change_password ? 1 : 0, user.id]
+    'UPDATE users SET username = ?, passwordHash = ?, role = ?, must_change_password = ?, ppk_master_id = ? WHERE id = ?',
+    [
+      user.username,
+      user.passwordHash,
+      user.role,
+      user.must_change_password ? 1 : 0,
+      user.ppk_master_id ?? null,
+      user.id
+    ]
   );
 };
 

@@ -254,6 +254,7 @@ const displayUserName = computed(() => {
     if (userName.value) return userName.value;
     if (userRole.value === 'developer') return 'Developer';
     if (userRole.value === 'admin') return 'Admin';
+    if (userRole.value === 'ppk') return 'PPK';
     return 'User';
 });
 
@@ -264,6 +265,7 @@ const displayAvatar = computed(() => {
 const displayUserRole = computed(() => {
     if (userRole.value === 'developer') return 'Developer';
     if (userRole.value === 'admin') return 'Administrator';
+    if (userRole.value === 'ppk') return 'PPK';
     return 'Standard User';
 });
 

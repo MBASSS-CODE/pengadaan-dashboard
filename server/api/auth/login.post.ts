@@ -22,8 +22,8 @@ export default defineEventHandler(async (event) => {
 
   const devCreds = getDefaultDevCredentials();
   const mustChangePassword =
-    user.role === 'developer' &&
-    (Boolean(user.must_change_password) || bcrypt.compareSync(devCreds.password, user.passwordHash));
+    Boolean(user.must_change_password) ||
+    (user.role === 'developer' && bcrypt.compareSync(devCreds.password, user.passwordHash));
 
   issueAuthSessionCookies(event, user, mustChangePassword);
 
@@ -33,7 +33,8 @@ export default defineEventHandler(async (event) => {
     user: {
       id: user.id,
       username: user.username,
-      role: user.role
+      role: user.role,
+      ppkMasterId: user.ppk_master_id ?? null
     }
   };
 });

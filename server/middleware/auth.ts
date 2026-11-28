@@ -1,10 +1,18 @@
 import jwt from 'jsonwebtoken';
-import { isAdminApi, isAdminOrDeveloper, isDeveloper, isDeveloperOnlyApi } from '../../shared/utils/roles';
+import {
+  isAdminApi,
+  isAdminOrDeveloper,
+  isDeveloper,
+  isDeveloperOnlyApi,
+  isPpk,
+  isPpkAllowedApi
+} from '../../shared/utils/roles';
 
 interface AuthJwtPayload {
   id: string;
   username: string;
   role: string;
+  ppkMasterId?: number | null;
   mustChangePassword?: boolean;
 }
 
@@ -41,11 +49,30 @@ export default defineEventHandler((event) => {
       throw createError({ statusCode: 401, statusMessage: 'Unauthorized: Token tidak valid atau kedaluwarsa' });
     }
 
-    // Wajib ganti password default sebelum mengakses endpoint terproteksi lainnya
+    // Wajib ganti password default / temporary password sebelum mengakses endpoint lain
     if (decoded.mustChangePassword && url.pathname !== '/api/auth/change-password') {
       throw createError({
         statusCode: 403,
-        statusMessage: 'Forbidden: Anda wajib mengganti password default terlebih dahulu'
+        statusMessage: 'Forbidden: Anda wajib mengganti password terlebih dahulu'
+      });
+    }
+
+    // Default-Deny Whitelist khusus untuk akun PPK
+    if (isPpk(decoded.role)) {
+      if (!isPpkAllowedApi(url.pathname)) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: 'Forbidden: Akun PPK tidak memiliki akses ke endpoint ini'
+        });
+      }
+      return;
+    }
+
+    // Endpoint /api/ppk/* khusus akun PPK
+    if (url.pathname.startsWith('/api/ppk/')) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'Forbidden: Endpoint ini khusus untuk pengguna PPK'
       });
     }
 

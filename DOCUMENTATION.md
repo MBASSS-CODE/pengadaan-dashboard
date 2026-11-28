@@ -93,8 +93,8 @@ Konfigurasi runtime dibaca di `nuxt.config.ts` (`runtimeConfig`) dan langsung da
 Tabel otomatis dibuat oleh fungsi `initDB()` jika belum ada:
 
 1. **`users`** (dikelola oleh `server/utils/userManager.ts`):
-   * `id` (`VARCHAR(255) PK`), `username` (`VARCHAR(255) UNIQUE`), `passwordHash` (`VARCHAR(255)`), `role` (`VARCHAR(50)`: `developer` \| `admin` \| `user`), `must_change_password` (`TINYINT(1)`).
-   * *Catatan:* Saat startup, `ensureDefaultUser()` otomatis membuat akun `admin` jika tabel kosong dan akun `developer` awal (dengan `must_change_password = 1`) jika belum ada user ber-role `developer`. Saat login dengan password default, pengguna wajib menggantinya di `/change-password`.
+   * `id` (`VARCHAR(255) PK`), `username` (`VARCHAR(255) UNIQUE`), `passwordHash` (`VARCHAR(255)`), `role` (`VARCHAR(50)`: `developer` \| `admin` \| `ppk` \| `user`), `must_change_password` (`TINYINT(1)`), `ppk_master_id` (`INT NULL` — relasi ke `ppk_master.id` untuk akun ber-role `ppk`).
+   * *Catatan:* Saat startup, `ensureDefaultUser()` otomatis membuat akun `admin` jika tabel kosong dan akun `developer` awal (dengan `must_change_password = 1`) jika belum ada user ber-role `developer`. Untuk akun dengan `must_change_password = 1` (termasuk opsi *Temporary Password* saat pembuatan/edit user di `/users`), pengguna wajib mengganti password di `/change-password` setelah login.
 2. **`ppk_master`** (dikelola oleh `server/utils/ppkManager.ts`):
    * `id` (`INT AUTO_INCREMENT PK`), `nip_nama_masked` (`VARCHAR(255) UNIQUE`), `nama_lengkap`, `nip_asli`, `jabatan`, `unit_kerja`, `telepon`, `email`, `created_at`, `updated_at`.
    * Digunakan untuk melengkapi nama/NIP PPK yang di-masking oleh API INAPROC.
@@ -165,10 +165,11 @@ server/data/
 * **`pages/rup/`, `pages/tender/`, `pages/ekatalog/`:** Halaman penampil **raw data** murni dari API.
 * **`pages/summary-table/`:** Halaman penampil **enriched / merged data** lengkap dengan analitik & dialog detail (komponen di `components/summary-table/`).
 * **`pages/admin/`:** Halaman administrasi: `system.vue` (cron, sync, backup/import, toggle endpoint), `data-merge.vue` (kontrol merge manual & log anomali via komponen `components/admin/Merge*.vue`), `ppk-master.vue`, `penyedia-master.vue`.
-* **`pages/users/index.vue`:** Manajemen pengguna (role `admin` dan `developer`; hanya `developer` yang dapat melihat, membuat, mengedit, atau menghapus akun `developer`).
-* **`pages/change-password.vue`:** Halaman wajib ganti password ketika akun `developer` terdeteksi masih memakai password default.
-* **`components/layout/menu.ts` & `layouts/default.vue`:** Konfigurasi navigasi sidebar berbasis `allowedRoles` (`developer`, `admin`, `user`) dan pengecekan `endpointActive`.
-* **`middleware/auth.global.ts`:** Guard navigasi sisi client berdasarkan cookie `is_logged_in`, `user_role`, dan `must_change_password` (memblokir akses DATA API & `/admin/system` bagi non-developer).
+* **`pages/users/index.vue`:** Manajemen pengguna (role `admin` dan `developer`; hanya `developer` yang dapat melihat, membuat, mengedit, atau menghapus akun `developer`; akun `ppk` ditautkan ke `ppk_master` dan mendukung checklist *Temporary Password*).
+* **`pages/ppk/` (`index.vue`, `realisasi.vue`, `rup.vue`):** Portal khusus akun PPK yang menampilkan data RUP, paket realisasi, grafik kinerja, ekspor Excel pribadi, dan kontribusi agregat terhadap instansi (hanya untuk data milik PPK yang sedang login via `/api/ppk/*`).
+* **`pages/change-password.vue`:** Halaman wajib ganti password ketika akun terdeteksi memakai password default atau *Temporary Password*.
+* **`components/layout/menu.ts` & `layouts/default.vue`:** Konfigurasi navigasi sidebar berbasis `allowedRoles` (`developer`, `admin`, `ppk`, `user`) dan pengecekan `endpointActive`.
+* **`middleware/auth.global.ts`:** Guard navigasi sisi client berdasarkan cookie `is_logged_in`, `user_role`, dan `must_change_password` (memblokir akses DATA API & `/admin/system` bagi non-developer, serta mengisolasi akun `ppk` hanya ke `/ppk/*` dan `/dashboard`).
 
 ---
 

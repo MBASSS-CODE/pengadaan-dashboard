@@ -3,6 +3,11 @@ import path from 'path';
 import crypto from 'crypto';
 import { loadPpkMaster } from './ppkManager';
 import { loadPenyediaMaster } from './penyediaManager';
+import {
+  normalizeText,
+  normalizeNameKey,
+  matchesMaskedName
+} from './ppkMatcher';
 
 const dataDir = path.resolve(process.cwd(), 'server/data');
 const mergedDir = path.resolve(dataDir, 'merged');
@@ -35,28 +40,6 @@ const readDataArraySafe = async (filePath: string): Promise<any[]> => {
   if (Array.isArray(parsed)) return parsed;
   if (Array.isArray(parsed.data)) return parsed.data;
   return [];
-};
-
-const normalizeText = (val?: string | null): string => {
-  if (!val) return '';
-  return String(val).replace(/\s+/g, ' ').trim();
-};
-
-const stripAcademicTitle = (name?: string | null): string => {
-  if (!name) return '';
-  // Hapus gelar di belakang koma, misal "Nisa Nurrela, A.Md." -> "Nisa Nurrela"
-  return normalizeText(String(name).split(',')[0]);
-};
-
-const normalizeNameKey = (name?: string | null): string => {
-  return stripAcademicTitle(name).toLowerCase();
-};
-
-const matchesMaskedName = (maskedName?: string | null, fullName?: string | null): boolean => {
-  const mWords = normalizeText(maskedName).toLowerCase().split(' ').filter(Boolean);
-  const fWords = normalizeNameKey(fullName).split(' ').filter(Boolean);
-  if (mWords.length === 0 || mWords.length !== fWords.length) return false;
-  return mWords.every((mw, idx) => mw.length === fWords[idx].length && mw[0] === fWords[idx][0]);
 };
 
 const isRupTerumumkanAktif = (r: any): boolean => {

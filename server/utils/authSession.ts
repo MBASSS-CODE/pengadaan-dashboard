@@ -5,6 +5,7 @@ export interface SessionUserPayload {
   id: string;
   username: string;
   role: string;
+  ppkMasterId?: number | null;
   mustChangePassword?: boolean;
 }
 
@@ -15,7 +16,7 @@ const COOKIE_MAX_AGE = 60 * 60 * 24; // 1 day
  */
 export const issueAuthSessionCookies = (
   event: H3Event,
-  user: { id: string; username: string; role: string },
+  user: { id: string; username: string; role: string; ppk_master_id?: number | null },
   mustChangePassword: boolean
 ) => {
   const config = useRuntimeConfig();
@@ -26,6 +27,7 @@ export const issueAuthSessionCookies = (
       id: user.id,
       username: user.username,
       role: user.role,
+      ppkMasterId: user.ppk_master_id ?? null,
       mustChangePassword
     },
     config.jwtSecret || 'default_secret_key_change_me',

@@ -69,6 +69,12 @@
                   <div class="text-xs font-mono text-[color:hsl(var(--maz-muted))] break-all">{{ ppk.nip_nama_masked }}</div>
                   <span v-if="ppk.is_in_db" class="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800 whitespace-nowrap">Tersimpan di DB</span>
                   <span v-else class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">Data Ekstrak (Belum Disimpan)</span>
+                  <span
+                    v-if="ppk.linked_accounts && ppk.linked_accounts.length > 0"
+                    class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap"
+                  >
+                    Akun Login: {{ ppk.linked_accounts.map(a => a.username).join(', ') }}
+                  </span>
                 </div>
                 <div v-if="ppk.nama_lengkap" class="mt-1 text-sm font-bold text-[color:hsl(var(--maz-primary))]">
                   → {{ ppk.nama_lengkap }}

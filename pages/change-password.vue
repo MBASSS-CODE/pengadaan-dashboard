@@ -19,7 +19,7 @@
 
       <NuxtLink
         v-if="!isForced"
-        to="/dashboard"
+        :to="homePath"
         class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline no-underline"
       >
         Kembali ke Dashboard
@@ -48,7 +48,7 @@
         v-if="isForced"
         class="mb-5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs leading-relaxed"
       >
-        <strong>Password default terdeteksi.</strong> Demi keamanan akun developer, Anda wajib mengganti password terlebih dahulu sebelum dapat mengakses dashboard dan menu lainnya.
+        <strong>Password sementara / default terdeteksi.</strong> Demi keamanan akun Anda, wajib mengganti password terlebih dahulu sebelum dapat mengakses dashboard dan menu lainnya.
       </div>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
@@ -117,6 +117,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { getDefaultHomePath } from '~/shared/utils/roles';
 
 definePageMeta({
   layout: 'blank'
@@ -124,8 +125,10 @@ definePageMeta({
 
 const router = useRouter();
 const userName = useCookie('user_name');
+const userRole = useCookie('user_role');
 const mustChangeCookie = useCookie('must_change_password');
 const isForced = computed(() => String(mustChangeCookie.value) === 'true');
+const homePath = computed(() => getDefaultHomePath(userRole.value));
 
 const currentPassword = ref('');
 const newPassword = ref('');
@@ -167,8 +170,9 @@ const handleSubmit = async () => {
     if (res?.success) {
       mustChangeCookie.value = null;
       successMessage.value = 'Password berhasil diperbarui. Mengalihkan ke dashboard...';
+      const targetPath = res.redirectTo || homePath.value;
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push(targetPath);
       }, 600);
     }
   } catch (error) {

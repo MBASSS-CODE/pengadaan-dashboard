@@ -1,4 +1,4 @@
-export const VALID_ROLES = ['developer', 'admin', 'user'] as const;
+export const VALID_ROLES = ['developer', 'admin', 'ppk', 'user'] as const;
 export type UserRole = (typeof VALID_ROLES)[number];
 
 export const isValidRole = (role?: string | null): role is UserRole => {
@@ -6,6 +6,8 @@ export const isValidRole = (role?: string | null): role is UserRole => {
 };
 
 export const isDeveloper = (role?: string | null): boolean => role === 'developer';
+
+export const isPpk = (role?: string | null): boolean => role === 'ppk';
 
 export const isAdminOrDeveloper = (role?: string | null): boolean =>
   role === 'developer' || role === 'admin';
@@ -17,6 +19,10 @@ export const hasAllowedRole = (
   if (!allowedRoles || allowedRoles.length === 0) return true;
   if (!role) return false;
   return allowedRoles.includes(role as UserRole);
+};
+
+export const getDefaultHomePath = (role?: string | null): string => {
+  return isPpk(role) ? '/ppk' : '/dashboard';
 };
 
 const normalizePath = (path: string): string => {
@@ -54,6 +60,33 @@ export const isAdminRoute = (path: string): boolean => {
     normalized.startsWith('/admin/') ||
     normalized === '/users' ||
     normalized.startsWith('/users/')
+  );
+};
+
+export const isPpkRoute = (path: string): boolean => {
+  const normalized = normalizePath(path);
+  return normalized === '/ppk' || normalized.startsWith('/ppk/');
+};
+
+export const isSummaryTableRoute = (path: string): boolean => {
+  const normalized = normalizePath(path);
+  return normalized === '/summary-table' || normalized.startsWith('/summary-table/');
+};
+
+/**
+ * Whitelist API (default-deny) yang boleh diakses oleh akun PPK:
+ * - /api/ppk/* (data pribadi milik PPK sendiri)
+ * - /api/dashboard (ringkasan agregat makro instansi, tanpa daftar paket/PPK lain)
+ * - /api/auth/change-password & /api/auth/logout
+ */
+export const isPpkAllowedApi = (pathname: string): boolean => {
+  const normalized = normalizePath(pathname);
+  return (
+    normalized === '/api/ppk' ||
+    normalized.startsWith('/api/ppk/') ||
+    normalized === '/api/dashboard' ||
+    normalized === '/api/auth/change-password' ||
+    normalized === '/api/auth/logout'
   );
 };
 
